@@ -1,0 +1,44 @@
+{
+  "health": {
+    "live": "API is running.",
+    "ready": "API is ready.",
+    "degraded": "API is running with limited services."
+  },
+  "auth": {
+    "invalid_credentials": "The email address or password is incorrect.",
+    "email_in_use": "This email address cannot be used.",
+    "registered": "Your account has been created.",
+    "login_success": "Signed in successfully.",
+    "logout_success": "Signed out successfully.",
+    "unauthorized": "You must sign in to perform this action.",
+    "forbidden": "You do not have permission to perform this action."
+  },
+  "validation": {
+    "invalid_request": "The submitted information is invalid.",
+    "invalid_email": "Enter a valid email address.",
+    "weak_password": "The password must be at least 10 characters and contain letters and numbers.",
+    "invalid_id": "Invalid record identifier.",
+    "file_required": "Upload at least one image.",
+    "invalid_file": "Unsupported or invalid file.",
+    "file_too_large": "The file exceeds the allowed size."
+  },
+  "media": {
+    "uploaded": "Images uploaded.",
+    "listed": "Images listed.",
+    "updated": "Image information updated.",
+    "replaced": "Image replaced.",
+    "deleted": "Image deleted.",
+    "not_found": "Image not found."
+  },
+  "products": {
+    "listed": "Products listed.",
+    "found": "Product found.",
+    "created": "Product created.",
+    "not_found": "Product not found."
+  },
+  "errors": {
+    "not_found": "The requested resource was not found.",
+    "rate_limit": "Too many requests. Please try again later.",
+    "server_error": "An unexpected error occurred."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "health": {
+    "live": "API çalışıyor.",
+    "ready": "API kullanıma hazır.",
+    "degraded": "API sınırlı servisle çalışıyor."
+  },
+  "auth": {
+    "invalid_credentials": "E-posta adresi veya şifre hatalı.",
+    "email_in_use": "Bu e-posta adresi kullanılamıyor.",
+    "registered": "Hesabınız oluşturuldu.",
+    "login_success": "Giriş başarılı.",
+    "logout_success": "Çıkış başarılı.",
+    "unauthorized": "Bu işlem için giriş yapmalısınız.",
+    "forbidden": "Bu işlem için yetkiniz bulunmuyor."
+  },
+  "validation": {
+    "invalid_request": "Gönderilen bilgiler geçersiz.",
+    "invalid_email": "Geçerli bir e-posta adresi girin.",
+    "weak_password": "Şifre en az 10 karakter olmalı ve harf ile rakam içermelidir.",
+    "invalid_id": "Geçersiz kayıt kimliği.",
+    "file_required": "En az bir görsel yükleyin.",
+    "invalid_file": "Desteklenmeyen veya geçersiz dosya.",
+    "file_too_large": "Dosya izin verilen boyutu aşıyor."
+  },
+  "media": {
+    "uploaded": "Görseller yüklendi.",
+    "listed": "Görseller listelendi.",
+    "updated": "Görsel bilgileri güncellendi.",
+    "replaced": "Görsel değiştirildi.",
+    "deleted": "Görsel silindi.",
+    "not_found": "Görsel bulunamadı."
+  },
+  "products": {
+    "listed": "Ürünler listelendi.",
+    "found": "Ürün bulundu.",
+    "created": "Ürün oluşturuldu.",
+    "not_found": "Ürün bulunamadı."
+  },
+  "errors": {
+    "not_found": "İstenen kaynak bulunamadı.",
+    "rate_limit": "Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin.",
+    "server_error": "Beklenmeyen bir hata oluştu."
+  }
+}

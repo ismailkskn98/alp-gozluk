@@ -1,0 +1,3 @@
+{
+  "i18n-ally.localesPaths": ["frontend/messages", "frontend/src/i18n", "backend/alpgozluk/v1/locales"]
+}

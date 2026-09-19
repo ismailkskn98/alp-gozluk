@@ -1,0 +1,36 @@
+{
+  "Metadata": {
+    "title": "ALP Eyewear",
+    "description": "The official ALP Eyewear online store."
+  },
+  "Navigation": {
+    "home": "Home",
+    "shop": "Shop all",
+    "new": "New arrivals",
+    "guide": "Eyewear guide",
+    "about": "About",
+    "account": "Account",
+    "cart": "Cart"
+  },
+  "Common": {
+    "loading": "Preparing content...",
+    "backHome": "Back to homepage",
+    "comingSoon": "This area is being prepared."
+  },
+  "NotFound": {
+    "eyebrow": "404",
+    "title": "The page could not be found",
+    "description": "The link may have changed or the page may have been removed."
+  },
+  "Auth": {
+    "login": "Sign in",
+    "register": "Create account",
+    "forgotPassword": "Forgot password",
+    "resetPassword": "Set a new password",
+    "verifyEmail": "Verify email",
+    "email": "Email",
+    "password": "Password",
+    "firstName": "First name",
+    "lastName": "Last name"
+  }
+}

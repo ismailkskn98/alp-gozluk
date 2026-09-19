@@ -1,0 +1,185 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+:root {
+  --background: #f7f9fc;
+  --foreground: #10233d;
+  --surface: #ffffff;
+  --surface-subtle: #edf2f7;
+  --muted: #edf2f7;
+  --muted-foreground: #66758a;
+  --border: #dce4ed;
+  --border-strong: #b8c5d3;
+  --primary: #1756a3;
+  --primary-foreground: #ffffff;
+  --accent: #08bbd3;
+  --accent-foreground: #10233d;
+  --accent-soft: #dcf7fb;
+  --success: #16794c;
+  --warning: #9a6400;
+  --danger: #b42318;
+  --focus: #1756a3;
+  --radius: 0.5rem;
+  --card: #ffffff;
+  --card-foreground: #10233d;
+  --popover: #ffffff;
+  --popover-foreground: #10233d;
+  --secondary: #edf2f7;
+  --secondary-foreground: #10233d;
+  --destructive: #b42318;
+  --input: #b8c5d3;
+  --ring: #1756a3;
+  --chart-1: #1756a3;
+  --chart-2: #08bbd3;
+  --chart-3: #6b7d91;
+  --chart-4: #98a8b9;
+  --chart-5: #c7d1dc;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #10233d;
+  --sidebar-primary: #1756a3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf2f7;
+  --sidebar-accent-foreground: #10233d;
+  --sidebar-border: #dce4ed;
+  --sidebar-ring: #1756a3;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-instrument-serif);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@utility grid-container {
+  display: grid;
+  grid-template-columns: 1fr min(92%, 90rem) 1fr;
+
+  & > * {
+    grid-column: 2;
+  }
+}
+
+@utility fluid {
+  grid-column: 1 / -1;
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-geist), Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+.display-serif {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+a,
+button {
+  cursor: pointer;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+  }
+}

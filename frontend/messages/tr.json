@@ -1,0 +1,36 @@
+{
+  "Metadata": {
+    "title": "ALP Gözlük",
+    "description": "ALP Gözlük resmi online mağazası."
+  },
+  "Navigation": {
+    "home": "Ana sayfa",
+    "shop": "Tüm ürünler",
+    "new": "Yeni gelenler",
+    "guide": "Gözlük rehberi",
+    "about": "Hakkımızda",
+    "account": "Hesabım",
+    "cart": "Sepet"
+  },
+  "Common": {
+    "loading": "İçerik hazırlanıyor...",
+    "backHome": "Ana sayfaya dön",
+    "comingSoon": "Bu alan hazırlanıyor."
+  },
+  "NotFound": {
+    "eyebrow": "404",
+    "title": "Aradığınız sayfa bulunamadı",
+    "description": "Bağlantı değişmiş veya sayfa kaldırılmış olabilir."
+  },
+  "Auth": {
+    "login": "Giriş yap",
+    "register": "Hesap oluştur",
+    "forgotPassword": "Şifremi unuttum",
+    "resetPassword": "Yeni şifre belirle",
+    "verifyEmail": "E-posta adresini doğrula",
+    "email": "E-posta",
+    "password": "Şifre",
+    "firstName": "Ad",
+    "lastName": "Soyad"
+  }
+}
