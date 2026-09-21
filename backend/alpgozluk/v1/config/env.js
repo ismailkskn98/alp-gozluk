@@ -47,6 +47,7 @@ const config = {
   auth: {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
   },
   storage: {
     driver: process.env.STORAGE_DRIVER || (nodeEnv === 'production' ? 's3' : 'local'),

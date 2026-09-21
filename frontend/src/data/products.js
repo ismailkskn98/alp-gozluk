@@ -55,6 +55,13 @@ export function getProduct(slug) {
 
 const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 function matchesDemoFilters(product, filters) {
   if (filters.audience) {
     const acceptedAudiences = ['women', 'men'].includes(filters.audience)
@@ -65,6 +72,18 @@ function matchesDemoFilters(product, filters) {
   if (filters.type && product.productType !== filters.type) return false;
   if (filters.material && !product.material.includes(filters.material)) return false;
   if (filters.feature && !product.features.includes(filters.feature)) return false;
+  if (filters.search) {
+    const searchValue = normalizeSearchText([
+      product.name,
+      product.type,
+      product.productType,
+      product.slug,
+      ...product.audiences,
+      ...product.material,
+      ...product.features,
+    ].join(' '));
+    if (!searchValue.includes(normalizeSearchText(filters.search).trim())) return false;
+  }
   return true;
 }
 

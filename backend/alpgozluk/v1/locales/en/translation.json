@@ -9,6 +9,11 @@
     "email_in_use": "This email address cannot be used.",
     "registered": "Your account has been created.",
     "login_success": "Signed in successfully.",
+    "google_ready": "Google sign-in is ready.",
+    "google_success": "Signed in with Google successfully.",
+    "google_invalid": "Your Google identity could not be verified. Please try again.",
+    "google_unavailable": "Google sign-in is currently unavailable.",
+    "google_email_conflict": "This email uses another sign-in method. Sign in with your email and password.",
     "logout_success": "Signed out successfully.",
     "unauthorized": "You must sign in to perform this action.",
     "forbidden": "You do not have permission to perform this action."

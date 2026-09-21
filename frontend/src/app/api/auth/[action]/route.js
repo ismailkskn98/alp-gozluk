@@ -2,7 +2,48 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { authCookieName, getApiUrl } from '@/lib/server-api';
 
-const publicActions = new Set(['login', 'register']);
+const publicActions = new Set(['login', 'register', 'google']);
+const googleNonceAction = 'google-nonce';
+const googleNonceCookieName = 'alp_google_nonce';
+
+function getRequestMessage(request, trMessage, enMessage) {
+  return request.headers.get('accept-language')?.toLowerCase().startsWith('en')
+    ? enMessage
+    : trMessage;
+}
+
+function getSecureCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+  };
+}
+
+async function createGoogleNonce(request) {
+  try {
+    const acceptLanguage = request.headers.get('accept-language');
+    const backendResponse = await fetch(`${getApiUrl()}/auth/google/nonce`, {
+      headers: acceptLanguage ? { 'Accept-Language': acceptLanguage } : undefined,
+      cache: 'no-store',
+    });
+    const payload = await backendResponse.json();
+    const nonce = payload.data?.nonce;
+    const response = NextResponse.json(payload, { status: backendResponse.status });
+
+    if (backendResponse.ok && nonce) {
+      response.cookies.set(googleNonceCookieName, nonce, {
+        ...getSecureCookieOptions(),
+        maxAge: Math.min(Number(payload.data.expiresIn) || 600, 600),
+      });
+    }
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
+  } catch {
+    return NextResponse.json({ status: false, message: 'API servisine ulaşılamıyor.' }, { status: 503 });
+  }
+}
 
 async function forward(action, request) {
   if (!publicActions.has(action) && action !== 'logout' && action !== 'me') {
@@ -13,9 +54,40 @@ async function forward(action, request) {
   const token = cookieStore.get(authCookieName)?.value;
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
+  const acceptLanguage = request.headers.get('accept-language');
+  if (acceptLanguage) headers['Accept-Language'] = acceptLanguage;
 
   let body;
-  if (publicActions.has(action)) body = JSON.stringify(await request.json());
+  if (publicActions.has(action)) {
+    try {
+      const requestBody = await request.json();
+
+      if (action === 'google') {
+        const nonce = cookieStore.get(googleNonceCookieName)?.value;
+        if (!nonce) {
+          return NextResponse.json(
+            {
+              status: false,
+              message: getRequestMessage(
+                request,
+                'Google giriş isteğinin süresi doldu. Lütfen tekrar deneyin.',
+                'The Google sign-in request expired. Please try again.',
+              ),
+            },
+            { status: 400 },
+          );
+        }
+        body = JSON.stringify({ idToken: requestBody.credential, nonce });
+      } else {
+        body = JSON.stringify(requestBody);
+      }
+    } catch {
+      return NextResponse.json({
+        status: false,
+        message: getRequestMessage(request, 'Geçersiz istek.', 'Invalid request.'),
+      }, { status: 400 });
+    }
+  }
 
   try {
     const backendResponse = await fetch(`${getApiUrl()}/auth/${action}`, {
@@ -40,6 +112,7 @@ async function forward(action, request) {
         expires: payload.data.expiresAt ? new Date(payload.data.expiresAt) : undefined,
       });
     }
+    if (action === 'google') response.cookies.delete(googleNonceCookieName);
     if (action === 'logout') response.cookies.delete(authCookieName);
     return response;
   } catch {
@@ -49,10 +122,14 @@ async function forward(action, request) {
 
 export async function GET(request, { params }) {
   const { action } = await params;
+  if (action === googleNonceAction) return createGoogleNonce(request);
   return forward(action, request);
 }
 
 export async function POST(request, { params }) {
   const { action } = await params;
+  if (action === googleNonceAction) {
+    return NextResponse.json({ status: false, message: 'Bu işlem GET isteği gerektirir.' }, { status: 405 });
+  }
   return forward(action, request);
 }

@@ -35,6 +35,8 @@ Base URL: `/api/alpgozluk/v1`
 - `GET /health/ready`
 - `POST /auth/register`
 - `POST /auth/login`
+- `GET /auth/google/nonce`
+- `POST /auth/google`
 - `GET /auth/me`
 - `POST /auth/logout`
 - `GET /products?locale=tr`
@@ -47,6 +49,8 @@ Base URL: `/api/alpgozluk/v1`
 - `DELETE /admin/media/delete/:id`
 
 Admin ürün ve medya rotaları bearer token ile ilgili backend iznini gerektirir.
+
+Google girişini etkinleştirmek için Google Cloud Console'daki Web application OAuth client kimliğini `GOOGLE_CLIENT_ID` olarak tanımlayın. Aynı client kimliği frontend tarafındaki `NEXT_PUBLIC_GOOGLE_CLIENT_ID` değeriyle eşleşmelidir. Google hesabıyla ilk kez giriş yapan kullanıcı için müşteri hesabı otomatik oluşturulur; mevcut şifreli hesaplar yalnızca e-posta eşleşmesine bakılarak otomatik bağlanmaz.
 
 ## Test
 

@@ -24,7 +24,7 @@ export default function MobileNavbar({ items, labels }) {
     <div className="lg:hidden">
       <button
         type="button"
-        className="grid size-10 place-items-center bg-white hover:bg-[#f4f5f6]"
+        className="grid size-11 place-items-center bg-white hover:bg-[#f4f5f6]"
         aria-label={isOpen ? labels.close : labels.open}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((value) => !value)}

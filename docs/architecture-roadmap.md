@@ -32,7 +32,6 @@ flowchart LR
 src/app/
 ├── layout.jsx
 ├── (site)/
-│   ├── page.jsx
 │   └── [locale]/
 │       ├── page.jsx
 │       ├── shop/
@@ -68,7 +67,7 @@ src/app/
         └── settings/
 ```
 
-Route group isimleri URL'ye yansımaz. Müşteri auth sayfaları locale altında, admin paneli `/admin` altında localesiz çalışır.
+Route group isimleri URL'ye yansımaz. Varsayılan locale Türkçedir ve URL'de prefix kullanmaz: ana sayfa `/`, müşteri girişi `/login`, mağaza `/shop` olarak açılır. Diğer diller locale prefix'i kullanır; örneğin İngilizce ana sayfa `/en`, müşteri girişi `/en/login` ve mağaza `/en/shop` olur. Eski veya gereksiz `/tr/...` adresleri prefixsiz Türkçe karşılıklarına yönlendirilir. Admin paneli `/admin` altında localesiz çalışır.
 
 ## Storage sözleşmesi
 
@@ -126,15 +125,27 @@ Admin katalog ve navigasyon uçları authentication yanında `catalog.manage` ve
 Public URL yapısı:
 
 ```text
-/{locale}/shop
-/{locale}/shop/{audience}
-/{locale}/shop/{audience}/{product-type}
-/{locale}/category/{slug}
-/{locale}/collection/{slug}
-/{locale}/product/{slug}
+/{locale?}/shop
+/{locale?}/shop/{audience}
+/{locale?}/shop/{audience}/{product-type}
+/{locale?}/category/{slug}
+/{locale?}/collection/{slug}
+/{locale?}/product/{slug}
 ```
 
+Buradaki `{locale?}` Türkçe için boş, diğer diller için zorunlu prefix'tir (`/shop`, `/en/shop`).
+
 Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` query parametreleriyle taşınır. İçerik sayfaları slug tabanlı kalır; filtre kombinasyonları yeni ve kontrolsüz SEO sayfaları üretmez.
+
+## Müşteri kimlik doğrulama
+
+- E-posta/şifre ve Google Identity Services aynı uygulama session/JWT akışını üretir.
+- Tarayıcı backend JWT'sini saklamaz; Next.js BFF token'ı `httpOnly`, `sameSite` cookie olarak yönetir.
+- Google ID token'ı backend'de resmi Google Auth Library ile imza, issuer, audience ve süre açısından doğrulanır.
+- Google `sub` değeri provider kimliğinin kalıcı anahtarıdır; e-posta provider kimliği olarak kullanılmaz.
+- Google nonce 10 dakika geçerli, tek kullanımlı ve Redis desteklidir; frontend ayrıca challenge'ı `httpOnly` cookie ile aynı tarayıcı oturumuna bağlar.
+- İlk Google girişinde müşteri hesabı otomatik oluşturulur. Mevcut şifreli hesap yalnızca e-posta eşleşmesine dayanarak otomatik bağlanmaz; bu, hesap ele geçirme riskini azaltır.
+- Login sheet yalnızca giriş akışlarını içerir. Kayıt formu `/{locale?}/register` sayfasında kalır.
 
 ## Güvenlik ilkeleri
 

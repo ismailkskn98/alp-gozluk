@@ -38,6 +38,25 @@ test('public ürün filtreleri allowlist dışındaki hedef kitleyi reddeder', a
   assert.equal(response.body.status, false);
 });
 
+test('Google auth endpointi eksik veya biçimsiz token bilgisini reddeder', async () => {
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/auth/google')
+    .send({ idToken: 'gecersiz', nonce: 'gecersiz' })
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+});
+
+test('Google nonce endpointi tek kullanımlık bir challenge üretir', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/auth/google/nonce')
+    .expect(200);
+
+  assert.equal(response.body.status, true);
+  assert.match(response.body.data.nonce, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(response.body.data.expiresIn, 600);
+});
+
 test('auth rate limit Redis yokken güvenli memory fallback ile çalışır', async () => {
   const app = createApp();
   let finalResponse;

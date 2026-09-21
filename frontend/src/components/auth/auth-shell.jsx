@@ -1,11 +1,11 @@
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 
-export default function AuthShell({ locale, eyebrow, title, description, children, footer }) {
+export default function AuthShell({ eyebrow, title, description, children, footer }) {
   return (
     <main className="grid min-h-svh bg-white lg:grid-cols-[0.85fr_1.15fr]">
       <section className="flex flex-col px-[8%] py-8 sm:px-[12%] lg:px-[14%]">
-        <Link href="/" locale={locale} aria-label="ALP Gözlük ana sayfa">
+        <Link href="/" aria-label="ALP Gözlük ana sayfa">
           <Image src="/brand/logo.png" alt="ALP Gözlük" width={170} height={66} className="h-12 w-auto object-contain" priority />
         </Link>
         <div className="my-auto py-16">

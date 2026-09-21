@@ -9,6 +9,11 @@
     "email_in_use": "Bu e-posta adresi kullanılamıyor.",
     "registered": "Hesabınız oluşturuldu.",
     "login_success": "Giriş başarılı.",
+    "google_ready": "Google girişi hazır.",
+    "google_success": "Google ile giriş başarılı.",
+    "google_invalid": "Google kimliği doğrulanamadı. Lütfen tekrar deneyin.",
+    "google_unavailable": "Google ile giriş şu anda kullanılamıyor.",
+    "google_email_conflict": "Bu e-posta başka bir giriş yöntemiyle kayıtlı. E-posta ve şifrenizle giriş yapın.",
     "logout_success": "Çıkış başarılı.",
     "unauthorized": "Bu işlem için giriş yapmalısınız.",
     "forbidden": "Bu işlem için yetkiniz bulunmuyor."

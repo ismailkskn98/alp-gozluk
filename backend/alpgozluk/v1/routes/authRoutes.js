@@ -10,9 +10,16 @@ const authRateLimit = createRateLimit({
   max: config.rateLimit.authMax,
   windowSeconds: config.rateLimit.windowSeconds,
 });
+const googleAuthRateLimit = createRateLimit({
+  namespace: 'auth-google',
+  max: config.rateLimit.authMax,
+  windowSeconds: config.rateLimit.windowSeconds,
+});
 
 router.post('/register', authRateLimit, authController.register);
 router.post('/login', authRateLimit, authController.login);
+router.get('/google/nonce', googleAuthRateLimit, authController.googleNonce);
+router.post('/google', googleAuthRateLimit, authController.google);
 router.use(verifyToken);
 router.get('/me', authController.me);
 router.post('/logout', authController.logout);

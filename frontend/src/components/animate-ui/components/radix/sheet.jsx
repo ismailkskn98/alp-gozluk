@@ -39,11 +39,13 @@ function SheetContent({
   children,
   side = 'right',
   showCloseButton = true,
+  closeLabel = 'Close',
+  overlayClassName,
   ...props
 }) {
   return (
     <SheetPortalPrimitive>
-      <SheetOverlay />
+      <SheetOverlay className={overlayClassName} />
       <SheetContentPrimitive
         className={cn(
           'bg-background fixed z-50 flex flex-col gap-4 shadow-lg',
@@ -58,9 +60,9 @@ function SheetContent({
         {children}
         {showCloseButton && (
           <SheetClose
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 grid size-11 place-items-center opacity-70 transition-opacity hover:bg-muted hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
             <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{closeLabel}</span>
           </SheetClose>
         )}
       </SheetContentPrimitive>

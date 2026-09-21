@@ -7,23 +7,32 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getPathname } from '@/i18n/navigation';
 
-const loginSchema = z.object({
-  email: z.email('Geçerli bir e-posta adresi girin.'),
-  password: z.string().min(1, 'Şifrenizi girin.').max(128),
-});
+function getSchema(mode, tr) {
+  const loginSchema = z.object({
+    email: z.email(tr ? 'Geçerli bir e-posta adresi girin.' : 'Enter a valid email address.'),
+    password: z.string().min(1, tr ? 'Şifrenizi girin.' : 'Enter your password.').max(128),
+  });
 
-const registerSchema = loginSchema.extend({
-  firstName: z.string().trim().min(2, 'En az 2 karakter girin.').max(80),
-  lastName: z.string().trim().min(2, 'En az 2 karakter girin.').max(80),
-  password: z.string().min(10, 'Şifre en az 10 karakter olmalıdır.').max(128).regex(/[A-Za-z]/, 'Şifre bir harf içermelidir.').regex(/\d/, 'Şifre bir rakam içermelidir.'),
-});
+  if (mode === 'login') return loginSchema;
 
-export default function AuthForm({ mode = 'login', admin = false, locale = 'tr' }) {
+  return loginSchema.extend({
+    firstName: z.string().trim().min(2, tr ? 'En az 2 karakter girin.' : 'Enter at least 2 characters.').max(80),
+    lastName: z.string().trim().min(2, tr ? 'En az 2 karakter girin.' : 'Enter at least 2 characters.').max(80),
+    password: z.string()
+      .min(10, tr ? 'Şifre en az 10 karakter olmalıdır.' : 'Password must be at least 10 characters.')
+      .max(128)
+      .regex(/[A-Za-z]/, tr ? 'Şifre bir harf içermelidir.' : 'Password must include a letter.')
+      .regex(/\d/, tr ? 'Şifre bir rakam içermelidir.' : 'Password must include a number.'),
+  });
+}
+
+export default function AuthForm({ mode = 'login', admin = false, locale = 'tr', onSuccess, redirectOnSuccess = true, idPrefix = '', appearance = 'default' }) {
   const router = useRouter();
   const tr = locale === 'tr';
   const [serverError, setServerError] = useState('');
-  const schema = mode === 'register' ? registerSchema : loginSchema;
+  const schema = getSchema(mode, tr);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) });
 
   async function onSubmit(values) {
@@ -38,7 +47,10 @@ export default function AuthForm({ mode = 'login', admin = false, locale = 'tr' 
       setServerError(payload.message || (tr ? 'İşlem tamamlanamadı.' : 'The request could not be completed.'));
       return;
     }
-    router.push(admin ? '/admin' : `/${locale}/account`);
+    onSuccess?.(payload.data?.user || null);
+    if (redirectOnSuccess) {
+      router.push(admin ? '/admin' : getPathname({ href: '/account', locale }));
+    }
     router.refresh();
   }
 
@@ -50,13 +62,20 @@ export default function AuthForm({ mode = 'login', admin = false, locale = 'tr' 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
       {fields.map(([name, label, autocomplete]) => (
         <div key={name} className="space-y-2">
-          <Label htmlFor={name}>{label}</Label>
-          <Input id={name} type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'} autoComplete={autocomplete} aria-invalid={Boolean(errors[name])} {...register(name)} />
+          <Label htmlFor={idPrefix ? `${idPrefix}-${name}` : name}>{label}</Label>
+          <Input
+            id={idPrefix ? `${idPrefix}-${name}` : name}
+            type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'}
+            autoComplete={autocomplete}
+            aria-invalid={Boolean(errors[name])}
+            className={appearance === 'sheet' ? 'h-12 rounded-none border-border' : undefined}
+            {...register(name)}
+          />
           {errors[name] ? <p className="text-sm text-danger">{errors[name].message}</p> : null}
         </div>
       ))}
       {serverError ? <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}
-      <button type="submit" disabled={isSubmitting} className="h-11 w-full rounded-md bg-primary px-5 text-sm font-semibold text-white hover:bg-[#124887] disabled:opacity-60">
+      <button type="submit" disabled={isSubmitting} className={`h-12 w-full px-5 text-sm font-semibold text-white disabled:opacity-60 ${appearance === 'sheet' ? 'bg-foreground hover:bg-primary' : 'rounded-md bg-primary hover:bg-[#124887]'}`}>
         {isSubmitting ? (tr ? 'İşleniyor…' : 'Processing…') : mode === 'register' ? (tr ? 'Hesap oluştur' : 'Create account') : (tr ? 'Giriş yap' : 'Sign in')}
       </button>
     </form>
