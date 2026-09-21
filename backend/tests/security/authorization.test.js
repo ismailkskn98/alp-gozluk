@@ -24,6 +24,20 @@ test('admin ürün oluşturma endpointi tokensız istekleri reddeder', async () 
   assert.ok(response.body.message);
 });
 
+test('admin katalog ve navigasyon endpointleri tokensız istekleri reddeder', async () => {
+  const app = createApp();
+  await request(app).get('/api/alpgozluk/v1/admin/catalog').expect(401);
+  await request(app).get('/api/alpgozluk/v1/admin/navigation/header').expect(401);
+});
+
+test('public ürün filtreleri allowlist dışındaki hedef kitleyi reddeder', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/products?audience=women%27%20OR%201=1')
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+});
+
 test('auth rate limit Redis yokken güvenli memory fallback ile çalışır', async () => {
   const app = createApp();
   let finalResponse;

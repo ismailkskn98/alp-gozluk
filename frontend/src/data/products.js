@@ -5,6 +5,10 @@ export const demoProducts = [
     type: 'Güneş Gözlüğü',
     price: '₺6.490',
     color: '#f0f1ef',
+    audiences: ['unisex'],
+    productType: 'sunglasses',
+    material: ['acetate'],
+    features: [],
     images: [
       '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/main.webp',
       '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/1.webp',
@@ -17,6 +21,10 @@ export const demoProducts = [
     type: 'Güneş Gözlüğü',
     price: '₺3.790',
     color: '#ebe9e4',
+    audiences: ['women'],
+    productType: 'sunglasses',
+    material: ['acetate'],
+    features: ['polarized'],
     images: [
       '/demo-gozlukler/inesta-polarized-ip-vnd268/main.webp',
       '/demo-gozlukler/inesta-polarized-ip-vnd268/1.webp',
@@ -29,6 +37,10 @@ export const demoProducts = [
     type: 'Güneş Gözlüğü',
     price: '₺12.990',
     color: '#f2eee7',
+    audiences: ['men'],
+    productType: 'sunglasses',
+    material: ['metal'],
+    features: [],
     images: [
       '/demo-gozlukler/versace-ve2287/main.webp',
       '/demo-gozlukler/versace-ve2287/1.webp',
@@ -43,11 +55,28 @@ export function getProduct(slug) {
 
 const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
 
-export async function listProducts(locale) {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') return demoProducts;
+function matchesDemoFilters(product, filters) {
+  if (filters.audience) {
+    const acceptedAudiences = ['women', 'men'].includes(filters.audience)
+      ? [filters.audience, 'unisex']
+      : [filters.audience];
+    if (!product.audiences.some((audience) => acceptedAudiences.includes(audience))) return false;
+  }
+  if (filters.type && product.productType !== filters.type) return false;
+  if (filters.material && !product.material.includes(filters.material)) return false;
+  if (filters.feature && !product.features.includes(filters.feature)) return false;
+  return true;
+}
+
+export async function listProducts(locale, filters = {}) {
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') return demoProducts.filter((product) => matchesDemoFilters(product, filters));
   if (!apiUrl) return [];
   try {
-    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products?locale=${locale}`, { next: { revalidate: 300 } });
+    const query = new URLSearchParams({ locale });
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
+    }
+    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products?${query}`, { next: { revalidate: 300 } });
     if (!response.ok) return [];
     const payload = await response.json();
     return (payload.data?.products || []).map((product) => ({

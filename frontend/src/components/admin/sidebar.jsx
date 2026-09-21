@@ -2,7 +2,7 @@
 
 import {
   BarChart3, Boxes, ChevronLeft, CircleDollarSign, FileText, FolderTree,
-  ImageIcon, LayoutDashboard, LogOut, Megaphone, Package, Settings, Shield,
+  ImageIcon, LayoutDashboard, ListTree, LogOut, Megaphone, Package, Settings, Shield, Tags,
   ShoppingBag, Users, Warehouse,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn';
 
 const groups = [
   { label: 'Genel', items: [['Genel bakış', '/admin', LayoutDashboard], ['Siparişler', '/admin/orders', ShoppingBag], ['Müşteriler', '/admin/customers', Users]] },
-  { label: 'Katalog', items: [['Ürünler', '/admin/products', Package], ['Kategoriler', '/admin/categories', FolderTree], ['Koleksiyonlar', '/admin/collections', Boxes], ['Stok', '/admin/inventory', Warehouse], ['Medya', '/admin/media', ImageIcon]] },
+  { label: 'Katalog', items: [['Ürünler', '/admin/products', Package], ['Kategoriler', '/admin/categories', FolderTree], ['Koleksiyonlar', '/admin/collections', Boxes], ['Hedef kitleler', '/admin/audiences', Users], ['Özellikler', '/admin/attributes', Tags], ['Markalar', '/admin/brands', Boxes], ['Mega menü', '/admin/navigation', ListTree], ['Stok', '/admin/inventory', Warehouse], ['Medya', '/admin/media', ImageIcon]] },
   { label: 'Pazarlama', items: [['Kampanyalar', '/admin/campaigns', Megaphone], ['İçerik', '/admin/content', FileText], ['Raporlar', '/admin/reports', BarChart3]] },
   { label: 'Sistem', items: [['Kullanıcılar', '/admin/users', Users], ['Roller', '/admin/roles', Shield], ['Audit log', '/admin/audit-logs', CircleDollarSign], ['Ayarlar', '/admin/settings', Settings]] },
 ];

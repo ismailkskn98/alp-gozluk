@@ -36,6 +36,18 @@
     "created": "Ürün oluşturuldu.",
     "not_found": "Ürün bulunamadı."
   },
+  "catalog": {
+    "listed": "Katalog seçenekleri listelendi.",
+    "created": "Katalog kaydı oluşturuldu.",
+    "updated": "Katalog kaydı güncellendi.",
+    "archived": "Katalog kaydı arşivlendi.",
+    "not_found": "Katalog kaydı bulunamadı.",
+    "duplicate": "Aynı kod veya URL adıyla başka bir kayıt bulunuyor."
+  },
+  "navigation": {
+    "listed": "Navigasyon listelendi.",
+    "updated": "Navigasyon güncellendi."
+  },
   "errors": {
     "not_found": "İstenen kaynak bulunamadı.",
     "rate_limit": "Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin.",

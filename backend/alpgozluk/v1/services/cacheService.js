@@ -40,4 +40,24 @@ const deleteKeys = async (...keys) => {
   }
 };
 
-module.exports = { getJson, setJson, deleteKeys };
+const deleteByPrefix = async (...keyParts) => {
+  const client = getRedisClient();
+  if (!client?.isReady) return false;
+
+  try {
+    const keys = [];
+    for await (const key of client.scanIterator({ MATCH: `${buildRedisKey(...keyParts)}:*`, COUNT: 100 })) {
+      keys.push(key);
+      if (keys.length === 100) {
+        await client.del(keys.splice(0, keys.length));
+      }
+    }
+    if (keys.length) await client.del(keys);
+    return true;
+  } catch (error) {
+    console.error('Redis cache prefix temizleme hatası:', error.message);
+    return false;
+  }
+};
+
+module.exports = { deleteByPrefix, getJson, setJson, deleteKeys };

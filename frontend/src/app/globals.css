@@ -3,7 +3,7 @@
 @import "shadcn/tailwind.css";
 
 :root {
-  --background: #f7f9fc;
+  --background: #ffffff;
   --foreground: #10233d;
   --surface: #ffffff;
   --surface-subtle: #edf2f7;
@@ -98,9 +98,9 @@
 
 @utility grid-container {
   display: grid;
-  grid-template-columns: 1fr min(92%, 90rem) 1fr;
+  grid-template-columns: 1fr min(96%, 110rem) 1fr;
 
-  & > * {
+  &>* {
     grid-column: 2;
   }
 }
@@ -219,12 +219,16 @@ select {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
   html {
     @apply font-sans;
   }

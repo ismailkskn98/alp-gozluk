@@ -36,6 +36,18 @@
     "created": "Product created.",
     "not_found": "Product not found."
   },
+  "catalog": {
+    "listed": "Catalogue options listed.",
+    "created": "Catalogue record created.",
+    "updated": "Catalogue record updated.",
+    "archived": "Catalogue record archived.",
+    "not_found": "Catalogue record not found.",
+    "duplicate": "Another record already uses this code or URL slug."
+  },
+  "navigation": {
+    "listed": "Navigation listed.",
+    "updated": "Navigation updated."
+  },
   "errors": {
     "not_found": "The requested resource was not found.",
     "rate_limit": "Too many requests. Please try again later.",

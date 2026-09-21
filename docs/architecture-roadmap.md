@@ -98,6 +98,44 @@ getUrl(fileKey, options)
 
 Redis çalışmazsa katalog MariaDB üzerinden devam eder. Cache yazma hatası kullanıcı isteğini başarısız yapmaz; güvenlik kontrollerindeki fallback ise loglanır ve sınırlı çalışır.
 
+## Katalog taksonomisi ve navigasyon
+
+Katalog verisi aşağıdaki sorumluluklara ayrılır:
+
+- `audiences` ve `product_audiences`: kadın, erkek, çocuk ve unisex hedef kitleleri
+- `attribute_groups` / `attribute_values`: ürün tipi, çerçeve materyali, form, cam özelliği, renk ve ölçü filtreleri
+- `categories`: kalıcı katalog hiyerarşisi
+- `collections`: yaz seçkisi, dört mevsim ve benzeri editoryal/sezonluk seçkiler
+- `brands`: tekrar kullanılabilir marka kayıtları
+- `navigation_menus` / `navigation_items`: header mega menüsü ve lokalize bağlantıları
+
+Kadın katalog sorgusu `women + unisex`, erkek sorgusu `men + unisex`, çocuk sorgusu yalnızca `kids` hedef kitlesini döndürür. Böylece unisex bir ürün kopyalanmadan iki katalogda görünür; ürün kimliği, slug, stok, fiyat, medya ve SEO verisi tek kayıtta kalır.
+
+Güneş gözlüğü ve optik çerçeve ürün tipi; polarize, materyal, form, renk ve ölçü ise filtre özelliğidir. `Yeni gelenler` tarih/sıralama, `İndirim` aktif varyant fiyatı, sezon anlatıları ise koleksiyon üzerinden hesaplanır. Bu kavramlar kategori olarak çoğaltılmaz.
+
+Public API uçları:
+
+```text
+GET /api/alpgozluk/v1/products
+GET /api/alpgozluk/v1/catalog/facets
+GET /api/alpgozluk/v1/navigation/header
+```
+
+Admin katalog ve navigasyon uçları authentication yanında `catalog.manage` veya `navigation.manage` permission kontrolü uygular. Header verisi Redis'te locale bazlı cache'lenir; ürün veya taksonomi değişikliğinde ilgili katalog cache prefix'i temizlenir.
+
+Public URL yapısı:
+
+```text
+/{locale}/shop
+/{locale}/shop/{audience}
+/{locale}/shop/{audience}/{product-type}
+/{locale}/category/{slug}
+/{locale}/collection/{slug}
+/{locale}/product/{slug}
+```
+
+Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` query parametreleriyle taşınır. İçerik sayfaları slug tabanlı kalır; filtre kombinasyonları yeni ve kontrolsüz SEO sayfaları üretmez.
+
 ## Güvenlik ilkeleri
 
 - Fiyat, indirim, kargo, stok ve sipariş toplamı backend tarafından yeniden hesaplanır.
@@ -123,6 +161,8 @@ Redis çalışmazsa katalog MariaDB üzerinden devam eder. Cache yazma hatası k
 10. [ ] Admin operasyon modüllerinin CRUD akışları, staging ve production hazırlığı
 
 İlk altı aşamanın mimari ve çalışan iskeleti uygulanmıştır. Admin modül ekranları hazırdır; ürün oluşturma dışındaki CRUD iş akışları ilgili geliştirme aşamalarında API'lere bağlanacaktır. Şifre sıfırlama ve e-posta doğrulama ekranları mevcut olmakla birlikte e-posta sağlayıcısı seçilene kadar bilgilendirme durumundadır.
+
+Yedinci aşamanın hedef kitle/özellik filtreleme, lokalize katalog URL'leri, yönetilebilir mega menü ve admin taksonomi CRUD bölümü uygulanmıştır. Gerçek arama sonuç sayfası, canonical stratejisi, breadcrumb/schema çıktıları ve ileri SEO çalışmaları tamamlanmadığı için aşama henüz kapatılmamıştır.
 
 ## Açık dış entegrasyon kararları
 

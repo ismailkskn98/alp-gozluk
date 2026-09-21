@@ -1,9 +1,9 @@
 import { listProducts } from '@/data/products';
 import ProductCard from './product-card';
 
-export default async function ProductGrid({ locale, limit }) {
+export default async function ProductGrid({ locale, limit, filters = {} }) {
   const tr = locale === 'tr';
-  const availableProducts = await listProducts(locale);
+  const availableProducts = await listProducts(locale, filters);
   const products = limit ? availableProducts.slice(0, limit) : availableProducts;
   if (products.length === 0) {
     return <div className="rounded-lg border border-dashed border-border-strong bg-white px-6 py-16 text-center"><p className="font-medium">{tr ? 'Ürünler hazırlanıyor' : 'Products are being prepared'}</p><p className="mt-2 text-sm text-muted-foreground">{tr ? 'Katalog API bağlantısı tamamlandığında ürünler burada yayınlanacak.' : 'Products will appear here when the catalogue API connection is ready.'}</p></div>;

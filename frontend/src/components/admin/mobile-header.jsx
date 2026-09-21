@@ -4,7 +4,7 @@ import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
-const links = [['Genel bakış', '/admin'], ['Ürünler', '/admin/products'], ['Siparişler', '/admin/orders'], ['Stok', '/admin/inventory'], ['Ayarlar', '/admin/settings']];
+const links = [['Genel bakış', '/admin'], ['Ürünler', '/admin/products'], ['Kategoriler', '/admin/categories'], ['Hedef kitleler', '/admin/audiences'], ['Özellikler', '/admin/attributes'], ['Mega menü', '/admin/navigation'], ['Siparişler', '/admin/orders'], ['Stok', '/admin/inventory'], ['Ayarlar', '/admin/settings']];
 
 export default function MobileAdminHeader() {
   const [open, setOpen] = useState(false);

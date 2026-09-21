@@ -1,2 +1,2 @@
-import ModulePlaceholder from '@/components/admin/module-placeholder';
-export default function Page() { return <ModulePlaceholder title="Koleksiyonlar" description="Sezonluk ve editoryal ürün seçkilerini yönetin." actionLabel="Koleksiyon ekle" />; }
+import CatalogResourceManager from '@/components/admin/catalog-resource-manager';
+export default function Page() { return <CatalogResourceManager resource="collections" title="Koleksiyonlar" description="Sezonluk ve editoryal ürün seçkilerini yönetin." />; }
