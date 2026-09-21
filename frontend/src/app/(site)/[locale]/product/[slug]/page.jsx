@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Glasses, ShieldCheck, Truck } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { findProduct } from '@/data/products';
@@ -10,10 +11,23 @@ export default async function ProductPage({ params }) {
   return (
     <section className="grid-container py-10 sm:py-16">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
-        <div className="grid aspect-[4/5] place-items-center rounded-xl" style={{ backgroundColor: product.color }}><Glasses className="size-40 text-foreground/55 sm:size-56" strokeWidth={1} /></div>
+        <div className="relative grid aspect-[4/5] place-items-center overflow-hidden" style={{ backgroundColor: product.color }}>
+          {product.images?.[0] ? (
+            <Image
+              src={product.images[0]}
+              alt={`${product.name} ${tr ? 'ürün görünümü' : 'product view'}`}
+              fill
+              priority
+              sizes="(min-width: 1024px) 54vw, 92vw"
+              className="object-contain p-[clamp(2rem,7vw,7rem)]"
+            />
+          ) : (
+            <Glasses className="size-40 text-foreground/55 sm:size-56" strokeWidth={1} />
+          )}
+        </div>
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{tr ? product.type : product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : 'Optical frame'}</p>
-          <h1 className="display-serif mt-3 text-5xl">{product.name}</h1>
+          <h1 className="mt-3 text-5xl">{product.name}</h1>
           <p className="mt-4 text-lg font-semibold">{product.price}</p>
           <p className="mt-6 leading-7 text-muted-foreground">{tr ? 'Dengeli oranları ve hafif yapısıyla günlük kullanıma göre tasarlanmış ALP çerçeve.' : 'An ALP frame designed for everyday wear with balanced proportions and a lightweight feel.'}</p>
           <button type="button" className="mt-8 h-12 w-full rounded-md bg-primary px-6 text-sm font-semibold text-white hover:bg-[#124887]">{tr ? 'Sepete ekle' : 'Add to cart'}</button>

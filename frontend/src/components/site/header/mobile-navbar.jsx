@@ -11,22 +11,22 @@ export default function MobileNavbar({ items, labels }) {
     <div className="md:hidden">
       <button
         type="button"
-        className="grid size-10 place-items-center rounded-full border border-border bg-white"
+        className="grid size-9 place-items-center bg-white hover:bg-[#f4f5f6]"
         aria-label={isOpen ? labels.close : labels.open}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((value) => !value)}
       >
-        {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        {isOpen ? <X className="size-4" /> : <Menu className="size-4" />}
       </button>
 
       {isOpen ? (
-        <div className="absolute inset-x-0 top-full border-b border-border bg-white px-[4%] py-5 shadow-lg">
+        <div className="absolute inset-x-[calc(-4vw)] top-full border-b border-black/10 bg-white px-[4vw] py-5 shadow-[0_14px_32px_rgba(0,0,0,0.06)]">
           <nav aria-label={labels.navigation} className="flex flex-col gap-1">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-md px-3 py-3 text-base font-medium hover:bg-muted"
+                className="border-b border-black/8 px-1 py-3 text-base font-normal last:border-0"
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}

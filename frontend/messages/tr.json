@@ -10,7 +10,66 @@
     "guide": "Gözlük rehberi",
     "about": "Hakkımızda",
     "account": "Hesabım",
-    "cart": "Sepet"
+    "cart": "Sepet",
+    "search": "Ara",
+    "openMenu": "Menüyü aç",
+    "closeMenu": "Menüyü kapat",
+    "mobileMenu": "Mobil menü",
+    "navigation": "Ana menü",
+    "language": "English"
+  },
+  "Home": {
+    "hero": {
+      "title": "Her bakış, kendine özgü.",
+      "description": "Günlük stiline uyum sağlayan güneş gözlükleri ve optik çerçeveler.",
+      "primaryAction": "Koleksiyonu keşfet",
+      "secondaryAction": "Gözlük rehberi",
+      "videoLabel": "ALP Gözlük koleksiyon filmi",
+      "pauseVideo": "Videoyu duraklat",
+      "playVideo": "Videoyu oynat"
+    },
+    "featured": {
+      "title": "Her stile tanıdık bir çerçeve.",
+      "description": "Yeni sezon seçkisinden öne çıkan modeller.",
+      "action": "Tüm ürünleri gör",
+      "emptyTitle": "Yeni seçki hazırlanıyor",
+      "emptyDescription": "Ürünler yayınlandığında burada görünecek.",
+      "explore": "Ürünü incele"
+    },
+    "categories": {
+      "title": "Bakışına göre seç.",
+      "description": "İhtiyacına ve stiline göre doğru kategoriden başla.",
+      "sunglasses": "Güneş gözlükleri",
+      "sunglassesCopy": "Güneşli günler için net bir karakter.",
+      "darkFrames": "Koyu çerçeveler",
+      "darkFramesCopy": "Günlük stile net bir ifade katan seçili güneş gözlükleri.",
+      "action": "Kategoriyi keşfet",
+      "darkFramesAction": "Seçkiyi gör"
+    },
+    "frameStory": {
+      "title": "İyi bir çerçeve, günün içinde kaybolur.",
+      "description": "Doğru ölçü, dengeli form ve rahat kullanım. Seçimini görünüş kadar günlük alışkanlıklarına göre de yap.",
+      "action": "Doğru çerçeveyi bul",
+      "visualLabel": "Zemin üzerinde sergilenen güneş gözlükleri",
+      "points": {
+        "selection": "Özenli seçki",
+        "selectionCopy": "Stil ve kullanım odağında seçilen modeller.",
+        "fit": "Yüz uyumu",
+        "fitCopy": "Ölçüleri karşılaştırmaya yardımcı rehber.",
+        "comfort": "Günlük konfor",
+        "comfortCopy": "Uzun kullanıma uygun seçim yaklaşımı.",
+        "support": "Kolay destek",
+        "supportCopy": "Sipariş öncesi ve sonrası ulaşılabilir iletişim."
+      }
+    },
+    "services": {
+      "guide": "Seçim rehberi",
+      "guideCopy": "Yüz şekli ve ölçüleri karşılaştır.",
+      "secure": "Güvenli alışveriş",
+      "secureCopy": "Ödeme bilgileri sunucu tarafında doğrulanır.",
+      "support": "Sipariş desteği",
+      "supportCopy": "İhtiyaç duyduğunda bize ulaş."
+    }
   },
   "Common": {
     "loading": "İçerik hazırlanıyor...",

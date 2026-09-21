@@ -10,7 +10,66 @@
     "guide": "Eyewear guide",
     "about": "About",
     "account": "Account",
-    "cart": "Cart"
+    "cart": "Cart",
+    "search": "Search",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mobileMenu": "Mobile menu",
+    "navigation": "Main navigation",
+    "language": "Türkçe"
+  },
+  "Home": {
+    "hero": {
+      "title": "Every perspective is personal.",
+      "description": "Sunglasses and optical frames designed to move with your everyday style.",
+      "primaryAction": "Explore the collection",
+      "secondaryAction": "Eyewear guide",
+      "videoLabel": "ALP Eyewear collection film",
+      "pauseVideo": "Pause video",
+      "playVideo": "Play video"
+    },
+    "featured": {
+      "title": "A familiar frame for every style.",
+      "description": "Selected highlights from the new collection.",
+      "action": "View all products",
+      "emptyTitle": "A new edit is on the way",
+      "emptyDescription": "Products will appear here once published.",
+      "explore": "View product"
+    },
+    "categories": {
+      "title": "Choose for your perspective.",
+      "description": "Start with the category that fits your needs and style.",
+      "sunglasses": "Sunglasses",
+      "sunglassesCopy": "A clear point of view for brighter days.",
+      "darkFrames": "Dark frames",
+      "darkFramesCopy": "Selected sunglasses that bring a clear point of view to everyday style.",
+      "action": "Explore category",
+      "darkFramesAction": "View the edit"
+    },
+    "frameStory": {
+      "title": "A good frame disappears into your day.",
+      "description": "The right measurements, a balanced shape and comfortable wear. Choose around your daily habits as much as your look.",
+      "action": "Find the right frame",
+      "visualLabel": "Sunglasses displayed on a textured plinth",
+      "points": {
+        "selection": "Considered edit",
+        "selectionCopy": "Frames selected around style and daily use.",
+        "fit": "Face fit",
+        "fitCopy": "A guide that helps compare measurements.",
+        "comfort": "Daily comfort",
+        "comfortCopy": "A considered approach to longer wear.",
+        "support": "Easy support",
+        "supportCopy": "Accessible help before and after your order."
+      }
+    },
+    "services": {
+      "guide": "Selection guide",
+      "guideCopy": "Compare face shape and frame measurements.",
+      "secure": "Secure shopping",
+      "secureCopy": "Payment details are verified on the server.",
+      "support": "Order support",
+      "supportCopy": "Reach us whenever you need help."
+    }
   },
   "Common": {
     "loading": "Preparing content...",

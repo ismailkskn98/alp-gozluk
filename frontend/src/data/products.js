@@ -1,10 +1,40 @@
 export const demoProducts = [
-  { slug: 'atlas-01', name: 'Atlas 01', type: 'Güneş Gözlüğü', price: '₺3.490', color: '#cadce7' },
-  { slug: 'nova-02', name: 'Nova 02', type: 'Optik Çerçeve', price: '₺2.990', color: '#e8ddd2' },
-  { slug: 'mira-03', name: 'Mira 03', type: 'Güneş Gözlüğü', price: '₺3.290', color: '#d8e8df' },
-  { slug: 'linea-04', name: 'Linea 04', type: 'Optik Çerçeve', price: '₺2.790', color: '#e5e5e1' },
-  { slug: 'orbit-05', name: 'Orbit 05', type: 'Güneş Gözlüğü', price: '₺3.590', color: '#d7dce8' },
-  { slug: 'terra-06', name: 'Terra 06', type: 'Optik Çerçeve', price: '₺3.090', color: '#eadfcf' },
+  {
+    slug: 'rayban-rb2140-wayfarer-50mm',
+    name: 'Ray-Ban RB2140 Wayfarer',
+    type: 'Güneş Gözlüğü',
+    price: '₺6.490',
+    color: '#f0f1ef',
+    images: [
+      '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/main.webp',
+      '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/1.webp',
+      '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/2.webp',
+    ],
+  },
+  {
+    slug: 'inesta-polarized-ip-vnd268',
+    name: 'Inesta Polarized IP VND268',
+    type: 'Güneş Gözlüğü',
+    price: '₺3.790',
+    color: '#ebe9e4',
+    images: [
+      '/demo-gozlukler/inesta-polarized-ip-vnd268/main.webp',
+      '/demo-gozlukler/inesta-polarized-ip-vnd268/1.webp',
+      '/demo-gozlukler/inesta-polarized-ip-vnd268/2.webp',
+    ],
+  },
+  {
+    slug: 'versace-ve2287',
+    name: 'Versace VE2287',
+    type: 'Güneş Gözlüğü',
+    price: '₺12.990',
+    color: '#f2eee7',
+    images: [
+      '/demo-gozlukler/versace-ve2287/main.webp',
+      '/demo-gozlukler/versace-ve2287/1.webp',
+      '/demo-gozlukler/versace-ve2287/2.webp',
+    ],
+  },
 ];
 
 export function getProduct(slug) {
@@ -25,6 +55,10 @@ export async function listProducts(locale) {
       price: new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY' }).format(Number(product.price || 0)),
       type: locale === 'tr' ? 'ALP Çerçeve' : 'ALP Frame',
       color: '#e4edf3',
+      images: (product.images || product.media || [])
+        .map((image) => typeof image === 'string' ? image : image.url)
+        .filter(Boolean)
+        .slice(0, 5),
     }));
   } catch {
     return [];
@@ -44,6 +78,10 @@ export async function findProduct(locale, slug) {
       type: locale === 'tr' ? 'ALP Çerçeve' : 'ALP Frame',
       price: new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', { style: 'currency', currency: 'TRY' }).format(Number(product.variants?.[0]?.price || 0)),
       color: '#e4edf3',
+      images: (product.images || product.media || [])
+        .map((image) => typeof image === 'string' ? image : image.url)
+        .filter(Boolean)
+        .slice(0, 5),
     };
   } catch {
     return null;

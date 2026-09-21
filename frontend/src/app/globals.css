@@ -60,8 +60,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist);
-  --font-display: var(--font-instrument-serif);
+  --font-sans: var(--font-hk-grotesk);
+  --font-display: var(--font-hk-grotesk);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -120,12 +120,53 @@ html {
 
 body {
   margin: 0;
-  font-family: var(--font-geist), Arial, sans-serif;
+  font-family: var(--font-hk-grotesk), Arial, sans-serif;
   text-rendering: optimizeLegibility;
 }
 
-.display-serif {
-  font-family: var(--font-instrument-serif), Georgia, serif;
+@keyframes home-hero-media-in {
+  from {
+    opacity: 0;
+    transform: scale(1.018);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes home-hero-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-hero-media video {
+  animation: home-hero-media-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-hero-copy {
+  animation: home-hero-copy-in 700ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-product-scroll {
+  scrollbar-width: none;
+}
+
+.home-product-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.home-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52rem;
 }
 
 .text-balance {
@@ -166,6 +207,11 @@ select {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .home-hero-media video,
+  .home-hero-copy {
+    animation: none;
   }
 }
 
