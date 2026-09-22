@@ -24,3 +24,19 @@ export async function getSessionUser() {
     return null;
   }
 }
+
+export async function getAccountOverview() {
+  const token = (await cookies()).get(authCookieName)?.value;
+  if (!token) return null;
+
+  try {
+    const response = await fetch(`${getApiUrl()}/account`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    return (await response.json()).data || null;
+  } catch {
+    return null;
+  }
+}

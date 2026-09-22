@@ -29,7 +29,7 @@ export default function Navbar({ items, labels }) {
       onMouseLeave={() => setActiveCode(null)}
       onBlur={handleBlur}
     >
-      <ul className="flex h-full items-center gap-[clamp(0.9rem,1.6vw,1.75rem)]">
+      <ul className="flex h-full items-center gap-[clamp(0.8rem,1.35vw,1.45rem)]">
         {items.map((item) => (
           <li key={item.code} className="flex h-full items-center">
             {item.children?.length ? (
@@ -37,18 +37,18 @@ export default function Navbar({ items, labels }) {
                 type="button"
                 aria-expanded={activeCode === item.code}
                 aria-controls={`mega-menu-${item.code}`}
-                className="group flex h-full items-center gap-1 text-[0.71rem] font-medium tracking-[-0.01em] text-[#4e5359] transition-colors hover:text-[#101820]"
+                className="site-header-primary-nav-item group flex h-full items-center gap-0.5 font-medium text-[#4e5359] transition-colors hover:text-[#101820]"
                 onMouseEnter={() => setActiveCode(item.code)}
                 onFocus={() => setActiveCode(item.code)}
                 onClick={() => setActiveCode((current) => current === item.code ? null : item.code)}
               >
                 {item.label}
-                <ChevronDown className={`size-3 transition-transform ${activeCode === item.code ? 'rotate-180' : ''}`} strokeWidth={1.5} />
+                <ChevronDown className={`size-2.5 transition-transform ${activeCode === item.code ? 'rotate-180' : ''}`} strokeWidth={1.6} />
               </button>
             ) : (
               <Link
                 href={item.href || '/shop'}
-                className={`flex h-full items-center text-[0.71rem] font-medium tracking-[-0.01em] transition-colors ${item.code === 'sale' ? 'font-semibold text-[#c52832] hover:text-[#991d25]' : 'text-[#4e5359] hover:text-[#101820]'}`}
+                className={`site-header-primary-nav-item flex h-full items-center font-medium transition-colors ${item.code === 'sale' ? 'site-header-sale-nav-item font-semibold text-[#c52832] hover:text-[#991d25]' : 'text-[#4e5359] hover:text-[#101820]'}`}
               >
                 {item.label}
               </Link>

@@ -201,6 +201,16 @@ select {
   box-shadow: none !important;
 }
 
+/* Header ana menüsü aksiyon ikonlarının optik ölçeğiyle eşit kalmalı. */
+.site-header-primary-nav-item {
+  font-size: 0.9rem !important;
+  letter-spacing: -0.005em;
+}
+
+.site-header-sale-nav-item {
+  font-size: 0.9rem !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -439,11 +449,15 @@ html[data-admin-theme='dark'] [data-admin-overlay] {
 }
 
 @keyframes admin-skeleton-sweep {
-  to { transform: translateX(100%); }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes admin-loader-orbit {
-  to { transform: rotate(1turn); }
+  to {
+    transform: rotate(1turn);
+  }
 }
 
 .admin-loader-orbit {
