@@ -3,9 +3,12 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import AccountNav from './account-nav';
+import { accountNavigationItems } from './account-nav';
+import AccountHeader from './account-header';
 import AccountOverview from './account-overview';
 import AddressBook from './address-book';
 import Favorites from './favorites';
+import { GooeyNav } from '@/components/ui/gooey-nav';
 import Orders from './orders';
 import ProfileForm from './profile-form';
 
@@ -16,5 +19,30 @@ export default function AccountExperience({ locale, user, account, logout }) {
   const profile = data.profile || user;
   async function removeFavorite(productId) { const response = await fetch(`/api/account/favorites/${productId}`, { method: 'DELETE' }); const payload = await response.json(); if (response.ok) setData(payload.data); }
   const view = active === 'overview' ? <AccountOverview user={profile} account={data} onNavigate={setActive} /> : active === 'orders' ? <Orders orders={data.orders || []} locale={locale} /> : active === 'addresses' ? <AddressBook addresses={data.addresses || []} onUpdated={setData} /> : active === 'favorites' ? <Favorites favorites={data.favorites || []} locale={locale} onRemove={removeFavorite} /> : <ProfileForm profile={profile} onUpdated={setData} />;
-  return <section className="grid-container bg-[#f7f8f5] py-[clamp(2rem,6vw,5rem)]"><div><div className="mb-7 max-w-2xl"><p className="text-sm text-[#69717b]">Hesap merkezi</p><p className="mt-2 text-sm leading-6 text-[#59616b]">Sipariş, adres ve kişisel bilgilerin sadece sana ait güvenli alanda tutulur.</p></div><div className="grid gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-10"><AccountNav active={active} onChange={setActive} logout={logout} /><motion.div key={active} initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }}>{view}</motion.div></div></div></section>;
+  return (
+    <section className="grid-container bg-[#f7f8f5] py-[clamp(2.25rem,5vw,5.5rem)]">
+      <div>
+        <AccountHeader user={profile} />
+        <div className="mt-6 overflow-x-auto pb-1 lg:hidden">
+          <GooeyNav
+            items={accountNavigationItems.map(({ id, label, icon: Icon }) => ({ id, label, icon: <Icon strokeWidth={1.55} /> }))}
+            value={accountNavigationItems.findIndex((item) => item.id === active)}
+            onChange={(index) => setActive(accountNavigationItems[index].id)}
+            size="xs"
+            activeColor="#1d2b3c"
+            activeLabelColor="#ffffff"
+            separation={10}
+            radius={7}
+            aria-label="Hesap bölümleri"
+          />
+        </div>
+        <div className="mt-[clamp(2rem,4vw,3.5rem)] grid gap-10 lg:grid-cols-[11.75rem_minmax(0,1fr)] lg:gap-[clamp(2.5rem,5vw,5.5rem)]">
+          <AccountNav active={active} onChange={setActive} logout={logout} />
+          <motion.div key={active} initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+            {view}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
 }

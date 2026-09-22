@@ -24,7 +24,7 @@ function Rail({ from = 0, y, visible, color, className }) {
   );
 }
 
-export default function HookSidebar({ items, label, compact = false, color = 'var(--sidebar-primary)', onNavigate, className }) {
+export default function HookSidebar({ items, label, compact = false, color = 'var(--sidebar-primary)', activeHref, onNavigate, className, itemClassName }) {
   const pathname = usePathname();
   const listRef = useRef(null);
   const itemRefs = useRef([]);
@@ -32,7 +32,9 @@ export default function HookSidebar({ items, label, compact = false, color = 'va
   const [hoverIndex, setHoverIndex] = useState(null);
   const [pointerInside, setPointerInside] = useState(false);
   const [focusInside, setFocusInside] = useState(false);
-  const activeIndex = items.findIndex((item) => item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href));
+  const activeIndex = activeHref
+    ? items.findIndex((item) => item.href === activeHref)
+    : items.findIndex((item) => item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href));
 
   useEffect(() => {
     const list = listRef.current;
@@ -64,11 +66,11 @@ export default function HookSidebar({ items, label, compact = false, color = 'va
               href={item.href}
               title={compact ? item.label : undefined}
               aria-current={active ? 'page' : undefined}
-              onClick={onNavigate}
+              onClick={(event) => onNavigate?.(item, event)}
               onMouseEnter={() => { setHoverIndex(index); setPointerInside(true); }}
               onFocus={() => { setHoverIndex(index); setFocusInside(true); }}
               onBlur={() => setFocusInside(false)}
-              className={cn('group ml-0.5 flex min-h-9 items-center rounded-lg py-1.5 text-sm transition-colors duration-200', compact ? 'justify-center pl-3 pr-2.5' : 'gap-2.5 pl-5 pr-2.5', active ? 'bg-sidebar-accent/70 text-sidebar-foreground' : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground')}
+              className={cn('group ml-0.5 flex min-h-9 items-center rounded-lg py-1.5 text-sm transition-colors duration-200', compact ? 'justify-center pl-3 pr-2.5' : 'gap-2.5 pl-5 pr-2.5', active ? 'bg-sidebar-accent/70 text-sidebar-foreground' : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/45 hover:text-sidebar-foreground', itemClassName)}
             >
               {Icon ? <Icon className={cn('size-4 shrink-0 transition-colors', active ? 'text-sidebar-primary' : 'text-sidebar-foreground/45 group-hover:text-sidebar-foreground/80')} /> : null}
               <span className={cn('min-w-0 flex-1 truncate', compact && 'sr-only')}>{item.label}</span>

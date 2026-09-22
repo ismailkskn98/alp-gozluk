@@ -1,33 +1,42 @@
 'use client';
 
-import { Heart, House, LayoutDashboard, MapPin, Package, Settings, UserRound } from 'lucide-react';
+import { Heart, LayoutDashboard, MapPin, Package, UserRound } from 'lucide-react';
+import HookSidebar from '@/components/admin/ui/hook-sidebar';
 
 const items = [
-  { id: 'overview', label: 'Genel bakış', icon: LayoutDashboard },
-  { id: 'orders', label: 'Siparişlerim', icon: Package },
-  { id: 'addresses', label: 'Adreslerim', icon: MapPin },
-  { id: 'favorites', label: 'Favorilerim', icon: Heart },
-  { id: 'profile', label: 'Üyelik bilgilerim', icon: UserRound },
+  { id: 'overview', href: '#overview', label: 'Genel bakış', icon: LayoutDashboard },
+  { id: 'orders', href: '#orders', label: 'Siparişlerim', icon: Package },
+  { id: 'addresses', href: '#addresses', label: 'Adreslerim', icon: MapPin },
+  { id: 'favorites', href: '#favorites', label: 'Favorilerim', icon: Heart },
+  { id: 'profile', href: '#profile', label: 'Üyelik bilgilerim', icon: UserRound },
 ];
 
 export default function AccountNav({ active, onChange, logout }) {
   return (
-    <aside className="lg:sticky lg:top-28 lg:self-start">
-      <div className="overflow-x-auto rounded-2xl border border-black/10 bg-white p-2 lg:overflow-visible">
-        <nav className="flex min-w-max gap-1 lg:block" aria-label="Hesap menüsü">
-          {items.map(({ id, label, icon: Icon }) => (
-            <button key={id} type="button" onClick={() => onChange(id)} aria-current={active === id ? 'page' : undefined}
-              className={`flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm transition-colors lg:w-full ${active === id ? 'bg-[#1b2635] text-white shadow-sm' : 'text-[#58606b] hover:bg-[#f3f4f2] hover:text-[#17202c]'}`}>
-              <Icon className="size-4" strokeWidth={1.65} />{label}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-2 hidden border-t border-black/8 pt-2 lg:block">
-          <div className="flex items-center gap-3 px-3.5 py-2 text-sm text-[#58606b]"><Settings className="size-4" /> Güvenli oturum</div>
+    <aside className="hidden lg:sticky lg:top-28 lg:block lg:self-start">
+      <div className="border-r border-[#d8ddd7] pr-5 xl:pr-7">
+        <div className="mb-5 px-1">
+          <p className="text-[0.7rem] font-medium tracking-[0.01em] text-[#69736d]">Hesabım</p>
+          <p className="mt-1 text-sm leading-5 text-[#1d2b3c]">Sana özel alan</p>
+        </div>
+        <HookSidebar
+          items={items}
+          label="Hesap bölümleri"
+          activeHref={`#${active}`}
+          color="#1d4f83"
+          itemClassName="focus-visible:outline-none focus-visible:outline-offset-0"
+          onNavigate={(item, event) => {
+            event.preventDefault();
+            onChange(item.id);
+          }}
+          className="[&_[data-slot='gooey-nav']]:hidden"
+        />
+        <div className="mt-6 border-t border-[#d8ddd7] pt-3">
           {logout}
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-2 px-1 text-xs text-[#7a818a] lg:hidden"><House className="size-3.5" /> ALP Gözlük hesabın güvenle korunur.</div>
     </aside>
   );
 }
+
+export { items as accountNavigationItems };
