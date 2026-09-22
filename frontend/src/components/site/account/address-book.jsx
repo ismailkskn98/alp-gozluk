@@ -178,7 +178,7 @@ export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
         </div>
       ) : null}
 
-      <ConfirmActionDialog open={Boolean(deleteTarget)} onOpenChange={(nextOpen) => !nextOpen && setDeleteTarget(null)} onConfirm={remove} title="Adresi sil" description="Bu adres hesabından kaldırılacak. Sipariş geçmişindeki teslimat bilgileri değişmez." itemName={deleteTarget?.title} pending={Boolean(removing)} />
+      <ConfirmActionDialog open={Boolean(deleteTarget)} onOpenChange={(nextOpen) => !nextOpen && setDeleteTarget(null)} onConfirm={remove} title="Adresi sil" description="Bu adres hesabından kaldırılacak. Sipariş geçmişindeki teslimat bilgileri değişmez." itemName={deleteTarget?.title} itemLabel="Adres" confirmLabel="Adresi sil" pending={Boolean(removing)} />
     </section>
   );
 }

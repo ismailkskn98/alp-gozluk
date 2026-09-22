@@ -1,9 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
-import ConfirmActionDialog from '@/components/admin/ui/confirm-action-dialog';
 import { Link } from '@/i18n/navigation';
 import AccountSectionHeader from './section-header';
 
@@ -15,15 +14,16 @@ function formatPrice(product, locale) {
 }
 
 export default function Favorites({ favorites, locale, onRemove }) {
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [removing, setRemoving] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
-  async function removeFavorite() {
-    if (!deleteTarget) return;
-    setRemoving(true);
-    await onRemove(deleteTarget.id);
-    setRemoving(false);
-    setDeleteTarget(null);
+  async function removeFavorite(productId) {
+    if (removingId) return;
+    setRemovingId(productId);
+    try {
+      await onRemove(productId);
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   return (
@@ -43,9 +43,10 @@ export default function Favorites({ favorites, locale, onRemove }) {
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => setDeleteTarget(product)}
+                  onClick={() => removeFavorite(product.id)}
+                  disabled={removingId === product.id}
                   aria-label={`${product.name} ürününü favorilerden çıkar`}
-                  className="absolute right-2.5 top-2.5 grid size-9 place-items-center rounded-full border border-black/8 bg-white/95 text-[#172536] transition-colors hover:bg-[#172536] hover:text-white"
+                  className="absolute right-2.5 top-2.5 grid size-9 place-items-center rounded-full border border-black/8 bg-white/95 text-[#172536] transition-colors hover:bg-[#172536] hover:text-white disabled:cursor-wait disabled:opacity-55"
                 >
                   <Heart className="size-4 fill-current" strokeWidth={1.4} />
                 </button>
@@ -66,17 +67,6 @@ export default function Favorites({ favorites, locale, onRemove }) {
           <Link href="/shop" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#172536]"><ShoppingBag className="size-4" /> Gözlükleri keşfet</Link>
         </div>
       )}
-      <ConfirmActionDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={removeFavorite}
-        title="Favorilerden çıkar"
-        description="Bu çerçeve favori listenden kaldırılacak. İstersen ürün sayfasından tekrar ekleyebilirsin."
-        itemName={deleteTarget?.name}
-        confirmLabel="Favorilerden çıkar"
-        pending={removing}
-        icon={Trash2}
-      />
     </section>
   );
 }

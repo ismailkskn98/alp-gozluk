@@ -106,6 +106,7 @@ const ICON_VARIANTS = {
 
 const VARIANT_CLASS = {
   primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+  danger: "bg-danger text-white hover:bg-danger/90",
   secondary: "border border-border bg-card text-foreground hover:border-border",
   outline: "border border-border bg-transparent text-foreground hover:bg-primary/5",
   ghost: "text-muted-foreground hover:bg-primary/5 hover:text-foreground",

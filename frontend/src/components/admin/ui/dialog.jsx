@@ -11,10 +11,10 @@ export const DialogClose = Primitive.Close;
 export function DialogContent({ children, className, showClose = true, ...props }) {
   return (
     <Primitive.Portal>
-      <Primitive.Overlay className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in" />
+      <Primitive.Overlay className="fixed inset-0 z-[70] bg-[#172536]/40 backdrop-blur-[1.5px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in" />
       <Primitive.Content data-admin-overlay className={cn('fixed left-1/2 top-1/2 z-[71] max-h-[min(85svh,48rem)] w-[min(92vw,34rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:p-6', className)} {...props}>
         {children}
-        {showClose ? <Primitive.Close className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Kapat"><X className="size-4" /></Primitive.Close> : null}
+        {showClose ? <Primitive.Close className="absolute right-1.5 top-1.5 grid size-11 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset" aria-label="Kapat"><X className="size-4" strokeWidth={1.6} /></Primitive.Close> : null}
       </Primitive.Content>
     </Primitive.Portal>
   );
