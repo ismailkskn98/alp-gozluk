@@ -7,11 +7,21 @@ const validIdArray = (values, required = false) => (
   Array.isArray(values) && (!required || values.length > 0) &&
   values.every((id) => Number.isInteger(id) && id > 0) && new Set(values).size === values.length
 );
+const validOptionalText = (value, maxLength) => value === undefined || value === null || (
+  typeof value === 'string' && value.trim().length <= maxLength
+);
+const validOptionalCountryCode = (value) => value === undefined || value === null || value === '' || (
+  typeof value === 'string' && /^[A-Za-z]{2}$/.test(value.trim())
+);
+const validOptionalMeasurement = (value) => value === undefined || value === null || (
+  Number.isFinite(value) && value > 0 && value <= 300
+);
 
 const validCreatePayload = (body) => (
   codePattern.test(String(body.code || '')) &&
   ['draft', 'published', 'archived'].includes(body.status) &&
   Number.isFinite(body.taxRate) && body.taxRate >= 0 && body.taxRate <= 100 &&
+  validOptionalCountryCode(body.originCountryCode) &&
   Array.isArray(body.translations) && body.translations.length > 0 &&
   new Set(body.translations.map((translation) => translation.locale)).size === body.translations.length &&
   body.translations.every((translation) =>
@@ -31,6 +41,10 @@ const validCreatePayload = (body) => (
     (variant.compareAtPrice === undefined || variant.compareAtPrice === null || (Number.isFinite(variant.compareAtPrice) && variant.compareAtPrice >= 0)) &&
     Number.isInteger(variant.stockQuantity) && variant.stockQuantity >= 0 &&
     Number.isInteger(variant.lowStockThreshold) && variant.lowStockThreshold >= 0 &&
+    ['barcode', 'colorCode', 'frameSize', 'lensType', 'lensCategory', 'uvProtection'].every((field) =>
+      validOptionalText(variant[field], field === 'barcode' ? 100 : 80)
+    ) &&
+    ['lensWidthMm', 'bridgeWidthMm', 'templeLengthMm'].every((field) => validOptionalMeasurement(variant[field])) &&
     (variant.attributeValueIds === undefined || validIdArray(variant.attributeValueIds))
   )
 );

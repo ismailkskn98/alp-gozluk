@@ -5,6 +5,8 @@ import { Glasses } from 'lucide-react';
 import { useState } from 'react';
 import { PRODUCT_IMAGE_QUALITY, shouldUseOriginalProductImage } from '@/lib/product-images';
 
+const hasPreparedWhiteCanvas = (src) => typeof src === 'string' && src.startsWith('/gozlukler/');
+
 export default function ProductGallery({ color, images = [], name, imageLabel }) {
   const availableImages = images.filter(Boolean).slice(0, 5);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -26,7 +28,7 @@ export default function ProductGallery({ color, images = [], name, imageLabel })
             unoptimized={shouldUseOriginalProductImage(activeImage)}
             fetchPriority={activeIndex === 0 ? 'high' : 'auto'}
             sizes="(min-width: 1440px) 52rem, (min-width: 1024px) 56vw, 96vw"
-            className="object-contain p-[clamp(1.5rem,5vw,5rem)]"
+            className={`object-contain ${hasPreparedWhiteCanvas(activeImage) ? 'p-0' : 'p-[clamp(1.5rem,5vw,5rem)]'}`}
           />
         ) : (
           <Glasses className="size-40 text-foreground/55 sm:size-56" strokeWidth={1} aria-hidden="true" />
@@ -51,7 +53,7 @@ export default function ProductGallery({ color, images = [], name, imageLabel })
                 quality={PRODUCT_IMAGE_QUALITY}
                 unoptimized={shouldUseOriginalProductImage(src)}
                 sizes="(min-width: 1024px) 10rem, (min-width: 640px) 18vw, 30vw"
-                className="object-contain p-2"
+                className={`object-contain ${hasPreparedWhiteCanvas(src) ? 'p-0' : 'p-2'}`}
               />
             </button>
           ))}

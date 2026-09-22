@@ -9,6 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSelect } from '@/components/admin/ui/select';
 
+const optionalMeasurement = z.preprocess(
+  (value) => value === '' || value === undefined || value === null ? undefined : Number(value),
+  z.number().positive().max(300).optional(),
+);
+
 const schema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]+$/, 'Yalnız harf, rakam, tire ve alt çizgi kullanın.'),
   name: z.string().trim().min(2).max(190),
@@ -16,7 +21,19 @@ const schema = z.object({
   enName: z.string().trim().max(190).optional(),
   enSlug: z.union([z.literal(''), z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Küçük harf, rakam ve tire kullanın.')]).optional(),
   shortDescription: z.string().trim().max(500).optional(),
+  originCountryCode: z.union([
+    z.literal(''),
+    z.string().trim().regex(/^[A-Za-z]{2}$/, 'ISO ülke kodu 2 harf olmalı.'),
+  ]).optional(),
   sku: z.string().trim().min(2).max(100),
+  colorCode: z.string().trim().max(64).optional(),
+  frameSize: z.string().trim().max(64).optional(),
+  lensType: z.string().trim().max(80).optional(),
+  lensCategory: z.string().trim().max(20).optional(),
+  uvProtection: z.string().trim().max(40).optional(),
+  lensWidthMm: optionalMeasurement,
+  bridgeWidthMm: optionalMeasurement,
+  templeLengthMm: optionalMeasurement,
   price: z.coerce.number().min(0),
   compareAtPrice: z.union([z.literal(''), z.coerce.number().min(0)]).optional(),
   stockQuantity: z.coerce.number().int().min(0),
@@ -36,7 +53,24 @@ export default function ProductForm() {
   const [variantAttributeIds, setVariantAttributeIds] = useState([]);
   const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'draft', stockQuantity: 0, audienceIds: [], categoryIds: [], collectionIds: [], enSlug: '', compareAtPrice: '' },
+    defaultValues: {
+      status: 'draft',
+      stockQuantity: 0,
+      audienceIds: [],
+      categoryIds: [],
+      collectionIds: [],
+      enSlug: '',
+      compareAtPrice: '',
+      originCountryCode: '',
+      colorCode: '',
+      frameSize: '',
+      lensType: '',
+      lensCategory: '',
+      uvProtection: '',
+      lensWidthMm: '',
+      bridgeWidthMm: '',
+      templeLengthMm: '',
+    },
   });
 
   useEffect(() => {
@@ -84,6 +118,7 @@ export default function ProductForm() {
         status: values.status,
         featured: false,
         taxRate: 20,
+        originCountryCode: values.originCountryCode || undefined,
         translations,
         audienceIds: values.audienceIds.map(Number),
         categoryIds: (values.categoryIds || []).map(Number),
@@ -95,6 +130,14 @@ export default function ProductForm() {
           compareAtPrice: values.compareAtPrice === '' ? undefined : values.compareAtPrice,
           stockQuantity: values.stockQuantity,
           lowStockThreshold: 5,
+          colorCode: values.colorCode || undefined,
+          frameSize: values.frameSize || undefined,
+          lensType: values.lensType || undefined,
+          lensCategory: values.lensCategory || undefined,
+          uvProtection: values.uvProtection || undefined,
+          lensWidthMm: values.lensWidthMm,
+          bridgeWidthMm: values.bridgeWidthMm,
+          templeLengthMm: values.templeLengthMm,
           attributeValueIds: variantAttributeIds,
         }],
       }),
@@ -119,6 +162,7 @@ export default function ProductForm() {
           <div className="space-y-2"><Label htmlFor="slug">Türkçe URL adı</Label><Input id="slug" placeholder="atlas-01" aria-invalid={Boolean(errors.slug)} {...register('slug')} /></div>
           <div className="space-y-2"><Label htmlFor="enName">İngilizce ürün adı</Label><Input id="enName" placeholder="Atlas 01" {...register('enName')} /></div>
           <div className="space-y-2"><Label htmlFor="enSlug">İngilizce URL adı</Label><Input id="enSlug" placeholder="atlas-01" aria-invalid={Boolean(errors.enSlug)} {...register('enSlug')} /></div>
+          <div className="space-y-2"><Label htmlFor="originCountryCode">Menşei ülke kodu</Label><Input id="originCountryCode" placeholder="TR" maxLength={2} aria-invalid={Boolean(errors.originCountryCode)} {...register('originCountryCode')} />{errors.originCountryCode ? <p className="text-xs text-danger">{errors.originCountryCode.message}</p> : null}</div>
         </div>
         <div className="mt-5 space-y-2"><Label htmlFor="shortDescription">Kısa açıklama</Label><textarea id="shortDescription" rows={4} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('shortDescription')} /></div>
       </section>
@@ -146,6 +190,20 @@ export default function ProductForm() {
           <div className="space-y-2"><Label htmlFor="price">Satış fiyatı (TRY)</Label><Input id="price" type="number" step="0.01" placeholder="3490" {...register('price')} /></div>
           <div className="space-y-2"><Label htmlFor="compareAtPrice">Eski fiyat (opsiyonel)</Label><Input id="compareAtPrice" type="number" step="0.01" placeholder="3990" {...register('compareAtPrice')} /></div>
           <div className="space-y-2"><Label htmlFor="stockQuantity">Başlangıç stoğu</Label><Input id="stockQuantity" type="number" placeholder="0" {...register('stockQuantity')} /></div>
+        </div>
+        <div className="mt-6 border-t border-border pt-6">
+          <h3 className="text-sm font-semibold">Gözlük teknik bilgileri</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Ölçüler milimetre olarak tutulur; renk ve ölçü bilgileri varyanta aittir.</p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2"><Label htmlFor="colorCode">Renk kodu</Label><Input id="colorCode" placeholder="F002/6G" {...register('colorCode')} /></div>
+            <div className="space-y-2"><Label htmlFor="frameSize">Gösterim ölçüsü</Label><Input id="frameSize" placeholder="51□21 - 145" {...register('frameSize')} /></div>
+            <div className="space-y-2"><Label htmlFor="lensWidthMm">Lens genişliği (mm)</Label><Input id="lensWidthMm" type="number" step="0.01" placeholder="51" aria-invalid={Boolean(errors.lensWidthMm)} {...register('lensWidthMm')} /></div>
+            <div className="space-y-2"><Label htmlFor="bridgeWidthMm">Köprü genişliği (mm)</Label><Input id="bridgeWidthMm" type="number" step="0.01" placeholder="21" aria-invalid={Boolean(errors.bridgeWidthMm)} {...register('bridgeWidthMm')} /></div>
+            <div className="space-y-2"><Label htmlFor="templeLengthMm">Sap uzunluğu (mm)</Label><Input id="templeLengthMm" type="number" step="0.01" placeholder="145" aria-invalid={Boolean(errors.templeLengthMm)} {...register('templeLengthMm')} /></div>
+            <div className="space-y-2"><Label htmlFor="lensType">Cam tipi</Label><Input id="lensType" placeholder="Polarize / degrade" {...register('lensType')} /></div>
+            <div className="space-y-2"><Label htmlFor="lensCategory">Cam kategorisi</Label><Input id="lensCategory" placeholder="3N" {...register('lensCategory')} /></div>
+            <div className="space-y-2"><Label htmlFor="uvProtection">UV koruması</Label><Input id="uvProtection" placeholder="UV400" {...register('uvProtection')} /></div>
+          </div>
         </div>
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{variantGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = variantAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id, true)} className={`rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-card hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
       </section>

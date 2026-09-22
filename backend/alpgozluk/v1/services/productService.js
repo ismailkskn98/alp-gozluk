@@ -166,6 +166,7 @@ const findPublishedBySlug = async (requestedLocale, slug) => {
 
   const [products] = await getDb().query(
     `SELECT p.id, p.code, COALESCE(b.name, p.brand) AS brand, p.featured, p.tax_rate AS taxRate,
+       p.origin_country_code AS originCountryCode,
        pt.name, pt.slug, pt.short_description AS shortDescription,
        pt.description, pt.seo_title AS seoTitle, pt.seo_description AS seoDescription
      FROM products p
@@ -180,7 +181,10 @@ const findPublishedBySlug = async (requestedLocale, slug) => {
   const [variants, audiences, attributes] = await Promise.all([
     getDb().query(
       `SELECT id, sku, barcode, color_code AS colorCode, frame_size AS frameSize,
-         lens_type AS lensType, price, compare_at_price AS compareAtPrice, stock_quantity AS stockQuantity
+         lens_width_mm AS lensWidthMm, bridge_width_mm AS bridgeWidthMm,
+         temple_length_mm AS templeLengthMm, lens_type AS lensType,
+         lens_category AS lensCategory, uv_protection AS uvProtection,
+         price, compare_at_price AS compareAtPrice, stock_quantity AS stockQuantity
        FROM product_variants WHERE product_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY id`,
       [productId],
     ),
@@ -257,9 +261,10 @@ const create = async (payload, requestMeta) => {
     await connection.beginTransaction();
     await validateRelations(connection, payload);
     const [productResult] = await connection.query(
-      `INSERT INTO products (code, brand, brand_id, status, featured, tax_rate)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [payload.code, payload.brand || 'ALP Gözlük', payload.brandId || null, payload.status, payload.featured ? 1 : 0, payload.taxRate],
+      `INSERT INTO products (code, brand, brand_id, status, featured, tax_rate, origin_country_code)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [payload.code, payload.brand || 'ALP Gözlük', payload.brandId || null, payload.status,
+        payload.featured ? 1 : 0, payload.taxRate, payload.originCountryCode?.trim().toUpperCase() || null],
     );
     for (const translation of payload.translations) {
       await connection.query(
@@ -274,12 +279,15 @@ const create = async (payload, requestMeta) => {
     for (const variant of payload.variants) {
       const [variantResult] = await connection.query(
         `INSERT INTO product_variants
-          (product_id, sku, barcode, color_code, frame_size, lens_type, price, compare_at_price, cost_price, stock_quantity, low_stock_threshold)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (product_id, sku, barcode, color_code, frame_size, lens_width_mm, bridge_width_mm,
+           temple_length_mm, lens_type, lens_category, uv_protection, price, compare_at_price,
+           cost_price, stock_quantity, low_stock_threshold)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [productResult.insertId, variant.sku, variant.barcode || null, variant.colorCode || null,
-          variant.frameSize || null, variant.lensType || null, variant.price,
-          variant.compareAtPrice || null, variant.costPrice || null,
-          variant.stockQuantity, variant.lowStockThreshold],
+          variant.frameSize || null, variant.lensWidthMm || null, variant.bridgeWidthMm || null,
+          variant.templeLengthMm || null, variant.lensType || null, variant.lensCategory || null,
+          variant.uvProtection || null, variant.price, variant.compareAtPrice || null,
+          variant.costPrice || null, variant.stockQuantity, variant.lowStockThreshold],
       );
       await insertLinks(connection, 'variant_attribute_values', ['variant_id', 'attribute_value_id'],
         (variant.attributeValueIds || []).map((id) => [variantResult.insertId, id]));
