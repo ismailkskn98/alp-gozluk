@@ -92,10 +92,30 @@ getUrl(fileKey, options)
 - Login ve abuse-sensitive endpoint rate limit'leri
 - OTP ve başarısız giriş sayaçları
 - JWT denylist/session iptali
-- MariaDB'deki sepetin isteğe bağlı sıcak cache'i
 - İhtiyaç kanıtlanırsa BullMQ tabanlı arka plan işleri
 
-Redis çalışmazsa katalog MariaDB üzerinden devam eder. Cache yazma hatası kullanıcı isteğini başarısız yapmaz; güvenlik kontrollerindeki fallback ise loglanır ve sınırlı çalışır.
+İlk sürümde sepet ve favoriler Redis'te tutulmaz veya cache'lenmez. Redis çalışmazsa katalog, sepet ve favoriler MariaDB üzerinden devam eder. Cache yazma hatası kullanıcı isteğini başarısız yapmaz; güvenlik kontrollerindeki fallback ise loglanır ve sınırlı çalışır. Sepet özeti için Redis cache'i ancak ölçülmüş bir ihtiyaç oluşursa sonraki fazda değerlendirilir.
+
+## Sepet ve favori sözleşmesi
+
+- MariaDB; kullanıcı ve misafir sepetlerinin, hesap favorilerinin, fiyatların, stokların, indirimlerin ve kupon ilişkilerinin tek doğruluk kaynağıdır.
+- Frontend yalnız `@tanstack/react-query` ile server state senkronizasyonu, optimistic update, rollback ve query invalidation yapar. Redux Toolkit, Zustand, SWR ve kalıcı Query cache kullanılmaz.
+- Misafir sepeti `alp_guest_cart` adlı `HttpOnly`, `SameSite=Lax` ve production'da `Secure` cookie ile tanımlanır. Cookie'deki 256-bit rastgele token'ın yalnız SHA-256 hash'i MariaDB'de saklanır.
+- Misafir favorilerinde yalnız ürün kimlikleri, en fazla 100 kayıt olacak şekilde `alp_guest_favorites_v1` anahtarıyla tarayıcıda tutulur. Fiyat, isim ve görsel localStorage'a yazılmaz.
+- Giriş sonrasında misafir sepeti transaction içinde hesap sepetiyle birleştirilir. Aynı varyantların adetleri stok ve satır limitine göre sınırlandırılır; seçim durumu OR mantığıyla birleşir.
+- Sepet/favori merge işlemleri idempotenttir. Başarısız merge kullanıcı girişini engellemez ve sonraki commerce isteğinde tekrar denenebilir.
+- Seçimi kaldırılan sepet satırları sepet adedinde kalır; fiyat ve checkout toplamına dahil edilmez.
+- Frontend fiyat, indirim, stok veya toplamı güvenilir veri olarak API'ye göndermez. Backend her mutation ve checkout öncesinde kanonik değerleri yeniden hesaplar.
+- Guest checkout desteklenir; hesap açmak zorunlu değildir.
+
+Frontend query anahtarları:
+
+```text
+['commerce', 'cart']
+['commerce', 'cart', 'summary']
+['commerce', 'favorites', 'ids']
+['commerce', 'favorites', 'list']
+```
 
 ## Katalog taksonomisi ve navigasyon
 
@@ -178,13 +198,15 @@ Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` quer
 5. [x] Local/S3 storage ve güvenli medya yönetimi
 6. [x] Admin ürün oluşturma → DB → cache invalidation → public ürün dikey akışı
 7. [ ] Katalog filtreleme, gerçek arama ve ayrıntılı SEO
-8. [ ] Müşteri adresleri ve MariaDB tabanlı kalıcı sepet
+8. [x] Müşteri adresleri, MariaDB tabanlı kalıcı sepet ve favoriler
 9. [ ] Checkout, stok transaction'ı, ödeme ve webhook
 10. [ ] Admin operasyon modüllerinin CRUD akışları, staging ve production hazırlığı
 
 İlk altı aşamanın mimari ve çalışan iskeleti uygulanmıştır. Admin modül ekranları hazırdır; ürün oluşturma dışındaki CRUD iş akışları ilgili geliştirme aşamalarında API'lere bağlanacaktır. Şifre sıfırlama ve e-posta doğrulama ekranları mevcut olmakla birlikte e-posta sağlayıcısı seçilene kadar bilgilendirme durumundadır.
 
 Yedinci aşamanın hedef kitle/özellik filtreleme, lokalize katalog URL'leri, yönetilebilir mega menü ve admin taksonomi CRUD bölümü uygulanmıştır. Gerçek arama sonuç sayfası, canonical stratejisi, breadcrumb/schema çıktıları ve ileri SEO çalışmaları tamamlanmadığı için aşama henüz kapatılmamıştır.
+
+Sekizinci aşamada misafir ve kullanıcı sepetleri, hesap ve misafir favorileri, login sonrası idempotent birleştirme, ürün seçimi, kupon, fiyat/stok uyarıları ve TanStack Query tabanlı optimistic arayüz akışları tamamlanmıştır. Sepet stok rezervasyonu yapmaz; kesin fiyat ve stok kontrolü checkout aşamasında yapılacaktır.
 
 ## Açık dış entegrasyon kararları
 

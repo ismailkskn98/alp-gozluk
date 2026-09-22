@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Label } from '@/components/ui/label';
 import { SiteButton } from '@/components/site/ui/button';
 import { SiteInput } from '@/components/site/ui/input';
+import { mergeGuestCommerceAfterAuthentication } from '@/features/commerce/merge-guest-commerce';
 import { getPathname } from '@/i18n/navigation';
 
 function getSchema(mode, tr) {
@@ -29,7 +30,7 @@ function getSchema(mode, tr) {
   });
 }
 
-export default function AuthForm({ mode = 'login', admin = false, locale = 'tr', onSuccess, redirectOnSuccess = true, idPrefix = '', appearance = 'default' }) {
+export default function AuthForm({ mode = 'login', admin = false, locale = 'tr', onSuccess, redirectOnSuccess = true, redirectTo, idPrefix = '', appearance = 'default' }) {
   const router = useRouter();
   const tr = locale === 'tr';
   const [serverError, setServerError] = useState('');
@@ -49,8 +50,9 @@ export default function AuthForm({ mode = 'login', admin = false, locale = 'tr',
       return;
     }
     onSuccess?.(payload.data?.user || null);
+    void mergeGuestCommerceAfterAuthentication();
     if (redirectOnSuccess) {
-      router.push(admin ? '/admin' : getPathname({ href: '/account', locale }));
+      router.push(redirectTo || (admin ? '/admin' : getPathname({ href: '/account', locale })));
     }
     router.refresh();
   }

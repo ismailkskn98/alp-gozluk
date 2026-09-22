@@ -21,7 +21,9 @@ const errorHandler = (error, req, res, next) => {
     });
   }
 
-  console.error(`[${req.requestId || 'no-request-id'}]`, error);
+  if (!error.statusCode || error.statusCode >= 500) {
+    console.error(`[${req.requestId || 'no-request-id'}]`, error);
+  }
 
   return res.status(error.statusCode || 500).json({
     status: false,

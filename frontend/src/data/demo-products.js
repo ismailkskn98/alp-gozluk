@@ -2,7 +2,7 @@ const createImages = (folder, files) => files.map((file) => `/gozlukler/${folder
 
 const createSpecifications = (tr, en) => ({ tr, en });
 
-export const demoProducts = [
+const rawDemoProducts = [
   {
     code: 'CL40235U',
     slug: 'celine-paris-cl40235u-3h',
@@ -327,3 +327,9 @@ export const demoProducts = [
     images: createImages('RAYBAN_SCUDERIA-FERRARI_RB3674M_F002-6G', ['main.webp', '1.png', '3.png', '4.png']),
   },
 ];
+
+export const demoProducts = rawDemoProducts.map((product, index) => ({
+  ...product,
+  id: 900001 + index,
+  isDemoProduct: true,
+}));

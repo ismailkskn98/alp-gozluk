@@ -1,5 +1,7 @@
 const { getDb } = require('../models/db');
 const { getStorage } = require('../../../general_services/storage');
+const favoriteService = require('../services/favoriteService');
+const { MAX_GUEST_FAVORITES } = require('../helpers/commerce');
 
 const genders = new Set(['female', 'male', 'prefer_not_to_say']);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -85,6 +87,7 @@ async function getAccountData(userId) {
     profile: userRows[0][0] ? serializeUser(userRows[0][0]) : null,
     addresses: addressRows[0].map(serializeAddress),
     orders: orderRows[0].map(serializeOrder),
+    favoriteIds: favoriteRows[0].map((row) => row.id),
     favorites: await Promise.all(favoriteRows[0].map(async (row) => ({
       id: row.id,
       slug: row.slug,
@@ -193,10 +196,57 @@ exports.removeFavorite = async (req, res) => {
   const productId = Number(req.params.productId);
   if (!Number.isSafeInteger(productId) || productId < 1) return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
   try {
-    await getDb().query('DELETE FROM customer_favorites WHERE user_id = ? AND product_id = ?', [req.user.id, productId]);
-    return res.json({ status: true, message: 'Ürün favorilerden çıkarıldı.', data: await getAccountData(req.user.id) });
+    await favoriteService.remove(req.user.id, productId);
+    const favorites = await favoriteService.list(req.user.id, req.query.locale);
+    const ids = await favoriteService.listIds(req.user.id);
+    return res.json({ status: true, message: req.t('favorites.removed'), data: { favorites, ids } });
   } catch (error) {
     console.error('Favori silme hatası:', error);
     return res.status(500).json({ status: false, message: req.t('errors.server_error') });
   }
+};
+
+exports.listFavorites = async (req, res, next) => {
+  try {
+    const favorites = await favoriteService.list(req.user.id, req.query.locale);
+    return res.json({ status: true, message: req.t('favorites.listed'), data: { favorites } });
+  } catch (error) { return next(error); }
+};
+
+exports.listFavoriteIds = async (req, res, next) => {
+  try {
+    const ids = await favoriteService.listIds(req.user.id);
+    return res.json({ status: true, message: req.t('favorites.listed'), data: { ids } });
+  } catch (error) { return next(error); }
+};
+
+exports.addFavorite = async (req, res, next) => {
+  const productId = Number(req.params.productId);
+  if (!Number.isSafeInteger(productId) || productId < 1) {
+    return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
+  }
+  try {
+    await favoriteService.add(req.user.id, productId);
+    const favorites = await favoriteService.list(req.user.id, req.body?.locale || req.query.locale);
+    const ids = await favoriteService.listIds(req.user.id);
+    return res.json({ status: true, message: req.t('favorites.added'), data: { favorites, ids } });
+  } catch (error) { return next(error); }
+};
+
+exports.mergeFavorites = async (req, res, next) => {
+  const productIds = req.body.productIds;
+  if (!Array.isArray(productIds) || productIds.length > MAX_GUEST_FAVORITES ||
+      productIds.some((id) => !Number.isSafeInteger(Number(id)) || Number(id) < 1)) {
+    return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
+  }
+  try {
+    const mergeResult = await favoriteService.merge(req.user.id, productIds.map(Number));
+    const favorites = await favoriteService.list(req.user.id, req.body?.locale || req.query.locale);
+    const ids = await favoriteService.listIds(req.user.id);
+    return res.json({
+      status: true,
+      message: req.t('favorites.merged'),
+      data: { favorites, ids, ...mergeResult },
+    });
+  } catch (error) { return next(error); }
 };

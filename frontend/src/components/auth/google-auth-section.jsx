@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { mergeGuestCommerceAfterAuthentication } from '@/features/commerce/merge-guest-commerce';
 import { getPathname } from '@/i18n/navigation';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -26,6 +27,7 @@ export default function GoogleAuthSection({
   mode = 'login',
   onSuccess,
   redirectOnSuccess = true,
+  redirectTo,
 }) {
   const router = useRouter();
   const buttonRef = useRef(null);
@@ -101,8 +103,9 @@ export default function GoogleAuthSection({
       }
 
       onSuccess?.(payload.data?.user || null);
+      void mergeGuestCommerceAfterAuthentication();
       if (redirectOnSuccess) {
-        router.push(getPathname({ href: '/account', locale }));
+        router.push(redirectTo || getPathname({ href: '/account', locale }));
       }
       router.refresh();
     } catch (error) {
@@ -112,7 +115,7 @@ export default function GoogleAuthSection({
     } finally {
       setIsSubmitting(false);
     }
-  }, [loadNonce, locale, onSuccess, redirectOnSuccess, router, tr]);
+  }, [loadNonce, locale, onSuccess, redirectOnSuccess, redirectTo, router, tr]);
 
   useEffect(() => {
     const buttonElement = buttonRef.current;

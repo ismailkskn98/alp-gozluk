@@ -2,6 +2,7 @@ const { getStorage } = require('../../../general_services/storage');
 const { resolveAudienceCodes } = require('../helpers/productFilters');
 const { getDb } = require('../models/db');
 const cache = require('./cacheService');
+const { MAX_CART_LINE_QUANTITY } = require('../helpers/commerce');
 
 const allowedLocales = new Set(['tr', 'en']);
 const normalizeLocale = (locale) => allowedLocales.has(locale) ? locale : 'tr';
@@ -117,7 +118,9 @@ const listPublished = async (requestedLocale, filters = {}) => {
     `SELECT p.id, p.code, COALESCE(b.name, p.brand) AS brand, p.featured, pt.name, pt.slug,
        pt.short_description AS shortDescription,
        MIN(pv.price) AS price, MAX(pv.compare_at_price) AS compareAtPrice,
-       SUM(pv.stock_quantity) AS stockQuantity
+       SUM(pv.stock_quantity) AS stockQuantity,
+       COUNT(pv.id) AS activeVariantCount, MIN(pv.id) AS defaultVariantId,
+       ${MAX_CART_LINE_QUANTITY} AS maxPerOrder
      FROM products p
      INNER JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?
      LEFT JOIN brands b ON b.id = p.brand_id AND b.deleted_at IS NULL

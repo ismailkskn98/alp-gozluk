@@ -13,7 +13,9 @@ const adminNavigationRoutes = require('./routes/adminNavigationRoutes');
 const adminAnnouncementRoutes = require('./routes/adminAnnouncementRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 const customerAccountRoutes = require('./routes/customerAccountRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 const verifyToken = require('./middlewares/verifyToken');
+const optionalAuth = require('./middlewares/optionalAuth');
 const requirePermission = require('./middlewares/requirePermission');
 const requireRole = require('./middlewares/requireRole');
 
@@ -26,6 +28,7 @@ router.use('/products', productRoutes);
 router.use('/catalog', catalogRoutes);
 router.use('/navigation', navigationRoutes);
 router.use('/announcements', announcementRoutes);
+router.use('/cart', optionalAuth, cartRoutes);
 router.use('/account', verifyToken, customerAccountRoutes);
 router.use(
   '/admin/products',

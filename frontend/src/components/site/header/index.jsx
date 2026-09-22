@@ -30,7 +30,7 @@ export default async function SiteHeader({ locale }) {
           </div>
           <HeaderLogo label={`ALP Gözlük — ${t("home")}`} />
           <Navbar items={menu.items} labels={{ navigation: t("navigation"), viewAll: t("viewAll") }} />
-          <HeaderActions authenticated={Boolean(user)} locale={locale} navigationItems={menu.items} hasAnnouncement={Boolean(announcements?.length)} labels={{ search: t("search"), account: t("account"), cart: t("cart") }} />
+          <HeaderActions authenticated={Boolean(user)} locale={locale} navigationItems={menu.items} hasAnnouncement={Boolean(announcements?.length)} labels={{ search: t("search"), account: t("account"), favorites: t("favorites"), loginToFavorites: t("loginToFavorites"), cart: t("cart") }} />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 export const authCookieName = 'alp_access_token';
 
@@ -9,7 +10,7 @@ export function getApiUrl() {
   return apiUrl.replace(/\/$/, '');
 }
 
-export async function getSessionUser() {
+export const getSessionUser = cache(async function getSessionUserForRequest() {
   const token = (await cookies()).get(authCookieName)?.value;
   if (!token) return null;
 
@@ -23,7 +24,7 @@ export async function getSessionUser() {
   } catch {
     return null;
   }
-}
+});
 
 export async function getAccountOverview() {
   const token = (await cookies()).get(authCookieName)?.value;

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { guestCartCookieName } from '@/lib/commerce-proxy';
 import { authCookieName, getApiUrl } from '@/lib/server-api';
 
 const publicActions = new Set(['login', 'register', 'google', '2fa-setup', '2fa-verify']);
@@ -24,6 +25,34 @@ function getSecureCookieOptions() {
     secure: process.env.NODE_ENV === 'production',
     path: '/',
   };
+}
+
+async function mergeGuestCartAfterAuthentication(token, guestCartToken, acceptLanguage) {
+  if (!token || !guestCartToken) return false;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'X-Cart-Token': guestCartToken,
+  };
+  if (acceptLanguage) headers['Accept-Language'] = acceptLanguage;
+
+  try {
+    const response = await fetch(`${getApiUrl()}/cart/merge`, {
+      method: 'POST',
+      headers,
+      body: '{}',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function createGoogleNonce(request) {
@@ -114,6 +143,10 @@ async function forward(action, request) {
     const payload = await backendResponse.json();
     const tokenFromBackend = payload.data?.token;
     const challengeToken = payload.data?.challengeToken;
+    const guestCartToken = cookieStore.get(guestCartCookieName)?.value;
+    const guestCartMerged = backendResponse.ok && tokenFromBackend
+      ? await mergeGuestCartAfterAuthentication(tokenFromBackend, guestCartToken, acceptLanguage)
+      : false;
     const safePayload = tokenFromBackend || challengeToken
       ? { ...payload, data: { ...payload.data, token: undefined, challengeToken: undefined } }
       : payload;
@@ -127,6 +160,7 @@ async function forward(action, request) {
         path: '/',
         expires: payload.data.expiresAt ? new Date(payload.data.expiresAt) : undefined,
       });
+      if (guestCartMerged) response.cookies.delete(guestCartCookieName);
     }
     if (action === 'login') {
       response.cookies.delete(twoFactorCookieName);

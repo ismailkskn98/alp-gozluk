@@ -81,3 +81,37 @@ test('auth rate limit Redis yokken güvenli memory fallback ile çalışır', as
   assert.equal(finalResponse.status, 429);
   assert.equal(finalResponse.body.status, false);
 });
+
+test('boş misafir sepeti veritabanında kayıt oluşturmadan okunabilir', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/cart')
+    .expect(200);
+
+  assert.equal(response.body.status, true);
+  assert.equal(response.body.data.cart.summary.itemCount, 0);
+  assert.deepEqual(response.body.data.cart.items, []);
+});
+
+test('sepet endpointi biçimsiz misafir tokenını reddeder', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/cart')
+    .set('X-Cart-Token', '../gecersiz')
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+});
+
+test('sepet ürün ekleme endpointi veritabanına gitmeden geçersiz adedi reddeder', async () => {
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/cart/items')
+    .send({ variantId: 1, quantity: 0 })
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+});
+
+test('favori endpointleri kimlik doğrulaması olmadan kullanılamaz', async () => {
+  await request(createApp()).get('/api/alpgozluk/v1/account/favorites').expect(401);
+  await request(createApp()).put('/api/alpgozluk/v1/account/favorites/1').expect(401);
+  await request(createApp()).post('/api/alpgozluk/v1/account/favorites/merge').send({ productIds: [1] }).expect(401);
+});

@@ -100,6 +100,7 @@ export async function listProducts(locale, filters = {}) {
     const payload = await response.json();
     return (payload.data?.products || []).map((product) => ({
       ...product,
+      priceAmount: Number(product.price),
       price: formatPrice(product.price, locale),
       type: locale === 'tr' ? 'ALP Çerçeve' : 'ALP Frame',
       color: '#ffffff',
@@ -126,6 +127,7 @@ export async function findProduct(locale, slug) {
     return normalizeProductDetail({
       ...product,
       type: locale === 'tr' ? 'ALP Çerçeve' : 'ALP Frame',
+      priceAmount: product.variants?.[0]?.price === undefined ? null : Number(product.variants[0].price),
       price: formatPrice(product.variants?.[0]?.price, locale),
       color: '#ffffff',
       images: (product.images || product.media || [])

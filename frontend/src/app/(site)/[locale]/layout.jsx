@@ -3,6 +3,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import SiteFooter from '@/components/site/footer';
 import SiteHeader from '@/components/site/header';
+import CommerceQueryProvider from '@/components/providers/commerce-query-provider';
 import { routing } from '@/i18n/routing';
 
 export function generateStaticParams() {
@@ -18,9 +19,11 @@ export default async function SiteLayout({ children, params }) {
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <SiteHeader locale={locale} />
-      <main>{children}</main>
-      <SiteFooter locale={locale} />
+      <CommerceQueryProvider>
+        <SiteHeader locale={locale} />
+        <main>{children}</main>
+        <SiteFooter locale={locale} />
+      </CommerceQueryProvider>
     </NextIntlClientProvider>
   );
 }

@@ -4,7 +4,7 @@ import { Trash2, X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { SiteButton } from '@/components/site/ui/button';
 
-export default function RemoveItemDialog({ open, onOpenChange, item, labels, onConfirm }) {
+export default function RemoveItemDialog({ open, onOpenChange, item, labels, pending = false, onConfirm }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -35,10 +35,10 @@ export default function RemoveItemDialog({ open, onOpenChange, item, labels, onC
           ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-2.5">
-            <SiteButton type="button" variant="secondary" onClick={() => onOpenChange(false)}>{labels.cancel}</SiteButton>
-            <SiteButton type="button" variant="destructive" onClick={onConfirm}>
+            <SiteButton type="button" variant="secondary" disabled={pending} onClick={() => onOpenChange(false)}>{labels.cancel}</SiteButton>
+            <SiteButton type="button" variant="destructive" disabled={pending} onClick={onConfirm}>
               <Trash2 className="size-4" aria-hidden="true" />
-              {labels.removeConfirm}
+              {pending ? '…' : labels.removeConfirm}
             </SiteButton>
           </div>
         </DialogPrimitive.Content>

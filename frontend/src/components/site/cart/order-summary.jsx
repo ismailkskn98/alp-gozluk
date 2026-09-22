@@ -4,7 +4,7 @@ import { SiteButton, siteButtonVariants } from '@/components/site/ui/button';
 import { SiteInput } from '@/components/site/ui/input';
 import { cn } from '@/lib/utils';
 
-export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit, canCheckout }) {
+export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit, couponPending = false, canCheckout }) {
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="border border-border bg-[#f7f7f4] p-5 sm:p-6">
@@ -27,7 +27,7 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-muted-foreground">{labels.shipping}</dt>
-            <dd>{labels.free}</dd>
+            <dd>{Number(totals.shipping || 0) === 0 ? labels.free : formatCurrency(totals.shipping)}</dd>
           </div>
         </dl>
 
@@ -70,7 +70,7 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
               placeholder={labels.promoPlaceholder}
               autoComplete="off"
             />
-            <SiteButton type="submit" className="rounded-l-none px-4">{labels.apply}</SiteButton>
+            <SiteButton type="submit" disabled={couponPending} className="rounded-l-none px-4">{couponPending ? '…' : labels.apply}</SiteButton>
           </div>
           {couponMessage ? <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">{couponMessage}</p> : null}
         </form>

@@ -16,7 +16,6 @@ export default function AccountAction({ authenticated, locale, label }) {
     return (
       <Link href="/account" aria-label={label} className="inline-flex h-11 items-center gap-2 px-2.5 text-[0.75rem] font-medium text-[#172536] transition-colors hover:bg-[#f4f5f6]">
         <UserRound className="size-4" strokeWidth={1.5} />
-        <span className="hidden sm:inline">{label}</span>
       </Link>
     );
   }
@@ -30,7 +29,6 @@ export default function AccountAction({ authenticated, locale, label }) {
       <SheetTrigger asChild>
         <button type="button" aria-label={t("login")} className="inline-flex h-11 items-center gap-2 px-2.5 text-[0.75rem] font-medium text-[#172536] transition-colors hover:bg-[#f4f5f6]">
           <UserRound className="size-4" strokeWidth={1.5} />
-          <span className="hidden sm:inline">{t("login")}</span>
         </button>
       </SheetTrigger>
       <SheetContent side="right" closeLabel={t("close")} className="w-full gap-0 border-l border-border bg-white shadow-none sm:w-[min(32rem,100vw)]">

@@ -80,6 +80,23 @@
     "deleted": "Announcement deleted.",
     "not_found": "Announcement not found."
   },
+  "cart": {
+    "loaded": "Cart loaded.",
+    "item_added": "Item added to cart.",
+    "item_updated": "Cart item updated.",
+    "item_removed": "Item removed from cart.",
+    "selection_updated": "Cart selection updated.",
+    "coupon_applied": "Coupon applied to cart.",
+    "coupon_removed": "Coupon removed from cart.",
+    "merged": "Guest cart merged into your account.",
+    "invalid_guest_token": "The guest cart identifier is invalid."
+  },
+  "favorites": {
+    "listed": "Favorites listed.",
+    "added": "Product added to favorites.",
+    "removed": "Product removed from favorites.",
+    "merged": "Guest favorites merged into your account."
+  },
   "errors": {
     "not_found": "The requested resource was not found.",
     "rate_limit": "Too many requests. Please try again later.",

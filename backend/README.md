@@ -23,6 +23,11 @@ npm run dev
 2. `2026-09-21_001_catalog_taxonomy.sql`
 3. `2026-09-21_002_google_auth.sql`
 4. `2026-09-21_003_admin_security.sql`
+5. `2026-09-22_001_announcements.sql`
+6. `2026-09-22_002_announcement_link_underline.sql`
+7. `2026-09-22_004_customer_account.sql`
+8. `2026-09-22_005_eyewear_variant_specs.sql`
+9. `2026-09-22_006_cart_and_favorites.sql`
 
 Dosyalar MariaDB 10.6 ve 11.4 için `CURRENT_TIMESTAMP(6)` sözdizimini kullanır. Tarihlerin UTC tutulabilmesi için veritabanı sunucusu ve uygulama bağlantıları UTC kullanmalıdır. Sunucu ayarını kontrol etmek için:
 
@@ -100,6 +105,20 @@ Base URL: `/api/alpgozluk/v1`
 - `POST /auth/logout`
 - `GET /products?locale=tr`
 - `GET /products/:slug?locale=tr`
+- `GET /cart`
+- `GET /cart/summary`
+- `POST /cart/items`
+- `PATCH /cart/items/:itemId`
+- `DELETE /cart/items/:itemId`
+- `PATCH /cart/selection`
+- `POST /cart/coupon`
+- `DELETE /cart/coupon`
+- `POST /cart/merge`
+- `GET /account/favorites`
+- `GET /account/favorites/ids`
+- `PUT /account/favorites/:productId`
+- `DELETE /account/favorites/:productId`
+- `POST /account/favorites/merge`
 - `POST /admin/products`
 - `GET /admin/media/list`
 - `POST /admin/media/upload`

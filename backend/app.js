@@ -25,7 +25,8 @@ const createApp = () => {
       return callback(error);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Request-Id', 'X-Cart-Token'],
+    exposedHeaders: ['X-Cart-Token', 'X-Request-Id'],
     credentials: false,
     maxAge: 600,
   }));

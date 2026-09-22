@@ -12,22 +12,26 @@ import { GooeyNav } from "@/components/ui/gooey-nav";
 import Orders from "./orders";
 import ProfileForm from "./profile-form";
 import { withDemoAccount } from "@/data/demo-account";
+import { useFavorites, useToggleFavorite } from "@/features/commerce";
 
 const demoEnabled = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
 
-export default function AccountExperience({ locale, user, account, logout }) {
-  const [active, setActive] = useState("overview");
+export default function AccountExperience({ locale, user, account, initialSection = "overview", logout }) {
+  const [active, setActive] = useState(initialSection);
   const [data, setData] = useState(() => (demoEnabled ? withDemoAccount(account, user) : account || { profile: user, addresses: [], orders: [], returns: [], favorites: [] }));
+  const favoritesQuery = useFavorites({ authenticated: true });
+  const toggleFavorite = useToggleFavorite({ authenticated: true });
   const reduceMotion = useReducedMotion();
   const profile = data.profile || user;
+  const favorites = demoEnabled ? (data.favorites || []) : (favoritesQuery.data || data.favorites || []);
+  const accountData = { ...data, favorites };
+
   async function removeFavorite(productId) {
     if (String(productId).startsWith("demo-")) {
       setData((current) => ({ ...current, favorites: current.favorites.filter((product) => product.id !== productId) }));
       return;
     }
-    const response = await fetch(`/api/account/favorites/${productId}`, { method: "DELETE" });
-    const payload = await response.json();
-    if (response.ok) setData(payload.data);
+    await toggleFavorite.mutateAsync({ productId: Number(productId), isFavorite: true });
   }
 
   function updateDemoAddresses(addresses) {
@@ -36,13 +40,13 @@ export default function AccountExperience({ locale, user, account, logout }) {
 
   const view =
     active === "overview" ? (
-      <AccountOverview user={profile} account={data} onNavigate={setActive} locale={locale} />
+      <AccountOverview user={profile} account={accountData} onNavigate={setActive} locale={locale} />
     ) : active === "orders" ? (
       <Orders orders={data.orders || []} returns={data.returns || []} locale={locale} />
     ) : active === "addresses" ? (
       <AddressBook addresses={data.addresses || []} onUpdated={setData} onDemoChange={updateDemoAddresses} />
     ) : active === "favorites" ? (
-      <Favorites favorites={data.favorites || []} locale={locale} onRemove={removeFavorite} />
+      <Favorites favorites={favorites} locale={locale} onRemove={removeFavorite} pending={toggleFavorite.isPending} error={favoritesQuery.isError || toggleFavorite.isError} />
     ) : (
       <ProfileForm profile={profile} onUpdated={setData} />
     );

@@ -80,6 +80,23 @@
     "deleted": "Duyuru silindi.",
     "not_found": "Duyuru bulunamadı."
   },
+  "cart": {
+    "loaded": "Sepet yüklendi.",
+    "item_added": "Ürün sepete eklendi.",
+    "item_updated": "Sepet ürünü güncellendi.",
+    "item_removed": "Ürün sepetten kaldırıldı.",
+    "selection_updated": "Sepet seçimi güncellendi.",
+    "coupon_applied": "Kupon sepete uygulandı.",
+    "coupon_removed": "Kupon sepetten kaldırıldı.",
+    "merged": "Misafir sepeti hesabınızla birleştirildi.",
+    "invalid_guest_token": "Misafir sepet kimliği geçersiz."
+  },
+  "favorites": {
+    "listed": "Favoriler listelendi.",
+    "added": "Ürün favorilere eklendi.",
+    "removed": "Ürün favorilerden çıkarıldı.",
+    "merged": "Misafir favorileri hesabınızla birleştirildi."
+  },
   "errors": {
     "not_found": "İstenen kaynak bulunamadı.",
     "rate_limit": "Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin.",
