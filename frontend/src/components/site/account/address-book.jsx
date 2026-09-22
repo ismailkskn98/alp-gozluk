@@ -4,9 +4,12 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, LoaderCircle, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import ConfirmActionDialog from "@/components/admin/ui/confirm-action-dialog";
+import { SiteButton } from "@/components/site/ui/button";
+import { SiteCheckbox } from "@/components/site/ui/checkbox";
+import { siteInputClassName } from "@/components/site/ui/input";
 import AccountSectionHeader from "./section-header";
 
 const schema = z.object({
@@ -21,7 +24,7 @@ const schema = z.object({
   isDefault: z.boolean(),
 });
 
-const inputClass = "mt-1.5 h-11 w-full rounded-lg border border-[#cfd5d1] bg-white px-3.5 text-sm text-[#172536] outline-none transition-colors placeholder:text-[#9aa39f] focus:border-[#65746e]";
+const inputClass = `${siteInputClassName} mt-1.5`;
 
 export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
   const [open, setOpen] = useState(false);
@@ -34,6 +37,7 @@ export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
@@ -107,13 +111,13 @@ export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
         title="Adreslerim"
         description="Sık kullandığın adresleri kaydet; ödeme sırasında teslimat bilgilerini yeniden yazma."
         action={
-          <button
+          <SiteButton
             type="button"
             onClick={startCreate}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a]"
+            size="compact"
           >
             <Plus className="size-4" /> Yeni adres
-          </button>
+          </SiteButton>
         }
       />
       {message ? (
@@ -165,17 +169,26 @@ export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
                   <textarea className={`${inputClass} h-[5.5rem] resize-none py-3`} autoComplete="street-address" {...register("addressLine")} />
                 </Field>
               </div>
-              <label className="mt-5 inline-flex cursor-pointer items-center gap-3 text-sm text-[#46534e]">
-                <input type="checkbox" className="size-4 accent-[#172536]" {...register("isDefault")} /> Varsayılan teslimat adresim yap
-              </label>
+              <Controller
+                name="isDefault"
+                control={control}
+                render={({ field }) => (
+                  <SiteCheckbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    label="Varsayılan teslimat adresim yap"
+                    className="mt-4"
+                  />
+                )}
+              />
               <div className="mt-6 flex flex-wrap gap-3">
-                <button type="submit" disabled={isSubmitting} className="inline-flex h-10 items-center gap-2 rounded-full bg-[#172536] px-5 text-sm font-medium text-white disabled:opacity-60">
+                <SiteButton type="submit" disabled={isSubmitting} size="compact">
                   {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {editing ? "Değişiklikleri kaydet" : "Adresi kaydet"}
-                </button>
-                <button type="button" onClick={closeForm} className="h-10 rounded-full border border-[#cfd5d1] px-5 text-sm text-[#46534e]">
+                </SiteButton>
+                <SiteButton type="button" onClick={closeForm} variant="secondary" size="compact">
                   Vazgeç
-                </button>
+                </SiteButton>
               </div>
             </div>
           </motion.form>

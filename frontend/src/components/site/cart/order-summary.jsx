@@ -1,7 +1,10 @@
 import { ChevronDown, LockKeyhole, PartyPopper, Tag } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { SiteButton, siteButtonVariants } from '@/components/site/ui/button';
+import { SiteInput } from '@/components/site/ui/input';
+import { cn } from '@/lib/utils';
 
-export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit }) {
+export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit, canCheckout }) {
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="border border-border bg-[#f7f7f4] p-5 sm:p-6">
@@ -33,10 +36,16 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
           <span className="text-lg">{formatCurrency(totals.total)}</span>
         </div>
 
-        <Link href="/checkout" className="flex h-12 w-full items-center justify-center bg-foreground px-5 text-sm font-semibold text-white transition-colors hover:bg-primary">
+        <Link
+          href="/checkout"
+          aria-disabled={!canCheckout}
+          tabIndex={canCheckout ? undefined : -1}
+          onClick={(event) => !canCheckout && event.preventDefault()}
+          className={cn(siteButtonVariants({ size: 'wide' }), !canCheckout && 'pointer-events-none opacity-45')}
+        >
           {labels.confirmCart}
         </Link>
-        <Link href="/shop" className="mt-2 flex h-12 w-full items-center justify-center border border-border bg-white px-5 text-sm font-medium hover:border-foreground">
+        <Link href="/shop" className={cn(siteButtonVariants({ variant: 'secondary', size: 'wide' }), 'mt-2')}>
           {labels.continueShopping}
         </Link>
         <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -53,15 +62,15 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
         <form className="border-t border-border p-4" onSubmit={onCouponSubmit} noValidate>
           <label htmlFor="coupon-code" className="sr-only">{labels.promoLabel}</label>
           <div className="flex">
-            <input
+            <SiteInput
               id="coupon-code"
               value={couponCode}
               onChange={(event) => onCouponChange(event.target.value)}
-              className="h-11 min-w-0 flex-1 border border-border bg-white px-3 text-sm outline-none focus:border-primary"
+              className="min-w-0 flex-1 rounded-r-none"
               placeholder={labels.promoPlaceholder}
               autoComplete="off"
             />
-            <button type="submit" className="h-11 bg-foreground px-4 text-sm font-medium text-white hover:bg-primary">{labels.apply}</button>
+            <SiteButton type="submit" className="rounded-l-none px-4">{labels.apply}</SiteButton>
           </div>
           {couponMessage ? <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">{couponMessage}</p> : null}
         </form>

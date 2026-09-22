@@ -199,6 +199,12 @@ select {
   outline-offset: 3px;
 }
 
+:where(input, textarea, select):focus,
+:where(input, textarea, select):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .site-header-search-input:focus,
 .site-header-search-input:focus-visible {
   outline: none !important;

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, Box, PackageOpen, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Box, Package, PackageOpen, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import { GooeyNav } from "@/components/ui/gooey-nav";
@@ -209,12 +209,15 @@ export default function Orders({ orders, returns, locale }) {
   const [tab, setTab] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const reduceMotion = useReducedMotion();
-  const tabs = useMemo(() => [{ label: `Siparişler · ${orders.length}` }, { label: `İadeler · ${returns.length}` }], [orders.length, returns.length]);
+  const tabs = useMemo(() => [
+    { label: `Siparişler (${orders.length})`, icon: <Package strokeWidth={1.55} /> },
+    { label: `İadeler (${returns.length})`, icon: <RotateCcw strokeWidth={1.55} /> },
+  ], [orders.length, returns.length]);
 
   return (
     <section>
       <AccountSectionHeader kicker="Alışveriş geçmişin" title="Siparişlerim" description="Kargonu takip et, sipariş ayrıntılarını incele ve iade süreçlerini tek yerden gör." />
-      <div className="mt-6 overflow-x-auto pb-1">
+      <div className="mt-5 border-b border-[#d8ddd7] pb-4">
         <GooeyNav
           items={tabs}
           value={tab}
@@ -223,12 +226,13 @@ export default function Orders({ orders, returns, locale }) {
             setSelectedOrder(null);
           }}
           size="sm"
-          activeColor="#e7eeeb"
-          activeLabelColor="#172536"
-          inactiveLabelColor="#68736f"
-          surfaceColor="#f1f3ef"
-          separation={8}
+          activeColor="#eaf1fb"
+          activeLabelColor="#1d4f83"
+          inactiveLabelColor="#71807c"
+          surfaceColor="transparent"
+          separation={10}
           radius={8}
+          className="max-w-full [&_[data-slot='gooey-nav-item']]:min-h-9 [&_[data-slot='gooey-nav-item']]:px-3 [&_[data-slot='gooey-nav-item']]:text-[0.8125rem]"
           aria-label="Sipariş ve iade kayıtları"
         />
       </div>

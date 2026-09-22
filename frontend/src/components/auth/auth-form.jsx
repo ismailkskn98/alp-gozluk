@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SiteButton } from '@/components/site/ui/button';
+import { SiteInput } from '@/components/site/ui/input';
 import { getPathname } from '@/i18n/navigation';
 
 function getSchema(mode, tr) {
@@ -63,21 +64,21 @@ export default function AuthForm({ mode = 'login', admin = false, locale = 'tr',
       {fields.map(([name, label, autocomplete]) => (
         <div key={name} className="space-y-2">
           <Label htmlFor={idPrefix ? `${idPrefix}-${name}` : name}>{label}</Label>
-          <Input
+          <SiteInput
             id={idPrefix ? `${idPrefix}-${name}` : name}
             type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'}
             autoComplete={autocomplete}
             aria-invalid={Boolean(errors[name])}
-            className={appearance === 'sheet' ? 'h-12 rounded-none border-border' : undefined}
+            className={appearance === 'sheet' ? 'h-12' : undefined}
             {...register(name)}
           />
           {errors[name] ? <p className="text-sm text-danger">{errors[name].message}</p> : null}
         </div>
       ))}
       {serverError ? <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}
-      <button type="submit" disabled={isSubmitting} className={`h-12 w-full px-5 text-sm font-semibold text-white disabled:opacity-60 ${appearance === 'sheet' ? 'bg-foreground hover:bg-primary' : 'rounded-md bg-primary hover:bg-[#124887]'}`}>
+      <SiteButton type="submit" disabled={isSubmitting} size="wide">
         {isSubmitting ? (tr ? 'İşleniyor…' : 'Processing…') : mode === 'register' ? (tr ? 'Hesap oluştur' : 'Create account') : (tr ? 'Giriş yap' : 'Sign in')}
-      </button>
+      </SiteButton>
     </form>
   );
 }

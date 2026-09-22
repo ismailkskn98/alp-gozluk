@@ -3,9 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, LoaderCircle, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { Checkbox } from '@/components/motion/checkbox';
+import { SiteButton } from '@/components/site/ui/button';
+import { SiteCheckbox } from '@/components/site/ui/checkbox';
+import { siteInputClassName } from '@/components/site/ui/input';
+import { SiteSelect } from '@/components/site/ui/select';
 import AccountSectionHeader from './section-header';
 
 const profileSchema = z.object({
@@ -18,7 +21,14 @@ const profileSchema = z.object({
   marketingSmsOptIn: z.boolean(),
 });
 
-const inputClass = 'mt-1.5 h-11 w-full rounded-lg border border-[#cfd5d1] bg-white px-3.5 text-sm text-[#172536] outline-none transition-colors placeholder:text-[#9aa39f] focus:border-[#65746e] disabled:bg-transparent disabled:text-[#7b8580]';
+const inputClass = `${siteInputClassName} mt-1.5`;
+
+const genderOptions = [
+  { value: '', label: 'Belirtmek istemiyorum' },
+  { value: 'female', label: 'Kadın' },
+  { value: 'male', label: 'Erkek' },
+  { value: 'prefer_not_to_say', label: 'Belirtmek istemiyorum' },
+];
 
 export default function ProfileForm({ profile, onUpdated }) {
   const [notice, setNotice] = useState(null);
@@ -84,12 +94,20 @@ export default function ProfileForm({ profile, onUpdated }) {
               <Field label="Telefon" error={errors.phone?.message}><input className={inputClass} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" {...register('phone')} /></Field>
               <Field label="Doğum tarihi"><input className={inputClass} type="date" {...register('birthDate')} /></Field>
               <Field label="Cinsiyet">
-                <select className={inputClass} {...register('gender')}>
-                  <option value="">Belirtmek istemiyorum</option>
-                  <option value="female">Kadın</option>
-                  <option value="male">Erkek</option>
-                  <option value="prefer_not_to_say">Belirtmek istemiyorum</option>
-                </select>
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <SiteSelect
+                      name={field.name}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={genderOptions}
+                      placeholder="Seç"
+                      className="mt-1.5"
+                    />
+                  )}
+                />
               </Field>
             </div>
           </div>
@@ -109,9 +127,9 @@ export default function ProfileForm({ profile, onUpdated }) {
         </section>
 
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          <button type="submit" disabled={isSubmitting} className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#172536] px-5 text-sm font-medium text-white transition-colors hover:bg-[#24364a] disabled:opacity-60">
+          <SiteButton type="submit" disabled={isSubmitting} size="compact">
             {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />} Değişiklikleri kaydet
-          </button>
+          </SiteButton>
           {notice ? <p role={notice.type === 'error' ? 'alert' : 'status'} className={`flex items-center gap-2 text-sm ${notice.type === 'error' ? 'text-[#a53e3e]' : 'text-[#387158]'}`}><CheckCircle2 className="size-4" />{notice.text}</p> : null}
         </div>
       </form>
@@ -130,7 +148,7 @@ function PreferenceRow({ title, description, checked, onChange }) {
         <p className="text-sm font-medium text-[#172536]">{title}</p>
         <p className="mt-1 text-xs leading-5 text-[#68736f]">{description}</p>
       </div>
-      <Checkbox checked={checked} onCheckedChange={onChange} aria-label={`${title} ile bilgilendirme`} />
+      <SiteCheckbox checked={checked} onCheckedChange={onChange} aria-label={`${title} ile bilgilendirme`} />
     </div>
   );
 }
