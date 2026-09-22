@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import LanguageSwitcher from './language-switcher';
 
 export default function SiteFooter({ locale }) {
   const tr = locale === 'tr';
@@ -64,10 +65,13 @@ export default function SiteFooter({ locale }) {
         </div>
         <div className="flex flex-col gap-4 border-t border-black/10 py-6 text-xs text-black/48 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} ALP Gözlük. {tr ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</p>
-          <Link href="/shop" className="inline-flex items-center gap-2 text-[#232323]">
-            {tr ? 'Koleksiyonu keşfet' : 'Explore the collection'}
-            <ArrowUpRight className="size-3.5" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <LanguageSwitcher locale={locale} />
+            <Link href="/shop" className="inline-flex items-center gap-2 text-[#232323]">
+              {tr ? 'Koleksiyonu keşfet' : 'Explore the collection'}
+              <ArrowUpRight className="size-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

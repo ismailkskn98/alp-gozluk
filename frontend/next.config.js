@@ -5,6 +5,12 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.js");
 const remotePatterns = [];
 const mediaBaseUrl = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
 
+remotePatterns.push({
+  protocol: "https",
+  hostname: "flagcdn.com",
+  pathname: "/**",
+});
+
 if (mediaBaseUrl) {
   const mediaUrl = new URL(mediaBaseUrl);
   remotePatterns.push({

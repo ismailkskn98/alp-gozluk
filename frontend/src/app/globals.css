@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 :root {
+  --brand-blue: #0e51a1;
+  --brand-cyan: #00c7e8;
   --background: #ffffff;
   --foreground: #10233d;
   --surface: #ffffff;
@@ -46,6 +48,8 @@
 }
 
 @theme inline {
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);

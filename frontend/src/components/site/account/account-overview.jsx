@@ -1,9 +1,9 @@
-import Image from 'next/image';
-import { ArrowRight, Heart, MapPin, Package } from 'lucide-react';
+import Image from "next/image";
+import { ArrowRight, Heart, MapPin, Package } from "lucide-react";
 
 function formatMoney(amount, currency, locale) {
-  return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
-    style: 'currency',
+  return new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
+    style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(amount || 0);
@@ -33,9 +33,7 @@ function ProductStack({ products }) {
     <div className="flex -space-x-3">
       {products.slice(0, 3).map((product) => (
         <div key={product.id || product.slug} className="relative size-14 overflow-hidden rounded-full border-2 border-[#f7f8f5] bg-white">
-          {product.imageUrl ? (
-            <Image src={product.imageUrl} alt="" fill sizes="56px" className="object-contain" />
-          ) : null}
+          {product.imageUrl ? <Image src={product.imageUrl} alt="" fill sizes="56px" className="object-contain" /> : null}
         </div>
       ))}
     </div>
@@ -49,11 +47,11 @@ export default function AccountOverview({ account, onNavigate, locale }) {
   const latestOrder = orders[0];
 
   return (
-    <div className="space-y-[clamp(2.25rem,5vw,4.5rem)]">
-      <section aria-label="Hesap özeti" className="grid border-y border-[#d8ddd7] sm:grid-cols-3">
-        <SummaryLink icon={Package} value={orders.length} label="Sipariş" onClick={() => onNavigate('orders')} />
-        <SummaryLink icon={MapPin} value={addresses.length} label="Kayıtlı adres" onClick={() => onNavigate('addresses')} />
-        <SummaryLink icon={Heart} value={favorites.length} label="Favori çerçeve" onClick={() => onNavigate('favorites')} />
+    <div className="space-y-[clamp(2.25rem,5vw,4rem)]">
+      <section aria-label="Hesap özeti" className="grid sm:grid-cols-3">
+        <SummaryLink icon={Package} value={orders.length} label="Sipariş" onClick={() => onNavigate("orders")} />
+        <SummaryLink icon={MapPin} value={addresses.length} label="Kayıtlı adres" onClick={() => onNavigate("addresses")} />
+        <SummaryLink icon={Heart} value={favorites.length} label="Favori çerçeve" onClick={() => onNavigate("favorites")} />
       </section>
 
       {latestOrder ? (
@@ -63,28 +61,20 @@ export default function AccountOverview({ account, onNavigate, locale }) {
               <h2 className="text-[clamp(1.35rem,2vw,1.75rem)] font-normal tracking-[-0.035em] text-[#172536]">Son siparişin</h2>
               <p className="mt-1 text-sm text-[#68736f]">#{latestOrder.orderNumber}</p>
             </div>
-            <button type="button" onClick={() => onNavigate('orders')} className="group inline-flex items-center gap-2 text-sm text-[#172536]">
+            <button type="button" onClick={() => onNavigate("orders")} className="group inline-flex items-center gap-2 text-sm text-[#172536]">
               Tüm siparişler <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('orders')}
-            className="group mt-5 grid w-full gap-5 border-y border-[#d8ddd7] py-5 text-left sm:grid-cols-[auto_1fr_auto] sm:items-center"
-          >
+          <button type="button" onClick={() => onNavigate("orders")} className="group mt-5 grid w-full gap-5 border-y border-[#d8ddd7] py-5 text-left sm:grid-cols-[auto_1fr_auto] sm:items-center">
             <ProductStack products={latestOrder.items || []} />
             <span>
-              <span className="block text-base font-medium text-[#172536]">
-                {latestOrder.fulfillmentStatus === 'shipped' ? 'Siparişin yolda' : 'Siparişin teslim edildi'}
-              </span>
+              <span className="block text-base font-medium text-[#172536]">{latestOrder.fulfillmentStatus === "shipped" ? "Siparişin yolda" : "Siparişin teslim edildi"}</span>
               <span className="mt-1 block text-sm text-[#68736f]">
-                {latestOrder.itemCount} ürün · {latestOrder.address || 'Teslimat adresin'}
+                {latestOrder.itemCount} ürün · {latestOrder.address || "Teslimat adresin"}
               </span>
             </span>
             <span className="flex items-center justify-between gap-5 sm:justify-end">
-              <span className="text-sm font-medium text-[#172536] tabular-nums">
-                {formatMoney(latestOrder.totalAmount, latestOrder.currency, locale)}
-              </span>
+              <span className="text-sm font-medium text-[#172536] tabular-nums">{formatMoney(latestOrder.totalAmount, latestOrder.currency, locale)}</span>
               <ArrowRight className="size-4 text-[#82908a] transition-transform group-hover:translate-x-1" />
             </span>
           </button>
@@ -97,18 +87,20 @@ export default function AccountOverview({ account, onNavigate, locale }) {
             <h2 className="text-[clamp(1.35rem,2vw,1.75rem)] font-normal tracking-[-0.035em] text-[#172536]">Kaydettiklerin</h2>
             <p className="mt-1 text-sm text-[#68736f]">Son baktığın çerçevelere kaldığın yerden devam et.</p>
           </div>
-          <button type="button" onClick={() => onNavigate('favorites')} className="hidden items-center gap-2 text-sm sm:inline-flex">
+          <button type="button" onClick={() => onNavigate("favorites")} className="hidden items-center gap-2 text-sm sm:inline-flex">
             Favorilerim <ArrowRight className="size-3.5" />
           </button>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-7 md:grid-cols-4">
           {favorites.slice(0, 4).map((product) => (
-            <button key={product.id} type="button" onClick={() => onNavigate('favorites')} className="group text-left">
+            <button key={product.id} type="button" onClick={() => onNavigate("favorites")} className="group text-left">
               <span className="relative block aspect-[4/5] overflow-hidden bg-white">
-                {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} fill sizes="(max-width: 768px) 50vw, 20vw" className="object-contain transition-transform duration-500 group-hover:scale-[1.025]" /> : null}
+                {product.imageUrl ? (
+                  <Image src={product.imageUrl} alt={product.name} fill sizes="(max-width: 768px) 50vw, 20vw" className="object-contain transition-transform duration-500 group-hover:scale-[1.025]" />
+                ) : null}
               </span>
               <span className="mt-3 block truncate text-sm font-medium text-[#172536]">{product.name}</span>
-              <span className="mt-1 block text-xs text-[#68736f]">{product.variant || 'Favorilerine eklendi'}</span>
+              <span className="mt-1 block text-xs text-[#68736f]">{product.variant || "Favorilerine eklendi"}</span>
             </button>
           ))}
         </div>

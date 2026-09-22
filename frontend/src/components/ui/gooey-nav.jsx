@@ -74,6 +74,7 @@ function Segment({
   rightFill,
   reduced,
   radii,
+  backgroundColor,
   className,
   style,
   children
@@ -94,8 +95,8 @@ function Segment({
       className={cn("relative", className)}
       style={{ ...style, marginLeft }}
       initial={false}
-      animate={radii}
-      transition={reduced ? { duration: 0 } : SPRING}
+      animate={backgroundColor ? { ...radii, backgroundColor } : radii}
+      transition={reduced ? { duration: 0 } : { ...SPRING, backgroundColor: { duration: 0.22, ease: "easeOut" } }}
     >
       {hasSeam && (
         <svg
@@ -129,6 +130,7 @@ function NavLabel({
   isActive,
   size,
   activeLabelColor,
+  inactiveLabelColor,
   onSelect
 }) {
   const props = {
@@ -143,7 +145,7 @@ function NavLabel({
       !isActive && "text-[#868593]",
     ),
 
-    style: isActive ? { color: activeLabelColor } : undefined,
+    style: { color: isActive ? activeLabelColor : inactiveLabelColor },
     onClick: onSelect
   };
 
@@ -168,6 +170,8 @@ export function GooeyNav({
   size = "md",
   activeColor = "#FC4C01",
   activeLabelColor = "#ffffff",
+  inactiveLabelColor,
+  surfaceColor,
   separation,
   radius,
   className,
@@ -221,6 +225,7 @@ export function GooeyNav({
               leftFill={fill(i - 1)}
               rightFill={fill(i)}
               reduced={reduced}
+              backgroundColor={surfaceColor ? (isActive ? activeColor : surfaceColor) : undefined}
               radii={{
                 borderTopLeftRadius: open(i) ? corner : 0,
                 borderBottomLeftRadius: open(i) ? corner : 0,
@@ -228,13 +233,14 @@ export function GooeyNav({
                 borderBottomRightRadius: open(i + 1) ? corner : 0,
               }}
               className={cn(BAR, isActive ? FADE_IN : FADE_OUT)}
-              style={{ backgroundColor: isActive ? activeColor : undefined }}
+              style={surfaceColor ? undefined : { backgroundColor: isActive ? activeColor : undefined }}
             >
               <NavLabel
                 {...navItem}
                 isActive={isActive}
                 size={size}
                 activeLabelColor={activeLabelColor}
+                inactiveLabelColor={inactiveLabelColor}
                 onSelect={() => {
                   if (value === undefined) setUncontrolled(i);
                   onChange?.(i);
