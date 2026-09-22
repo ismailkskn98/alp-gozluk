@@ -76,10 +76,7 @@ export default function CartExperience({ locale, initialItems, recommendations }
     [locale],
   );
 
-  const selectedItems = useMemo(
-    () => items.filter((item) => selectedItemIds.has(item.id)),
-    [items, selectedItemIds],
-  );
+  const selectedItems = useMemo(() => items.filter((item) => selectedItemIds.has(item.id)), [items, selectedItemIds]);
 
   const totals = useMemo(() => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.originalPrice * item.quantity, 0);
@@ -150,14 +147,11 @@ export default function CartExperience({ locale, initialItems, recommendations }
       {items.length ? (
         <div className="mt-8 grid gap-x-[clamp(1.25rem,3vw,3rem)] gap-y-8 lg:grid-cols-[minmax(0,1fr)_clamp(19rem,24vw,23rem)]">
           <div className="min-w-0">
-            <div className="mb-3 flex min-h-12 flex-wrap items-center justify-between gap-3 border-y border-[#d8ddd7] px-1 py-2.5">
-              <SiteCheckbox
-                checked={allSelected}
-                indeterminate={selectedItems.length > 0 && !allSelected}
-                onCheckedChange={toggleAll}
-                label={labels.selectAll}
-              />
-              <p className="text-xs text-[#68736f]">{selectedItems.length} / {items.length} {labels.selectedProducts}</p>
+            <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 border-t border-[#d8ddd7] px-1 py-2.5">
+              <SiteCheckbox checked={allSelected} indeterminate={selectedItems.length > 0 && !allSelected} onCheckedChange={toggleAll} label={labels.selectAll} />
+              <p className="text-xs text-[#68736f]">
+                {selectedItems.length} / {items.length} {labels.selectedProducts}
+              </p>
             </div>
             <div className="mb-4 flex min-h-12 items-center justify-center bg-[#e9ece6] px-4 text-center text-sm">{t("campaign")}</div>
             <div className="space-y-2">
@@ -203,13 +197,7 @@ export default function CartExperience({ locale, initialItems, recommendations }
         </div>
       )}
 
-      <RemoveItemDialog
-        open={Boolean(removeTarget)}
-        onOpenChange={(open) => !open && setRemoveTarget(null)}
-        item={removeTarget}
-        labels={labels}
-        onConfirm={removeItem}
-      />
+      <RemoveItemDialog open={Boolean(removeTarget)} onOpenChange={(open) => !open && setRemoveTarget(null)} item={removeTarget} labels={labels} onConfirm={removeItem} />
     </div>
   );
 }
