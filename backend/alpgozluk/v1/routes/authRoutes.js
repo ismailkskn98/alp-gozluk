@@ -18,6 +18,8 @@ const googleAuthRateLimit = createRateLimit({
 
 router.post('/register', authRateLimit, authController.register);
 router.post('/login', authRateLimit, authController.login);
+router.post('/2fa/setup', authRateLimit, authController.twoFactorSetup);
+router.post('/2fa/verify', authRateLimit, authController.twoFactorVerify);
 router.get('/google/nonce', googleAuthRateLimit, authController.googleNonce);
 router.post('/google', googleAuthRateLimit, authController.google);
 router.use(verifyToken);

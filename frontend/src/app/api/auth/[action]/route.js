@@ -2,9 +2,14 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { authCookieName, getApiUrl } from '@/lib/server-api';
 
-const publicActions = new Set(['login', 'register', 'google']);
+const publicActions = new Set(['login', 'register', 'google', '2fa-setup', '2fa-verify']);
 const googleNonceAction = 'google-nonce';
 const googleNonceCookieName = 'alp_google_nonce';
+const twoFactorCookieName = 'alp_admin_2fa_challenge';
+const backendActionPaths = {
+  '2fa-setup': '2fa/setup',
+  '2fa-verify': '2fa/verify',
+};
 
 function getRequestMessage(request, trMessage, enMessage) {
   return request.headers.get('accept-language')?.toLowerCase().startsWith('en')
@@ -78,6 +83,15 @@ async function forward(action, request) {
           );
         }
         body = JSON.stringify({ idToken: requestBody.credential, nonce });
+      } else if (action === '2fa-setup' || action === '2fa-verify') {
+        const challengeToken = cookieStore.get(twoFactorCookieName)?.value;
+        if (!challengeToken) {
+          return NextResponse.json(
+            { status: false, message: 'Doğrulama isteğinin süresi doldu. Lütfen yeniden giriş yapın.' },
+            { status: 401 },
+          );
+        }
+        body = JSON.stringify({ ...requestBody, challengeToken });
       } else {
         body = JSON.stringify(requestBody);
       }
@@ -90,7 +104,8 @@ async function forward(action, request) {
   }
 
   try {
-    const backendResponse = await fetch(`${getApiUrl()}/auth/${action}`, {
+    const backendAction = backendActionPaths[action] || action;
+    const backendResponse = await fetch(`${getApiUrl()}/auth/${backendAction}`, {
       method: action === 'me' ? 'GET' : 'POST',
       headers,
       body,
@@ -98,8 +113,9 @@ async function forward(action, request) {
     });
     const payload = await backendResponse.json();
     const tokenFromBackend = payload.data?.token;
-    const safePayload = tokenFromBackend
-      ? { ...payload, data: { ...payload.data, token: undefined } }
+    const challengeToken = payload.data?.challengeToken;
+    const safePayload = tokenFromBackend || challengeToken
+      ? { ...payload, data: { ...payload.data, token: undefined, challengeToken: undefined } }
       : payload;
     const response = NextResponse.json(safePayload, { status: backendResponse.status });
 
@@ -112,8 +128,21 @@ async function forward(action, request) {
         expires: payload.data.expiresAt ? new Date(payload.data.expiresAt) : undefined,
       });
     }
+    if (action === 'login') {
+      response.cookies.delete(twoFactorCookieName);
+      if (backendResponse.ok && challengeToken) {
+        response.cookies.set(twoFactorCookieName, challengeToken, {
+          ...getSecureCookieOptions(),
+          maxAge: Math.min(Number(payload.data.expiresIn) || 300, 600),
+        });
+      }
+    }
+    if (action === '2fa-verify' && backendResponse.ok && tokenFromBackend) {
+      response.cookies.delete(twoFactorCookieName);
+    }
     if (action === 'google') response.cookies.delete(googleNonceCookieName);
     if (action === 'logout') response.cookies.delete(authCookieName);
+    response.headers.set('Cache-Control', 'no-store');
     return response;
   } catch {
     return NextResponse.json({ status: false, message: 'API servisine ulaşılamıyor.' }, { status: 503 });

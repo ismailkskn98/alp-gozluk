@@ -14,9 +14,28 @@
     "google_invalid": "Google kimliği doğrulanamadı. Lütfen tekrar deneyin.",
     "google_unavailable": "Google ile giriş şu anda kullanılamıyor.",
     "google_email_conflict": "Bu e-posta başka bir giriş yöntemiyle kayıtlı. E-posta ve şifrenizle giriş yapın.",
+    "admin_google_forbidden": "Yönetim paneli hesapları e-posta, şifre ve etkinse iki faktörlü doğrulama ile giriş yapmalıdır.",
+    "two_factor_required": "İki faktörlü doğrulama gerekli.",
+    "two_factor_setup": "Authenticator kurulumu hazır.",
+    "two_factor_invalid": "Doğrulama kodu geçersiz veya daha önce kullanılmış.",
+    "two_factor_unavailable": "İki faktörlü doğrulama servisi geçici olarak kullanılamıyor.",
+    "two_factor_disabled": "İki faktörlü doğrulama etkin değil.",
+    "two_factor_challenge_invalid": "Doğrulama isteğinin süresi doldu. Lütfen yeniden giriş yapın.",
+    "two_factor_attempts_exceeded": "Çok fazla hatalı kod girdiniz. Lütfen yeniden giriş yapın.",
     "logout_success": "Çıkış başarılı.",
     "unauthorized": "Bu işlem için giriş yapmalısınız.",
     "forbidden": "Bu işlem için yetkiniz bulunmuyor."
+  },
+  "admin_users": {
+    "listed": "Yönetici kullanıcılar listelendi.",
+    "roles_listed": "Atanabilir roller listelendi.",
+    "created": "Yönetici kullanıcı oluşturuldu.",
+    "roles_updated": "Kullanıcı rolleri güncellendi ve aktif oturumları kapatıldı.",
+    "status_updated": "Kullanıcı durumu güncellendi.",
+    "deleted": "Yönetici kullanıcı arşivlendi.",
+    "not_found": "Yönetici kullanıcı bulunamadı.",
+    "invalid_roles": "Seçilen rollerden biri atanamaz.",
+    "protected": "Süper yönetici veya mevcut oturum sahibi bu işlemle değiştirilemez."
   },
   "validation": {
     "invalid_request": "Gönderilen bilgiler geçersiz.",

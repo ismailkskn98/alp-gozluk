@@ -30,6 +30,15 @@ test('admin katalog ve navigasyon endpointleri tokensız istekleri reddeder', as
   await request(app).get('/api/alpgozluk/v1/admin/navigation/header').expect(401);
 });
 
+test('süper admin kullanıcı yönetimi endpointi tokensız istekleri reddeder', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/admin/users')
+    .expect(401);
+
+  assert.equal(response.body.status, false);
+  assert.ok(response.body.message);
+});
+
 test('public ürün filtreleri allowlist dışındaki hedef kitleyi reddeder', async () => {
   const response = await request(createApp())
     .get('/api/alpgozluk/v1/products?audience=women%27%20OR%201=1')

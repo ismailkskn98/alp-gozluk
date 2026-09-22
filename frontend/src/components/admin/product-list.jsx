@@ -18,7 +18,7 @@ export default function ProductList() {
   }, []);
 
   return (
-    <div className="overflow-x-auto border border-border bg-white">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card">
       <div className="grid min-w-[48rem] grid-cols-[minmax(14rem,1.6fr)_1fr_8rem_8rem_6rem] gap-4 border-b border-border bg-muted/55 px-4 py-3 text-xs font-medium text-muted-foreground"><span>Ürün</span><span>Hedef kitle</span><span>Durum</span><span>Stok</span><span className="text-right">Fiyat</span></div>
       {state.loading ? <div className="px-5 py-14 text-center text-sm text-muted-foreground">Ürünler yükleniyor…</div> : null}
       {state.error ? <div className="px-5 py-14 text-center"><p className="font-medium text-danger">Ürünler alınamadı</p><p className="mt-2 text-sm text-muted-foreground">{state.error}</p></div> : null}

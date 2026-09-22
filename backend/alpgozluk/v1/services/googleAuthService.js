@@ -128,6 +128,9 @@ const signInWithGoogle = async ({ idToken, nonce, req }) => {
     if (user.status !== 'active') throw createAuthError('google_invalid');
 
     const roles = await getUserRoles(connection, user.id);
+    if (roles.some((role) => ['super_admin', 'admin', 'editor'].includes(role))) {
+      throw createAuthError('admin_google_forbidden');
+    }
     const session = await createSession(connection, user, req);
     await connection.commit();
 

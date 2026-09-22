@@ -14,9 +14,28 @@
     "google_invalid": "Your Google identity could not be verified. Please try again.",
     "google_unavailable": "Google sign-in is currently unavailable.",
     "google_email_conflict": "This email uses another sign-in method. Sign in with your email and password.",
+    "admin_google_forbidden": "Admin accounts must sign in with email, password, and two-factor authentication when enabled.",
+    "two_factor_required": "Two-factor authentication is required.",
+    "two_factor_setup": "Authenticator setup is ready.",
+    "two_factor_invalid": "The verification code is invalid or has already been used.",
+    "two_factor_unavailable": "The two-factor authentication service is temporarily unavailable.",
+    "two_factor_disabled": "Two-factor authentication is not enabled.",
+    "two_factor_challenge_invalid": "The verification request expired. Sign in again.",
+    "two_factor_attempts_exceeded": "Too many invalid codes. Sign in again.",
     "logout_success": "Signed out successfully.",
     "unauthorized": "You must sign in to perform this action.",
     "forbidden": "You do not have permission to perform this action."
+  },
+  "admin_users": {
+    "listed": "Admin users listed.",
+    "roles_listed": "Assignable roles listed.",
+    "created": "Admin user created.",
+    "roles_updated": "User roles updated and active sessions revoked.",
+    "status_updated": "User status updated.",
+    "deleted": "Admin user archived.",
+    "not_found": "Admin user not found.",
+    "invalid_roles": "One of the selected roles cannot be assigned.",
+    "protected": "The super admin or current signed-in user cannot be changed by this operation."
   },
   "validation": {
     "invalid_request": "The submitted information is invalid.",

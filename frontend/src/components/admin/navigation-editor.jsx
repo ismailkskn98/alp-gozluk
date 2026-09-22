@@ -111,17 +111,17 @@ export default function NavigationEditor() {
     setFeedback(response.ok ? { type: 'success', message: 'Mega menü kaydedildi.' } : { type: 'error', message: result.message || 'Mega menü kaydedilemedi.' });
   }
 
-  const inputClass = 'h-9 w-full border border-input bg-white px-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15';
+  const inputClass = 'h-9 w-full rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15';
   const roots = (currentItems || []).filter((item) => !item.parentCode);
 
-  if (loading) return <div className="border border-border bg-white px-6 py-16 text-center text-sm text-muted-foreground">Navigasyon yükleniyor…</div>;
+  if (loading) return <div className="rounded-xl border border-border bg-card px-6 py-16 text-center text-sm text-muted-foreground">Navigasyon yükleniyor…</div>;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid gap-8 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-3">
           {fields.map((field, index) => (
-            <section key={field.id} className="border border-border bg-white p-4">
+            <section key={field.id} className="rounded-xl border border-border bg-card p-4">
               <input type="hidden" {...register(`items.${index}.status`)} />
               <div className="mb-4 flex items-center gap-2"><GripVertical className="size-4 text-muted-foreground" /><span className="text-sm font-medium">{currentItems?.[index]?.trLabel || `Öğe ${index + 1}`}</span><button type="button" onClick={() => remove(index)} className="ml-auto grid size-8 place-items-center text-danger hover:bg-danger/8" aria-label="Öğeyi kaldır"><Trash2 className="size-4" /></button></div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -137,15 +137,15 @@ export default function NavigationEditor() {
               {errors.items?.[index] ? <p className="mt-3 text-xs text-danger">Bu satırdaki alanları ve üst öğe ilişkisini kontrol edin.</p> : null}
             </section>
           ))}
-          <button type="button" onClick={() => append({ code: `menu-link-${fields.length + 1}`, parentCode: '', itemType: 'link', columnPosition: 1, sortOrder: (fields.length + 1) * 10, status: 'active', trLabel: 'Yeni bağlantı', trHref: '/shop', enLabel: 'New link', enHref: '/shop' })} className="inline-flex h-10 items-center gap-2 border border-border-strong bg-white px-4 text-sm font-medium hover:bg-muted"><Plus className="size-4" />Öğe ekle</button>
+          <button type="button" onClick={() => append({ code: `menu-link-${fields.length + 1}`, parentCode: '', itemType: 'link', columnPosition: 1, sortOrder: (fields.length + 1) * 10, status: 'active', trLabel: 'Yeni bağlantı', trHref: '/shop', enLabel: 'New link', enHref: '/shop' })} className="inline-flex h-10 items-center gap-2 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium hover:bg-muted"><Plus className="size-4" />Öğe ekle</button>
         </div>
 
-        <aside className="self-start border-t-2 border-primary bg-white p-5 2xl:sticky 2xl:top-24">
+        <aside className="self-start rounded-xl border border-border border-t-2 border-t-primary bg-card p-5 2xl:sticky 2xl:top-24">
           <p className="text-xs font-medium text-muted-foreground">Masaüstü önizleme</p>
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-3 border-b border-border pb-4 text-sm">{roots.map((item) => <span key={item.code}>{item.trLabel || item.code}</span>)}</div>
           <p className="mt-4 text-xs leading-5 text-muted-foreground">Ana öğeler header’da görünür. Alt öğeler, seçilen üst öğe ve sütun sırasına göre mega menüde gruplanır.</p>
           {feedback.message ? <p role="status" className={`mt-4 p-3 text-sm ${feedback.type === 'error' ? 'bg-danger/8 text-danger' : 'bg-success/8 text-success'}`}>{feedback.message}</p> : null}
-          <button type="submit" disabled={isSubmitting} className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 bg-primary px-4 text-sm font-medium text-white disabled:opacity-60"><Save className="size-4" />{isSubmitting ? 'Kaydediliyor…' : 'Mega menüyü kaydet'}</button>
+          <button type="submit" disabled={isSubmitting} className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"><Save className="size-4" />{isSubmitting ? 'Kaydediliyor…' : 'Mega menüyü kaydet'}</button>
         </aside>
       </div>
     </form>

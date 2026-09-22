@@ -27,7 +27,7 @@ function SheetOverlay({
   className,
   ...props
 }) {
-  return (<SheetOverlayPrimitive className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />);
+  return (<SheetOverlayPrimitive data-admin-overlay className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />);
 }
 
 function SheetClose(props) {
@@ -47,6 +47,7 @@ function SheetContent({
     <SheetPortalPrimitive>
       <SheetOverlay className={overlayClassName} />
       <SheetContentPrimitive
+        data-admin-overlay
         className={cn(
           'bg-background fixed z-50 flex flex-col gap-4 shadow-lg',
           side === 'right' && 'h-full w-[350px] border-l',

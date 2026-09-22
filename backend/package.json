@@ -10,8 +10,8 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon app.js",
     "start": "cross-env NODE_ENV=production node app.js",
-    "admin:grant": "cross-env NODE_ENV=development node scripts/grant-admin.js",
-    "admin:grant:production": "cross-env NODE_ENV=production node scripts/grant-admin.js",
+    "admin:bootstrap": "cross-env NODE_ENV=development node scripts/bootstrap-super-admin.js",
+    "admin:bootstrap:production": "cross-env NODE_ENV=production node scripts/bootstrap-super-admin.js",
     "test": "cross-env NODE_ENV=test node --test tests/**/*.test.js",
     "test:unit": "cross-env NODE_ENV=test node --test tests/unit/**/*.test.js",
     "test:integration": "cross-env NODE_ENV=test node --test tests/integration/**/*.test.js",
@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
     "mysql2": "^3.24.4",
+    "qrcode": "^1.5.4",
     "redis": "^6.2.1"
   },
   "devDependencies": {

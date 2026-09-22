@@ -4,6 +4,11 @@ const { getRedisClient, buildRedisKey } = require('../models/redis');
 const { createSession } = require('../services/authSessionService');
 const { signInWithGoogle } = require('../services/googleAuthService');
 const { createGoogleNonce } = require('../services/googleNonceService');
+const {
+  beginAdminTwoFactor,
+  completeAdminTwoFactor,
+  getAdminTwoFactorSetup,
+} = require('../services/adminTwoFactorService');
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{10,128}$/;
@@ -71,6 +76,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
+  const loginContext = req.body.loginContext === 'admin' ? 'admin' : 'site';
 
   if (!emailPattern.test(email) || password.length === 0 || password.length > 128) {
     return res.status(401).json({ status: false, message: req.t('auth.invalid_credentials') });
@@ -95,8 +101,24 @@ exports.login = async (req, res) => {
       return res.status(401).json({ status: false, message: req.t('auth.invalid_credentials') });
     }
 
+    const roles = user.role_codes ? user.role_codes.split(',') : [];
+    const panelUser = roles.some((role) => ['super_admin', 'admin', 'editor'].includes(role));
+    if ((loginContext === 'admin' && !panelUser) || (loginContext === 'site' && panelUser)) {
+      return res.status(401).json({ status: false, message: req.t('auth.invalid_credentials') });
+    }
+
+    const twoFactorChallenge = await beginAdminTwoFactor({ id: user.id, roles });
+    if (twoFactorChallenge) {
+      return res.status(202).json({
+        status: true,
+        message: req.t('auth.two_factor_required'),
+        data: twoFactorChallenge,
+      });
+    }
+
     const connection = await database.getConnection();
     try {
+      await connection.query('UPDATE users SET last_login_at = UTC_TIMESTAMP(6) WHERE id = ?', [user.id]);
       const session = await createSession(connection, user, req);
       return res.json({
         status: true,
@@ -107,7 +129,7 @@ exports.login = async (req, res) => {
             email: user.email,
             firstName: user.first_name,
             lastName: user.last_name,
-            roles: user.role_codes ? user.role_codes.split(',') : [],
+            roles,
           },
           ...session,
         },
@@ -116,8 +138,38 @@ exports.login = async (req, res) => {
       connection.release();
     }
   } catch (error) {
+    if (error.authCode === 'two_factor_unavailable') {
+      return res.status(503).json({ status: false, message: req.t('auth.two_factor_unavailable') });
+    }
     console.error('Giriş hatası:', error);
     return res.status(500).json({ status: false, message: req.t('errors.server_error') });
+  }
+};
+
+exports.twoFactorSetup = async (req, res) => {
+  const challengeToken = String(req.body.challengeToken || '');
+  try {
+    const setup = await getAdminTwoFactorSetup(challengeToken);
+    return res.json({ status: true, message: req.t('auth.two_factor_setup'), data: setup });
+  } catch (error) {
+    const status = error.authCode === 'two_factor_unavailable' ? 503 : 401;
+    return res.status(status).json({ status: false, message: req.t(`auth.${error.authCode || 'two_factor_invalid'}`) });
+  }
+};
+
+exports.twoFactorVerify = async (req, res) => {
+  const challengeToken = String(req.body.challengeToken || '');
+  const code = String(req.body.code || '').trim();
+  if (!/^\d{6}$/.test(code) && !/^[A-Za-z0-9-]{16,24}$/.test(code)) {
+    return res.status(422).json({ status: false, message: req.t('auth.two_factor_invalid') });
+  }
+
+  try {
+    const authResult = await completeAdminTwoFactor({ challengeToken, code, req });
+    return res.json({ status: true, message: req.t('auth.login_success'), data: authResult });
+  } catch (error) {
+    const status = error.authCode === 'two_factor_unavailable' ? 503 : 401;
+    return res.status(status).json({ status: false, message: req.t(`auth.${error.authCode || 'two_factor_invalid'}`) });
   }
 };
 
@@ -156,6 +208,9 @@ exports.google = async (req, res) => {
     }
     if (error.authCode === 'google_email_conflict') {
       return res.status(409).json({ status: false, message: req.t('auth.google_email_conflict') });
+    }
+    if (error.authCode === 'admin_google_forbidden') {
+      return res.status(403).json({ status: false, message: req.t('auth.admin_google_forbidden') });
     }
     if (error.authCode === 'google_invalid') {
       return res.status(401).json({ status: false, message: req.t('auth.google_invalid') });

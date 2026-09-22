@@ -9,8 +9,10 @@ const navigationRoutes = require('./routes/navigationRoutes');
 const adminProductRoutes = require('./routes/adminProductRoutes');
 const adminCatalogRoutes = require('./routes/adminCatalogRoutes');
 const adminNavigationRoutes = require('./routes/adminNavigationRoutes');
+const adminUserRoutes = require('./routes/adminUserRoutes');
 const verifyToken = require('./middlewares/verifyToken');
 const requirePermission = require('./middlewares/requirePermission');
+const requireRole = require('./middlewares/requireRole');
 
 const router = express.Router();
 
@@ -43,6 +45,12 @@ router.use(
   verifyToken,
   requirePermission('navigation.manage'),
   adminNavigationRoutes,
+);
+router.use(
+  '/admin/users',
+  verifyToken,
+  requireRole('super_admin'),
+  adminUserRoutes,
 );
 
 module.exports = router;

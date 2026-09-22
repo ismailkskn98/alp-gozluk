@@ -167,14 +167,14 @@ export default function CatalogResourceManager({ resource, title, description, c
     else await load();
   }
 
-  const inputClass = 'h-10 w-full border border-input bg-white px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
+  const inputClass = 'h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
   const errorFor = (name) => errors[name] ? <p className="mt-1 text-xs text-danger">{errors[name].message}</p> : null;
 
   return (
     <section className={compact ? 'border-t border-border pt-8 first:border-0 first:pt-0' : ''}>
       {!compact ? <AdminPageHeader title={title} description={description} /> : <div className="mb-5"><h2 className="text-lg font-semibold">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>}
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)]">
-        <div className="min-w-0 border border-border bg-white">
+        <div className="min-w-0 rounded-xl border border-border bg-card">
           <div className="grid grid-cols-[minmax(0,1fr)_7rem_5rem] gap-4 border-b border-border bg-muted/55 px-4 py-3 text-xs font-medium text-muted-foreground">
             <span>Kayıt</span><span>Durum</span><span className="text-right">İşlem</span>
           </div>
@@ -192,7 +192,7 @@ export default function CatalogResourceManager({ resource, title, description, c
           )) : null}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="self-start border-t-2 border-primary bg-white px-5 py-5 shadow-[0_12px_32px_rgba(16,35,61,0.06)]" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="self-start rounded-xl border border-border border-t-2 border-t-primary bg-card px-5 py-5 shadow-[0_12px_32px_rgba(16,35,61,0.06)]" noValidate>
           <div className="mb-5 flex items-center justify-between"><h3 className="font-semibold">{editingId ? 'Kaydı düzenle' : 'Yeni kayıt'}</h3>{editingId ? <button type="button" onClick={cancelEdit} className="grid size-8 place-items-center hover:bg-muted" aria-label="Düzenlemeyi kapat"><X className="size-4" /></button> : <Plus className="size-4 text-primary" />}</div>
           <div className="space-y-4">
             <label className="block text-sm font-medium">Kod<input className={`${inputClass} mt-1.5`} {...register('code')} />{errorFor('code')}</label>
@@ -207,7 +207,7 @@ export default function CatalogResourceManager({ resource, title, description, c
             <div className="grid grid-cols-2 gap-3"><label className="block text-sm font-medium">Durum<select className={`${inputClass} mt-1.5`} {...register('status')}><option value="active">Aktif</option><option value="inactive">Pasif</option><option value="draft">Taslak</option></select></label><label className="block text-sm font-medium">Sıra<input type="number" min="0" className={`${inputClass} mt-1.5`} {...register('sortOrder')} /></label></div>
           </div>
           {feedback.message ? <p role="status" className={`mt-4 px-3 py-2 text-sm ${feedback.type === 'error' ? 'bg-danger/8 text-danger' : 'bg-success/8 text-success'}`}>{feedback.message}</p> : null}
-          <button type="submit" disabled={isSubmitting} className="mt-5 h-10 w-full bg-primary px-4 text-sm font-medium text-white disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Kayıt oluştur'}</button>
+          <button type="submit" disabled={isSubmitting} className="mt-5 h-10 w-full rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Kayıt oluştur'}</button>
         </form>
       </div>
     </section>

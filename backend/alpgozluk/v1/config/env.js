@@ -48,6 +48,19 @@ const config = {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
     googleClientId: process.env.GOOGLE_CLIENT_ID,
+    adminTwoFactor: {
+      enabled: toBoolean(process.env.ADMIN_2FA_ENABLED),
+      encryptionKey: process.env.ADMIN_2FA_ENCRYPTION_KEY,
+      issuer: process.env.ADMIN_2FA_ISSUER || 'ALP Gözlük',
+      challengeTtlSeconds: toNumber(process.env.ADMIN_2FA_CHALLENGE_TTL_SECONDS, 300),
+      maxAttempts: toNumber(process.env.ADMIN_2FA_MAX_ATTEMPTS, 5),
+    },
+    bootstrapSuperAdmin: {
+      email: process.env.SUPER_ADMIN_EMAIL,
+      password: process.env.SUPER_ADMIN_PASSWORD,
+      firstName: process.env.SUPER_ADMIN_FIRST_NAME || 'ALP',
+      lastName: process.env.SUPER_ADMIN_LAST_NAME || 'Yönetici',
+    },
   },
   storage: {
     driver: process.env.STORAGE_DRIVER || (nodeEnv === 'production' ? 's3' : 'local'),
@@ -105,6 +118,29 @@ const validateConfig = () => {
     if (!process.env.FRONTEND_URL) missingValues.push('FRONTEND_URL');
     if (!process.env.CORS_ORIGINS) missingValues.push('CORS_ORIGINS');
     if (!config.redis.url) missingValues.push('REDIS_URL');
+  }
+
+  if (config.auth.adminTwoFactor.enabled) {
+    if (!config.redis.url) missingValues.push('REDIS_URL');
+    if (!config.auth.adminTwoFactor.encryptionKey) {
+      missingValues.push('ADMIN_2FA_ENCRYPTION_KEY');
+    } else {
+      const encryptionKey = Buffer.from(config.auth.adminTwoFactor.encryptionKey, 'base64');
+      if (encryptionKey.length !== 32) {
+        throw new Error('ADMIN_2FA_ENCRYPTION_KEY Base64 biçiminde 32 byte olmalıdır.');
+      }
+    }
+  }
+
+  const bootstrapValues = {
+    SUPER_ADMIN_EMAIL: config.auth.bootstrapSuperAdmin.email,
+    SUPER_ADMIN_PASSWORD: config.auth.bootstrapSuperAdmin.password,
+  };
+  const configuredBootstrapValues = Object.values(bootstrapValues).filter(Boolean).length;
+  if (configuredBootstrapValues > 0 && configuredBootstrapValues < Object.keys(bootstrapValues).length) {
+    for (const [name, value] of Object.entries(bootstrapValues)) {
+      if (!value) missingValues.push(name);
+    }
   }
 
   if (missingValues.length > 0) {

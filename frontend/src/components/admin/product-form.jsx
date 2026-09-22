@@ -104,12 +104,12 @@ export default function ProductForm() {
     router.refresh();
   }
 
-  const fieldClass = 'h-10 w-full border border-input bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15';
+  const fieldClass = 'h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15';
   const checkClass = 'size-4 rounded-none border-border-strong text-primary focus:ring-primary';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-5xl space-y-8" noValidate>
-      <section className="border-t-2 border-primary bg-white p-5 sm:p-6">
+      <section className="rounded-t-xl border border-border border-t-2 border-t-primary bg-card p-5 sm:p-6">
         <h2 className="font-semibold">Temel bilgiler ve çeviriler</h2>
         <p className="mt-1 text-sm text-muted-foreground">Kod ve URL adları değişmeden kalması gereken katalog kimlikleridir.</p>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -120,10 +120,10 @@ export default function ProductForm() {
           <div className="space-y-2"><Label htmlFor="enName">İngilizce ürün adı</Label><Input id="enName" placeholder="Atlas 01" {...register('enName')} /></div>
           <div className="space-y-2"><Label htmlFor="enSlug">İngilizce URL adı</Label><Input id="enSlug" placeholder="atlas-01" aria-invalid={Boolean(errors.enSlug)} {...register('enSlug')} /></div>
         </div>
-        <div className="mt-5 space-y-2"><Label htmlFor="shortDescription">Kısa açıklama</Label><textarea id="shortDescription" rows={4} className="w-full border border-input bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('shortDescription')} /></div>
+        <div className="mt-5 space-y-2"><Label htmlFor="shortDescription">Kısa açıklama</Label><textarea id="shortDescription" rows={4} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('shortDescription')} /></div>
       </section>
 
-      <section className="border-t border-border bg-white p-5 sm:p-6">
+      <section className="border-x border-b border-border bg-card p-5 sm:p-6">
         <h2 className="font-semibold">Hedef kitle ve katalog konumu</h2>
         <p className="mt-1 text-sm text-muted-foreground">Unisex seçilen ürünler kadın ve erkek kataloglarında otomatik olarak görünür.</p>
         {catalogError ? <p className="mt-4 bg-danger/8 p-3 text-sm text-danger">{catalogError}</p> : null}
@@ -134,12 +134,12 @@ export default function ProductForm() {
         </div>
       </section>
 
-      <section className="border-t border-border bg-white p-5 sm:p-6">
+      <section className="border-x border-b border-border bg-card p-5 sm:p-6">
         <h2 className="font-semibold">Ürün özellikleri</h2>
-        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{productGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = productAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id)} className={`border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-white hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
+        <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{productGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = productAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id)} className={`rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-card hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
       </section>
 
-      <section className="border-t border-border bg-white p-5 sm:p-6">
+      <section className="border-x border-b border-border bg-card p-5 sm:p-6">
         <h2 className="font-semibold">İlk varyant, fiyat ve stok</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2"><Label htmlFor="sku">SKU</Label><Input id="sku" placeholder="ALP-ATLAS-01-BLK" {...register('sku')} /></div>
@@ -147,12 +147,12 @@ export default function ProductForm() {
           <div className="space-y-2"><Label htmlFor="compareAtPrice">Eski fiyat (opsiyonel)</Label><Input id="compareAtPrice" type="number" step="0.01" placeholder="3990" {...register('compareAtPrice')} /></div>
           <div className="space-y-2"><Label htmlFor="stockQuantity">Başlangıç stoğu</Label><Input id="stockQuantity" type="number" placeholder="0" {...register('stockQuantity')} /></div>
         </div>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{variantGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = variantAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id, true)} className={`border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-white hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{variantGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = variantAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id, true)} className={`rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-card hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
       </section>
 
-      <section className="border-t border-border bg-white p-5 sm:p-6"><Label htmlFor="status">Yayın durumu</Label><select id="status" className={`${fieldClass} mt-2`} {...register('status')}><option value="draft">Taslak</option><option value="published">Yayında</option></select><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
+      <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><Label htmlFor="status">Yayın durumu</Label><select id="status" className={`${fieldClass} mt-2`} {...register('status')}><option value="draft">Taslak</option><option value="published">Yayında</option></select><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
       {serverError ? <p role="alert" className="bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}
-      <div className="flex justify-end gap-2"><button type="button" onClick={() => router.back()} className="h-10 border border-border-strong bg-white px-4 text-sm font-medium">Vazgeç</button><button type="submit" disabled={isSubmitting || !catalog} className="h-10 bg-primary px-4 text-sm font-medium text-white disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : 'Ürünü kaydet'}</button></div>
+      <div className="flex justify-end gap-2"><button type="button" onClick={() => router.back()} className="h-10 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium">Vazgeç</button><button type="submit" disabled={isSubmitting || !catalog} className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : 'Ürünü kaydet'}</button></div>
     </form>
   );
 }
