@@ -9,6 +9,7 @@ import { AdminButton } from '@/components/admin/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/admin/ui/dialog';
 import { adminInputClass, AdminFormField } from '@/components/admin/ui/form-field';
 import StatusBadge from '@/components/admin/ui/status-badge';
+import { AdminSelect } from '@/components/admin/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 
 const sections = [
@@ -21,8 +22,8 @@ export default function AdminSettings() {
       <AdminPageHeader eyebrow="Sistem" title="Ayarlar" description="Mağaza, ödeme, kargo, storage ve güvenlik yapılandırmasını tek merkezden yönetin." actions={<AdminButton disabled><Save className="size-4" />Değişiklikleri kaydet</AdminButton>} />
       <AdminAlert title="Gizli bilgiler bu ekranda tutulmaz" variant="warning">API anahtarı ve parolalar environment değişkenlerinden okunur; panel yalnız etkinlik durumunu gösterir.</AdminAlert>
       <Tabs defaultValue="store" className="mt-5">
-        <div className="overflow-x-auto pb-1"><TabsList>{sections.map(([value, label, Icon]) => <TabsTrigger key={value} value={value} className="gap-2"><Icon className="size-3.5" />{label}</TabsTrigger>)}</TabsList></div>
-        <TabsContent value="store"><SettingsSection title="Mağaza bilgileri" description="Kamuya açık temel iletişim ve yerel ayarlar."><div className="grid gap-4 sm:grid-cols-2"><AdminFormField label="Mağaza adı"><input className={adminInputClass} defaultValue="ALP Gözlük" /></AdminFormField><AdminFormField label="Varsayılan dil"><select className={adminInputClass} defaultValue="tr"><option value="tr">Türkçe</option><option value="en">English</option></select></AdminFormField><AdminFormField label="Destek e-postası"><input className={adminInputClass} type="email" placeholder="destek@alpgozluk.com" /></AdminFormField><AdminFormField label="Para birimi"><select className={adminInputClass}><option>TRY — Türk Lirası</option></select></AdminFormField></div></SettingsSection></TabsContent>
+        <div className="max-w-full overflow-x-auto pb-1 [scrollbar-width:thin]"><TabsList>{sections.map(([value, label, Icon]) => <TabsTrigger key={value} value={value} className="gap-2"><Icon className="size-3.5" />{label}</TabsTrigger>)}</TabsList></div>
+        <TabsContent value="store"><SettingsSection title="Mağaza bilgileri" description="Kamuya açık temel iletişim ve yerel ayarlar."><div className="grid gap-5 md:grid-cols-2"><AdminFormField label="Mağaza adı"><input className={adminInputClass} defaultValue="ALP Gözlük" /></AdminFormField><AdminFormField label="Varsayılan dil"><AdminSelect defaultValue="tr" ariaLabel="Varsayılan dil" options={[{ value: 'tr', label: 'Türkçe' }, { value: 'en', label: 'English' }]} /></AdminFormField><AdminFormField label="Destek e-postası"><input className={adminInputClass} type="email" placeholder="destek@alpgozluk.com" /></AdminFormField><AdminFormField label="Para birimi"><AdminSelect defaultValue="TRY" ariaLabel="Para birimi" options={[{ value: 'TRY', label: 'TRY — Türk Lirası' }]} /></AdminFormField></div></SettingsSection></TabsContent>
         <TabsContent value="payments"><IntegrationSettings title="Ödeme sağlayıcıları" icon={CreditCard} rows={['iyzico', 'GarantiPay', 'Havale / EFT']} /></TabsContent>
         <TabsContent value="shipping"><IntegrationSettings title="Kargo sağlayıcıları" icon={Truck} rows={['Aras Kargo', 'Yurtiçi Kargo', 'Mağazadan teslim']} /></TabsContent>
         <TabsContent value="storage"><SettingsSection title="Medya storage" description="Aktif sürücü backend environment dosyasından yönetilir."><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium">Aktif sürücü</p><p className="mt-1 text-xs text-muted-foreground">Development ortamında local filesystem</p></div><StatusBadge tone="info">Local</StatusBadge></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><ReadOnlyValue label="S3 endpoint" value="Environment ile yönetiliyor" /><ReadOnlyValue label="Bucket" value="Environment ile yönetiliyor" /></div></SettingsSection></TabsContent>
@@ -33,7 +34,7 @@ export default function AdminSettings() {
 }
 
 function SettingsSection({ title, description, children }) {
-  return <section className="max-w-4xl rounded-2xl border border-border bg-card p-5 sm:p-6"><div className="mb-6"><h2 className="text-base font-semibold">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>{children}</section>;
+  return <section className="w-full max-w-5xl rounded-2xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(16,35,61,0.03)] sm:p-6"><div className="mb-6 border-b border-border pb-5"><h2 className="text-base font-semibold">{title}</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p></div>{children}</section>;
 }
 
 function ReadOnlyValue({ label, value }) {

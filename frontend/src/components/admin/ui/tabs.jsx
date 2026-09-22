@@ -6,11 +6,11 @@ import { cn } from '@/lib/utils';
 export const Tabs = Primitive.Root;
 
 export function TabsList({ className, ...props }) {
-  return <Primitive.List className={cn('inline-flex min-h-9 items-center gap-1 rounded-xl border border-border bg-muted/55 p-1', className)} {...props} />;
+  return <Primitive.List className={cn('flex min-h-11 w-max min-w-full items-center gap-1 rounded-xl border border-border bg-muted/55 p-1 sm:min-w-0', className)} {...props} />;
 }
 
 export function TabsTrigger({ className, ...props }) {
-  return <Primitive.Trigger className={cn('rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm', className)} {...props} />;
+  return <Primitive.Trigger className={cn('inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm', className)} {...props} />;
 }
 
 export function TabsContent({ className, ...props }) {

@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { AdminButton } from '@/components/admin/ui/button';
+import ConfirmActionDialog from '@/components/admin/ui/confirm-action-dialog';
 
 export default function UserRow({ user, roles, onChanged, onError }) {
   const [selectedRoles, setSelectedRoles] = useState(user.roles.filter((role) => role !== 'super_admin'));
   const [pending, setPending] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const protectedAccount = user.isProtected || user.roles.includes('super_admin');
 
   async function request(path, method, body) {
@@ -18,8 +21,10 @@ export default function UserRow({ user, roles, onChanged, onError }) {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'İşlem tamamlanamadı.');
       await onChanged();
+      return true;
     } catch (error) {
       onError(error.message);
+      return false;
     } finally {
       setPending(false);
     }
@@ -53,12 +58,13 @@ export default function UserRow({ user, roles, onChanged, onError }) {
       <div className="flex flex-wrap gap-2 lg:justify-end">
         {!protectedAccount ? (
           <>
-            <button type="button" disabled={pending || selectedRoles.length === 0} onClick={() => request(`/api/admin/users/${user.id}/roles`, 'PUT', { roleCodes: selectedRoles })} className="rounded-md border border-border px-3 py-2 text-xs font-medium disabled:opacity-50">Rolleri kaydet</button>
-            <button type="button" disabled={pending} onClick={() => request(`/api/admin/users/${user.id}/status`, 'PUT', { status: user.status === 'active' ? 'disabled' : 'active' })} className="rounded-md border border-border px-3 py-2 text-xs font-medium disabled:opacity-50">{user.status === 'active' ? 'Devre dışı bırak' : 'Etkinleştir'}</button>
-            <button type="button" disabled={pending} onClick={() => request(`/api/admin/users/${user.id}`, 'DELETE')} className="rounded-md border border-danger/30 px-3 py-2 text-xs font-medium text-danger disabled:opacity-50">Arşivle</button>
+            <AdminButton size="sm" variant="secondary" disabled={pending || selectedRoles.length === 0} onClick={() => request(`/api/admin/users/${user.id}/roles`, 'PUT', { roleCodes: selectedRoles })}>Rolleri kaydet</AdminButton>
+            <AdminButton size="sm" variant="secondary" disabled={pending} onClick={() => request(`/api/admin/users/${user.id}/status`, 'PUT', { status: user.status === 'active' ? 'disabled' : 'active' })}>{user.status === 'active' ? 'Devre dışı bırak' : 'Etkinleştir'}</AdminButton>
+            <AdminButton size="sm" variant="ghost" disabled={pending} className="text-danger hover:bg-danger/8" onClick={() => setArchiveOpen(true)}>Arşivle</AdminButton>
           </>
         ) : <span className="text-xs text-muted-foreground">Değiştirilemez</span>}
       </div>
+      <ConfirmActionDialog open={archiveOpen} onOpenChange={setArchiveOpen} title="Yönetici hesabını arşivle" description="Bu kullanıcının yönetim paneline erişimi kaldırılacak ve açık oturumları kapatılacak." itemName={`${user.firstName} ${user.lastName} · ${user.email}`} confirmLabel="Hesabı arşivle" variant="archive" pending={pending} onConfirm={async () => { const succeeded = await request(`/api/admin/users/${user.id}`, 'DELETE'); if (succeeded) setArchiveOpen(false); }} />
     </article>
   );
 }

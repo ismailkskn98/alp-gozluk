@@ -3,10 +3,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AdminSelect } from '@/components/admin/ui/select';
 
 const schema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]+$/, 'Yalnız harf, rakam, tire ve alt çizgi kullanın.'),
@@ -33,7 +34,7 @@ export default function ProductForm() {
   const [catalogError, setCatalogError] = useState('');
   const [productAttributeIds, setProductAttributeIds] = useState([]);
   const [variantAttributeIds, setVariantAttributeIds] = useState([]);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { status: 'draft', stockQuantity: 0, audienceIds: [], categoryIds: [], collectionIds: [], enSlug: '', compareAtPrice: '' },
   });
@@ -104,7 +105,6 @@ export default function ProductForm() {
     router.refresh();
   }
 
-  const fieldClass = 'h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15';
   const checkClass = 'size-4 rounded-none border-border-strong text-primary focus:ring-primary';
 
   return (
@@ -114,7 +114,7 @@ export default function ProductForm() {
         <p className="mt-1 text-sm text-muted-foreground">Kod ve URL adları değişmeden kalması gereken katalog kimlikleridir.</p>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <div className="space-y-2"><Label htmlFor="code">Ürün kodu</Label><Input id="code" placeholder="ALP-ATLAS-01" aria-invalid={Boolean(errors.code)} {...register('code')} />{errors.code ? <p className="text-xs text-danger">{errors.code.message}</p> : null}</div>
-          <label className="space-y-2 text-sm font-medium">Marka<select className={fieldClass} {...register('brandId')}><option value="">ALP Gözlük (varsayılan)</option>{catalog?.brands?.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select></label>
+          <div className="space-y-2"><Label>Marka</Label><Controller control={control} name="brandId" render={({ field }) => <AdminSelect value={field.value || ''} onValueChange={field.onChange} ariaLabel="Marka" options={[{ value: '', label: 'ALP Gözlük (varsayılan)' }, ...(catalog?.brands || []).map((brand) => ({ value: brand.id, label: brand.name }))]} />} /></div>
           <div className="space-y-2"><Label htmlFor="name">Türkçe ürün adı</Label><Input id="name" placeholder="Atlas 01" aria-invalid={Boolean(errors.name)} {...register('name')} /></div>
           <div className="space-y-2"><Label htmlFor="slug">Türkçe URL adı</Label><Input id="slug" placeholder="atlas-01" aria-invalid={Boolean(errors.slug)} {...register('slug')} /></div>
           <div className="space-y-2"><Label htmlFor="enName">İngilizce ürün adı</Label><Input id="enName" placeholder="Atlas 01" {...register('enName')} /></div>
@@ -150,7 +150,7 @@ export default function ProductForm() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{variantGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = variantAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id, true)} className={`rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-card hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
       </section>
 
-      <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><Label htmlFor="status">Yayın durumu</Label><select id="status" className={`${fieldClass} mt-2`} {...register('status')}><option value="draft">Taslak</option><option value="published">Yayında</option></select><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
+      <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><Label>Yayın durumu</Label><div className="mt-2 max-w-md"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} ariaLabel="Yayın durumu" options={[{ value: 'draft', label: 'Taslak' }, { value: 'published', label: 'Yayında' }]} />} /></div><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
       {serverError ? <p role="alert" className="bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}
       <div className="flex justify-end gap-2"><button type="button" onClick={() => router.back()} className="h-10 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium">Vazgeç</button><button type="submit" disabled={isSubmitting || !catalog} className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : 'Ürünü kaydet'}</button></div>
     </form>

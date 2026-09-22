@@ -1,18 +1,5 @@
 const colorPattern = /^#[0-9a-f]{6}$/i;
 
-const relativeLuminance = (hex) => {
-  const channels = hex.slice(1).match(/.{2}/g).map((part) => Number.parseInt(part, 16) / 255);
-  const linear = channels.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
-  return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
-};
-
-const hasReadableContrast = (backgroundColor, textColor) => {
-  if (!colorPattern.test(backgroundColor) || !colorPattern.test(textColor)) return false;
-  const first = relativeLuminance(backgroundColor);
-  const second = relativeLuminance(textColor);
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05) >= 4.5;
-};
-
 const optionalText = (value, maxLength) => {
   if (value === null || value === undefined || value === '') return null;
   const text = String(value).trim();
@@ -54,7 +41,6 @@ const normalizeAnnouncementPayload = (body = {}) => {
   if (messageTr.length < 2 || messageTr.length > 240) return null;
   if ([messageEn, linkLabelTr, linkLabelEn, linkUrl, startsAt, endsAt].includes(undefined)) return null;
   if (!colorPattern.test(backgroundColor) || !colorPattern.test(textColor)) return null;
-  if (!hasReadableContrast(backgroundColor, textColor)) return null;
   if (!Number.isInteger(durationSeconds) || durationSeconds < 3 || durationSeconds > 60) return null;
   if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 100000) return null;
   if (startsAt && endsAt && startsAt >= endsAt) return null;
@@ -84,4 +70,4 @@ const normalizeAnnouncementOrder = (body = {}) => {
   return ids;
 };
 
-module.exports = { colorPattern, hasReadableContrast, normalizeAnnouncementOrder, normalizeAnnouncementPayload, normalizeLink };
+module.exports = { colorPattern, normalizeAnnouncementOrder, normalizeAnnouncementPayload, normalizeLink };

@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { UserPlus } from 'lucide-react';
+import { Check, KeyRound, UserPlus } from 'lucide-react';
 import { AdminButton } from '@/components/admin/ui/button';
 import { adminInputClass, AdminFormField } from '@/components/admin/ui/form-field';
 
@@ -47,19 +47,21 @@ export default function CreateUserForm({ roles, onCreated, compact = false }) {
         <h2 className="mt-2 text-xl font-semibold tracking-tight">Yönetici kullanıcı oluştur</h2>
         <p className="mt-2 text-sm text-muted-foreground">Süper yönetici rolü buradan atanamaz. Yeni kullanıcı ilk girişinde 2FA açıksa Authenticator kurulumuna yönlendirilir.</p>
       </div> : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <AdminFormField htmlFor="admin-first-name" label="Ad" error={errors.firstName?.message} required><input id="admin-first-name" className={adminInputClass} {...register('firstName')} /></AdminFormField>
-        <AdminFormField htmlFor="admin-last-name" label="Soyad" error={errors.lastName?.message} required><input id="admin-last-name" className={adminInputClass} {...register('lastName')} /></AdminFormField>
-        <AdminFormField htmlFor="admin-user-email" label="E-posta" error={errors.email?.message} required><input id="admin-user-email" className={adminInputClass} type="email" autoComplete="off" {...register('email')} /></AdminFormField>
-        <AdminFormField htmlFor="admin-user-password" label="Geçici şifre" error={errors.password?.message} hint="Min. 12 karakter" required><input id="admin-user-password" className={adminInputClass} type="password" autoComplete="new-password" {...register('password')} /></AdminFormField>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <AdminFormField htmlFor="admin-first-name" label="Ad" error={errors.firstName?.message} required><input id="admin-first-name" className={adminInputClass} aria-invalid={Boolean(errors.firstName)} autoComplete="given-name" {...register('firstName')} /></AdminFormField>
+        <AdminFormField htmlFor="admin-last-name" label="Soyad" error={errors.lastName?.message} required><input id="admin-last-name" className={adminInputClass} aria-invalid={Boolean(errors.lastName)} autoComplete="family-name" {...register('lastName')} /></AdminFormField>
+        <AdminFormField htmlFor="admin-user-email" label="E-posta" error={errors.email?.message} required><input id="admin-user-email" className={adminInputClass} aria-invalid={Boolean(errors.email)} type="email" autoComplete="off" placeholder="yonetici@alpgozluk.com" {...register('email')} /></AdminFormField>
+        <AdminFormField htmlFor="admin-user-password" label="Geçici şifre" error={errors.password?.message} hint="En az 12 karakter" required><div className="relative"><KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input id="admin-user-password" className={`${adminInputClass} pl-9`} aria-invalid={Boolean(errors.password)} type="password" autoComplete="new-password" {...register('password')} /></div></AdminFormField>
       </div>
-      <fieldset className="mt-5">
-        <legend className="text-sm font-medium">Roller</legend>
-        <div className="mt-3 flex flex-wrap gap-3">
+      <fieldset className="mt-6 border-t border-border pt-5">
+        <legend className="px-1 text-sm font-medium">Yetki rolü</legend>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">Kullanıcının panelde erişebileceği alanı belirleyin. En az bir rol seçilmelidir.</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {roles.map((role) => (
-            <label key={role.code} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
-              <input type="checkbox" value={role.code} {...register('roleCodes')} />
-              {role.name}
+            <label key={role.code} className="group relative flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 text-sm transition hover:border-border-strong has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+              <input type="checkbox" value={role.code} className="peer sr-only" {...register('roleCodes')} />
+              <span className="grid size-5 shrink-0 place-items-center rounded-md border border-input text-transparent transition peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground"><Check className="size-3.5" /></span>
+              <span className="min-w-0"><span className="block font-medium">{role.name}</span><span className="block truncate text-[0.68rem] text-muted-foreground">{role.code}</span></span>
             </label>
           ))}
         </div>

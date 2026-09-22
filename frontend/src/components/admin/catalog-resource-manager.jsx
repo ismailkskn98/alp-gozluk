@@ -3,9 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Archive, Pencil, Plus, RefreshCw, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import AdminPageHeader from './page-header';
+import ConfirmActionDialog from './ui/confirm-action-dialog';
+import { adminInputClass, AdminFormField } from './ui/form-field';
+import { AdminSelect } from './ui/select';
 
 const codePattern = /^[a-z0-9][a-z0-9_-]{1,99}$/;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -54,7 +57,9 @@ export default function CatalogResourceManager({ resource, title, description, c
   const [editingId, setEditingId] = useState(null);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(true);
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema), defaultValues: defaults });
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [archiving, setArchiving] = useState(false);
+  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema), defaultValues: defaults });
 
   const usesTranslations = resource !== 'brands';
   const usesSlug = !['brands', 'attribute-groups'].includes(resource);
@@ -63,9 +68,9 @@ export default function CatalogResourceManager({ resource, title, description, c
     groups: overview?.attributeGroups || [],
   }), [overview, editingId]);
 
-  async function load() {
+  async function load({ clearFeedback = true } = {}) {
     setLoading(true);
-    setFeedback({ type: '', message: '' });
+    if (clearFeedback) setFeedback({ type: '', message: '' });
     try {
       const result = await fetchResourceData(resource);
       setRecords(result.records);
@@ -156,19 +161,24 @@ export default function CatalogResourceManager({ resource, title, description, c
     }
     setFeedback({ type: 'success', message: editingId ? 'Kayıt güncellendi.' : 'Kayıt oluşturuldu.' });
     cancelEdit();
-    await load();
+    await load({ clearFeedback: false });
   }
 
   async function archiveRecord(record) {
-    if (!window.confirm(`${record.name || record.code} kaydını arşivlemek istediğinize emin misiniz?`)) return;
-    const response = await fetch(`/api/admin/catalog/${resource}/${record.id}`, { method: 'DELETE' });
-    const result = await response.json();
-    if (!response.ok) setFeedback({ type: 'error', message: result.message || 'Kayıt arşivlenemedi.' });
-    else await load();
+    setArchiving(true);
+    try {
+      const response = await fetch(`/api/admin/catalog/${resource}/${record.id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) setFeedback({ type: 'error', message: result.message || 'Kayıt arşivlenemedi.' });
+      else {
+        setFeedback({ type: 'success', message: 'Kayıt arşivlendi.' });
+        setArchiveTarget(null);
+        await load({ clearFeedback: false });
+      }
+    } finally {
+      setArchiving(false);
+    }
   }
-
-  const inputClass = 'h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
-  const errorFor = (name) => errors[name] ? <p className="mt-1 text-xs text-danger">{errors[name].message}</p> : null;
 
   return (
     <section className={compact ? 'border-t border-border pt-8 first:border-0 first:pt-0' : ''}>
@@ -186,7 +196,7 @@ export default function CatalogResourceManager({ resource, title, description, c
               <span className="w-fit bg-muted px-2 py-1 text-xs text-foreground/75">{record.status}</span>
               <div className="flex justify-end gap-1">
                 <button type="button" onClick={() => startEdit(record)} className="grid size-8 place-items-center hover:bg-muted" aria-label="Düzenle"><Pencil className="size-3.5" /></button>
-                <button type="button" onClick={() => archiveRecord(record)} className="grid size-8 place-items-center text-danger hover:bg-danger/8" aria-label="Arşivle"><Archive className="size-3.5" /></button>
+                <button type="button" onClick={() => setArchiveTarget(record)} className="grid size-8 place-items-center rounded-lg text-danger hover:bg-danger/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/25" aria-label={`${record.name || record.code} kaydını arşivle`}><Archive className="size-3.5" /></button>
               </div>
             </div>
           )) : null}
@@ -195,21 +205,22 @@ export default function CatalogResourceManager({ resource, title, description, c
         <form onSubmit={handleSubmit(onSubmit)} className="self-start rounded-xl border border-border border-t-2 border-t-primary bg-card px-5 py-5 shadow-[0_12px_32px_rgba(16,35,61,0.06)]" noValidate>
           <div className="mb-5 flex items-center justify-between"><h3 className="font-semibold">{editingId ? 'Kaydı düzenle' : 'Yeni kayıt'}</h3>{editingId ? <button type="button" onClick={cancelEdit} className="grid size-8 place-items-center hover:bg-muted" aria-label="Düzenlemeyi kapat"><X className="size-4" /></button> : <Plus className="size-4 text-primary" />}</div>
           <div className="space-y-4">
-            <label className="block text-sm font-medium">Kod<input className={`${inputClass} mt-1.5`} {...register('code')} />{errorFor('code')}</label>
-            <label className="block text-sm font-medium">Türkçe ad<input className={`${inputClass} mt-1.5`} {...register('name')} />{errorFor('name')}</label>
-            {usesSlug ? <label className="block text-sm font-medium">Türkçe URL adı<input className={`${inputClass} mt-1.5`} {...register('slug')} />{errorFor('slug')}</label> : null}
-            {usesTranslations ? <label className="block text-sm font-medium">İngilizce ad<input className={`${inputClass} mt-1.5`} {...register('enName')} /></label> : null}
-            {usesTranslations && usesSlug ? <label className="block text-sm font-medium">İngilizce URL adı<input className={`${inputClass} mt-1.5`} {...register('enSlug')} />{errorFor('enSlug')}</label> : null}
-            {resource === 'categories' ? <label className="block text-sm font-medium">Üst kategori<select className={`${inputClass} mt-1.5`} {...register('parentId')}><option value="">Üst kategori yok</option>{options.parents.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label> : null}
-            {resource === 'attribute-values' ? <label className="block text-sm font-medium">Özellik grubu<select className={`${inputClass} mt-1.5`} {...register('groupId')}><option value="">Grup seçin</option>{options.groups.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label> : null}
-            {resource === 'attribute-values' ? <label className="block text-sm font-medium">Renk / swatch değeri<input className={`${inputClass} mt-1.5`} placeholder="#171717" {...register('swatchValue')} /></label> : null}
-            {resource === 'attribute-groups' ? <div className="grid grid-cols-2 gap-3"><label className="block text-sm font-medium">Kapsam<select className={`${inputClass} mt-1.5`} {...register('scope')}><option value="product">Ürün</option><option value="variant">Varyant</option></select></label><label className="block text-sm font-medium">Seçim<select className={`${inputClass} mt-1.5`} {...register('selectionMode')}><option value="single">Tekli</option><option value="multiple">Çoklu</option></select></label></div> : null}
-            <div className="grid grid-cols-2 gap-3"><label className="block text-sm font-medium">Durum<select className={`${inputClass} mt-1.5`} {...register('status')}><option value="active">Aktif</option><option value="inactive">Pasif</option><option value="draft">Taslak</option></select></label><label className="block text-sm font-medium">Sıra<input type="number" min="0" className={`${inputClass} mt-1.5`} {...register('sortOrder')} /></label></div>
+            <AdminFormField label="Kod" error={errors.code?.message}><input className={adminInputClass} {...register('code')} aria-invalid={Boolean(errors.code)} /></AdminFormField>
+            <AdminFormField label="Türkçe ad" error={errors.name?.message}><input className={adminInputClass} {...register('name')} aria-invalid={Boolean(errors.name)} /></AdminFormField>
+            {usesSlug ? <AdminFormField label="Türkçe URL adı" error={errors.slug?.message}><input className={adminInputClass} {...register('slug')} aria-invalid={Boolean(errors.slug)} /></AdminFormField> : null}
+            {usesTranslations ? <AdminFormField label="İngilizce ad"><input className={adminInputClass} {...register('enName')} /></AdminFormField> : null}
+            {usesTranslations && usesSlug ? <AdminFormField label="İngilizce URL adı" error={errors.enSlug?.message}><input className={adminInputClass} {...register('enSlug')} aria-invalid={Boolean(errors.enSlug)} /></AdminFormField> : null}
+            {resource === 'categories' ? <AdminFormField label="Üst kategori"><Controller control={control} name="parentId" render={({ field }) => <AdminSelect value={field.value || ''} onValueChange={field.onChange} options={[{ value: '', label: 'Üst kategori yok' }, ...options.parents.map((option) => ({ value: option.id, label: option.name }))]} />} /></AdminFormField> : null}
+            {resource === 'attribute-values' ? <AdminFormField label="Özellik grubu"><Controller control={control} name="groupId" render={({ field }) => <AdminSelect value={field.value || ''} onValueChange={field.onChange} options={[{ value: '', label: 'Grup seçin' }, ...options.groups.map((option) => ({ value: option.id, label: option.name }))]} />} /></AdminFormField> : null}
+            {resource === 'attribute-values' ? <AdminFormField label="Renk / swatch değeri"><input className={adminInputClass} placeholder="#171717" {...register('swatchValue')} /></AdminFormField> : null}
+            {resource === 'attribute-groups' ? <div className="grid gap-4 sm:grid-cols-2"><AdminFormField label="Kapsam"><Controller control={control} name="scope" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} options={[{ value: 'product', label: 'Ürün' }, { value: 'variant', label: 'Varyant' }]} />} /></AdminFormField><AdminFormField label="Seçim"><Controller control={control} name="selectionMode" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} options={[{ value: 'single', label: 'Tekli' }, { value: 'multiple', label: 'Çoklu' }]} />} /></AdminFormField></div> : null}
+            <div className="grid gap-4 sm:grid-cols-2"><AdminFormField label="Durum"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} options={[{ value: 'active', label: 'Aktif' }, { value: 'inactive', label: 'Pasif' }, { value: 'draft', label: 'Taslak' }]} />} /></AdminFormField><AdminFormField label="Sıra"><input type="number" min="0" className={adminInputClass} {...register('sortOrder')} /></AdminFormField></div>
           </div>
           {feedback.message ? <p role="status" className={`mt-4 px-3 py-2 text-sm ${feedback.type === 'error' ? 'bg-danger/8 text-danger' : 'bg-success/8 text-success'}`}>{feedback.message}</p> : null}
-          <button type="submit" disabled={isSubmitting} className="mt-5 h-10 w-full rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Kayıt oluştur'}</button>
+          <button type="submit" disabled={isSubmitting} className="mt-5 min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Kayıt oluştur'}</button>
         </form>
       </div>
+      <ConfirmActionDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open) setArchiveTarget(null); }} title="Kaydı arşivle" description="Kayıt aktif listelerden kaldırılacak. İlişkili ürünlerde kullanılmaya devam ediyorsa görünürlüğü etkilenebilir." itemName={archiveTarget ? (archiveTarget.name || getTranslation(archiveTarget, 'tr')?.name || archiveTarget.code) : ''} confirmLabel="Arşivle" variant="archive" pending={archiving} onConfirm={() => archiveTarget && archiveRecord(archiveTarget)} />
     </section>
   );
 }

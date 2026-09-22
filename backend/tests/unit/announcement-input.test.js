@@ -26,7 +26,8 @@ test('güvensiz link protokollerini ve şema dışı renkleri reddeder', () => {
   assert.equal(normalizeLink('javascript:alert(1)'), undefined);
   assert.equal(normalizeLink('//evil.example'), undefined);
   assert.equal(normalizeAnnouncementPayload({ ...validPayload, backgroundColor: 'red' }), null);
-  assert.equal(normalizeAnnouncementPayload({ ...validPayload, backgroundColor: '#FFFFFF', textColor: '#BBBBBB' }), null);
+  assert.equal(normalizeAnnouncementPayload({ ...validPayload, backgroundColor: '#F00000', textColor: '#FFFFFF' }).backgroundColor, '#F00000');
+  assert.equal(normalizeAnnouncementPayload({ ...validPayload, backgroundColor: '#FFFFFF', textColor: '#BBBBBB' }).textColor, '#BBBBBB');
 });
 
 test('rotasyon süresini 3 ile 60 saniye arasında sınırlar', () => {

@@ -3,28 +3,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Megaphone, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Megaphone, Plus, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import AdminAlert from '@/components/admin/ui/alert';
 import { AdminButton } from '@/components/admin/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/admin/ui/dialog';
+import ConfirmActionDialog from '@/components/admin/ui/confirm-action-dialog';
 import { AdminFormField, adminInputClass } from '@/components/admin/ui/form-field';
+import { AdminSelect } from '@/components/admin/ui/select';
 import SortableAnnouncementRow from './sortable-row';
 
 const hexColor = /^#[0-9a-f]{6}$/i;
 const linkIsSafe = (value) => !value || (value.startsWith('/') && !value.startsWith('//')) || /^https:\/\/[^\s]+$/i.test(value);
-const luminance = (hex) => {
-  const channels = hex.slice(1).match(/.{2}/g).map((part) => Number.parseInt(part, 16) / 255);
-  const linear = channels.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
-  return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
-};
-const hasReadableContrast = (background, foreground) => {
-  if (!hexColor.test(background) || !hexColor.test(foreground)) return false;
-  const values = [luminance(background), luminance(foreground)];
-  return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05) >= 4.5;
-};
 
 const schema = z.object({
   messageTr: z.string().trim().min(2, 'En az 2 karakter girin.').max(240, 'En fazla 240 karakter girin.'),
@@ -44,9 +35,6 @@ const schema = z.object({
   if (values.startsAt && values.endsAt && values.startsAt >= values.endsAt) {
     context.addIssue({ code: 'custom', path: ['endsAt'], message: 'Bitiş zamanı başlangıçtan sonra olmalı.' });
   }
-  if (!hasReadableContrast(values.backgroundColor, values.textColor)) {
-    context.addIssue({ code: 'custom', path: ['textColor'], message: 'Yazı ve arka plan kontrastı en az 4.5:1 olmalı.' });
-  }
 });
 
 const defaults = {
@@ -62,6 +50,7 @@ export default function AnnouncementManager() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [reordering, setReordering] = useState(false);
   const { control, register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema), defaultValues: defaults });
@@ -174,16 +163,21 @@ export default function AnnouncementManager() {
 
   async function deleteAnnouncement() {
     if (!deleteTarget) return;
-    const response = await fetch(`/api/admin/announcements/${deleteTarget.id}`, { method: 'DELETE' });
-    const payload = await response.json();
-    if (!response.ok) {
-      setFeedback({ variant: 'danger', title: 'Duyuru silinemedi', message: payload.message });
-    } else {
-      setFeedback({ variant: 'success', title: 'Duyuru silindi', message: 'Değişiklik header alanına yansıtılacak.' });
-      if (editingId === deleteTarget.id) clearForm();
-      await loadAnnouncements();
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/announcements/${deleteTarget.id}`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) {
+        setFeedback({ variant: 'danger', title: 'Duyuru silinemedi', message: payload.message });
+      } else {
+        setFeedback({ variant: 'success', title: 'Duyuru silindi', message: 'Değişiklik header alanına yansıtılacak.' });
+        if (editingId === deleteTarget.id) clearForm();
+        setDeleteTarget(null);
+        await loadAnnouncements();
+      }
+    } finally {
+      setDeleting(false);
     }
-    setDeleteTarget(null);
   }
 
   return (
@@ -227,19 +221,14 @@ export default function AnnouncementManager() {
             <ColorField label="Arka plan" name="backgroundColor" register={register} setValue={setValue} error={errors.backgroundColor?.message} value={preview.backgroundColor} />
             <ColorField label="Yazı" name="textColor" register={register} setValue={setValue} error={errors.textColor?.message} value={preview.textColor} />
           </div>
-          <AdminFormField label="Duyuru değişim hızı" htmlFor="durationSeconds" hint="Birden fazla aktif duyuru varsa" error={errors.durationSeconds?.message}><select id="durationSeconds" className={adminInputClass} {...register('durationSeconds')} aria-invalid={Boolean(errors.durationSeconds)}><option value="5">Hızlı — 5 saniyede değişir</option><option value="8">Dengeli — 8 saniyede değişir</option><option value="12">Yavaş — 12 saniyede değişir</option></select></AdminFormField>
+          <AdminFormField label="Duyuru değişim hızı" htmlFor="durationSeconds" hint="Birden fazla aktif duyuru varsa" error={errors.durationSeconds?.message}><Controller control={control} name="durationSeconds" render={({ field }) => <AdminSelect value={String(field.value)} onValueChange={field.onChange} ariaLabel="Duyuru değişim hızı" options={[{ value: '5', label: 'Hızlı — 5 saniyede değişir' }, { value: '8', label: 'Dengeli — 8 saniyede değişir' }, { value: '12', label: 'Yavaş — 12 saniyede değişir' }]} />} /></AdminFormField>
           <details className="rounded-lg border border-border p-3"><summary className="text-sm font-medium">Zamanlama (isteğe bağlı)</summary><div className="mt-4 grid gap-4 sm:grid-cols-2"><AdminFormField label="Başlangıç" htmlFor="startsAt"><input id="startsAt" type="datetime-local" className={adminInputClass} {...register('startsAt')} /></AdminFormField><AdminFormField label="Bitiş" htmlFor="endsAt" error={errors.endsAt?.message}><input id="endsAt" type="datetime-local" className={adminInputClass} {...register('endsAt')} /></AdminFormField></div></details>
           <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3 text-sm"><input type="checkbox" className="size-4 accent-primary" {...register('isActive')} /><span><span className="font-medium">Aktif</span><span className="ml-2 text-xs text-muted-foreground">Public header’da göster</span></span></label>
         </div>
         <AdminButton type="submit" className="mt-5 w-full" disabled={isSubmitting}>{isSubmitting ? 'Kaydediliyor…' : editingId ? 'Değişiklikleri kaydet' : 'Duyuru oluştur'}</AdminButton>
       </form>
 
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Duyuruyu sil</DialogTitle><DialogDescription>“{deleteTarget?.messageTr}” kalıcı olarak silinecek. Bu işlem geri alınamaz.</DialogDescription></DialogHeader>
-          <DialogFooter><DialogClose asChild><AdminButton variant="secondary">Vazgeç</AdminButton></DialogClose><AdminButton variant="danger" onClick={deleteAnnouncement}><Trash2 className="size-4" />Sil</AdminButton></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmActionDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title="Duyuruyu sil" description="Duyuru kalıcı olarak silinecek ve public header rotasyonundan kaldırılacak. Bu işlem geri alınamaz." itemName={deleteTarget?.messageTr} confirmLabel="Duyuruyu sil" pending={deleting} onConfirm={deleteAnnouncement} />
     </div>
   );
 }

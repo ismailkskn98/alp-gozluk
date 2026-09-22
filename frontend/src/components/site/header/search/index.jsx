@@ -15,7 +15,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import SearchResultCard from './result-card';
 import SearchSuggestions from './suggestions';
 
-export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
+export default function SearchMenu({ locale, navigationItems, triggerLabel, hasAnnouncement }) {
   const t = useTranslations('Search');
   const router = useRouter();
   const inputRef = useRef(null);
@@ -79,6 +79,7 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
   const resultsTitle = normalizedQuery
     ? t('resultsFor', { query: normalizedQuery })
     : t('popularProducts');
+  const panelTop = hasAnnouncement ? '6rem' : '3.75rem';
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
@@ -86,7 +87,7 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
         <button
           type="button"
           aria-label={triggerLabel}
-          className="grid size-11 place-items-center transition-colors hover:bg-[#f4f5f6]"
+          className="grid size-10 place-items-center rounded-full text-[#263548] transition-colors hover:bg-[#f3f5f6] focus-visible:outline-offset-0"
         >
           <Search className="size-4" strokeWidth={1.5} aria-hidden="true" />
         </button>
@@ -94,54 +95,59 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
 
       <SheetContent
         side="top"
-        style={{ top: '4rem' }}
+        style={{ top: panelTop, height: `calc(100dvh - ${panelTop})` }}
         closeLabel={t('close')}
         overlayClassName="bg-transparent"
-        className="h-[calc(100dvh-4rem)] w-full gap-0 overflow-hidden border-y border-black/10 bg-white shadow-[0_24px_60px_rgba(16,35,61,0.12)]"
+        className="w-full gap-0 overflow-hidden border-b border-black/10 bg-white shadow-[0_24px_60px_rgba(16,35,61,0.1)]"
       >
-        <SheetHeader className="grid-container border-b border-black/10 px-0 py-[clamp(1.25rem,3vh,2rem)]">
-          <div className="pr-12">
-            <SheetTitle className="text-[clamp(1.5rem,2.2vw,2.25rem)] font-normal tracking-[-0.035em]">
-              {t('title')}
-            </SheetTitle>
-            <SheetDescription className="mt-1 max-w-xl text-sm leading-6">
-              {t('description')}
-            </SheetDescription>
+        <SheetHeader className="border-b border-black/10 bg-white p-0">
+          <div className="grid-container">
+            <div className="py-[clamp(1rem,2.4vh,1.5rem)] pr-12">
+              <div className="flex flex-col justify-between gap-1 md:flex-row md:items-end md:gap-8">
+                <SheetTitle className="text-[clamp(1.35rem,1.7vw,1.75rem)] font-normal tracking-[-0.03em]">
+                  {t('title')}
+                </SheetTitle>
+                <SheetDescription className="max-w-xl text-[0.8rem] leading-5 md:text-right">
+                  {t('description')}
+                </SheetDescription>
+              </div>
 
-            <form onSubmit={handleSubmit} className="mt-5 flex items-center border-b border-black/25 focus-within:border-black">
-              <Search className="mr-3 size-5 shrink-0 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
-              <label htmlFor="header-product-search" className="sr-only">{t('inputLabel')}</label>
-              <input
-                ref={inputRef}
-                id="header-product-search"
-                type="search"
-                autoFocus
-                value={query}
-                onChange={(event) => setQuery(event.target.value.slice(0, 80))}
-                placeholder={t('placeholder')}
-                autoComplete="off"
-                enterKeyHint="search"
-                className="h-14 min-w-0 flex-1 bg-transparent text-lg text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              {query ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery('');
-                    inputRef.current?.focus();
-                  }}
-                  className="flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground hover:text-foreground"
-                >
-                  <X className="size-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">{t('clear')}</span>
-                </button>
-              ) : null}
-            </form>
+              <form onSubmit={handleSubmit} className="mt-4 flex min-h-11 items-center border border-black/12 bg-[#f7f8f7] px-3 transition-colors focus-within:bg-white">
+                <Search className="mr-2.5 size-4 shrink-0 text-[#667085]" strokeWidth={1.5} aria-hidden="true" />
+                <label htmlFor="header-product-search" className="sr-only">{t('inputLabel')}</label>
+                <input
+                  ref={inputRef}
+                  id="header-product-search"
+                  type="text"
+                  inputMode="search"
+                  autoFocus
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value.slice(0, 80))}
+                  placeholder={t('placeholder')}
+                  autoComplete="off"
+                  enterKeyHint="search"
+                  className="site-header-search-input h-10 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[0.92rem] text-foreground outline-none placeholder:text-[#7b8491]"
+                />
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery('');
+                      inputRef.current?.focus();
+                    }}
+                    className="flex min-h-9 items-center gap-1.5 px-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-offset-0"
+                  >
+                    <X className="size-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">{t('clear')}</span>
+                  </button>
+                ) : null}
+              </form>
+            </div>
           </div>
         </SheetHeader>
 
         <div className="grid-container min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="py-[clamp(1.5rem,4vh,3rem)]">
+          <div className="py-[clamp(1.25rem,3vh,2.25rem)]">
             {!normalizedQuery ? (
               <SearchSuggestions
                 categories={categories}
@@ -159,7 +165,7 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
               />
             ) : null}
 
-            <section className={normalizedQuery ? '' : 'mt-[clamp(2.5rem,6vh,5rem)]'} aria-live="polite" aria-busy={status === 'loading'}>
+            <section className={normalizedQuery ? '' : 'mt-[clamp(1.75rem,4vh,3rem)]'} aria-live="polite" aria-busy={status === 'loading'}>
               <div className="flex min-h-11 items-center justify-between gap-4">
                 <h2 className="text-sm font-medium text-muted-foreground">{resultsTitle}</h2>
                 {normalizedQuery && products.length > 0 ? (

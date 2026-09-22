@@ -195,6 +195,12 @@ select {
   outline-offset: 3px;
 }
 
+.site-header-search-input:focus,
+.site-header-search-input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
