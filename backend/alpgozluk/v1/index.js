@@ -6,9 +6,11 @@ const mediaRoutes = require('./routes/mediaRoutes');
 const productRoutes = require('./routes/productRoutes');
 const catalogRoutes = require('./routes/catalogRoutes');
 const navigationRoutes = require('./routes/navigationRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
 const adminProductRoutes = require('./routes/adminProductRoutes');
 const adminCatalogRoutes = require('./routes/adminCatalogRoutes');
 const adminNavigationRoutes = require('./routes/adminNavigationRoutes');
+const adminAnnouncementRoutes = require('./routes/adminAnnouncementRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
 const verifyToken = require('./middlewares/verifyToken');
 const requirePermission = require('./middlewares/requirePermission');
@@ -22,6 +24,7 @@ router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/catalog', catalogRoutes);
 router.use('/navigation', navigationRoutes);
+router.use('/announcements', announcementRoutes);
 router.use(
   '/admin/products',
   verifyToken,
@@ -45,6 +48,12 @@ router.use(
   verifyToken,
   requirePermission('navigation.manage'),
   adminNavigationRoutes,
+);
+router.use(
+  '/admin/announcements',
+  verifyToken,
+  requirePermission('content.manage'),
+  adminAnnouncementRoutes,
 );
 router.use(
   '/admin/users',

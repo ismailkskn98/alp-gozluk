@@ -1,6 +1,6 @@
-import Image from 'next/image';
-import { Glasses, ShieldCheck, Truck } from 'lucide-react';
+import { ShieldCheck, Truck } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import ProductGallery from '@/components/site/product-detail/gallery';
 import { findProduct } from '@/data/products';
 
 export default async function ProductPage({ params }) {
@@ -11,20 +11,12 @@ export default async function ProductPage({ params }) {
   return (
     <section className="grid-container py-10 sm:py-16">
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
-        <div className="relative grid aspect-[4/5] place-items-center overflow-hidden" style={{ backgroundColor: product.color }}>
-          {product.images?.[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={`${product.name} ${tr ? 'ürün görünümü' : 'product view'}`}
-              fill
-              priority
-              sizes="(min-width: 1024px) 54vw, 92vw"
-              className="object-contain p-[clamp(2rem,7vw,7rem)]"
-            />
-          ) : (
-            <Glasses className="size-40 text-foreground/55 sm:size-56" strokeWidth={1} />
-          )}
-        </div>
+        <ProductGallery
+          color={product.color}
+          images={product.images}
+          name={product.name}
+          imageLabel={tr ? 'ürün görünümü' : 'product view'}
+        />
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">{tr ? product.type : product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : 'Optical frame'}</p>
           <h1 className="mt-3 text-5xl">{product.name}</h1>

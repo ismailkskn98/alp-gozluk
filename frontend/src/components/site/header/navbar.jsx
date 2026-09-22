@@ -29,7 +29,7 @@ export default function Navbar({ items, labels }) {
       onMouseLeave={() => setActiveCode(null)}
       onBlur={handleBlur}
     >
-      <ul className="flex h-full items-center gap-[clamp(1rem,1.8vw,2rem)]">
+      <ul className="flex h-full items-center gap-[clamp(0.9rem,1.6vw,1.75rem)]">
         {items.map((item) => (
           <li key={item.code} className="flex h-full items-center">
             {item.children?.length ? (
@@ -37,7 +37,7 @@ export default function Navbar({ items, labels }) {
                 type="button"
                 aria-expanded={activeCode === item.code}
                 aria-controls={`mega-menu-${item.code}`}
-                className="group flex h-full items-center gap-1 text-[0.76rem] text-[#42474d] transition-colors hover:text-[#101820]"
+                className="group flex h-full items-center gap-1 text-[0.71rem] font-medium tracking-[-0.01em] text-[#4e5359] transition-colors hover:text-[#101820]"
                 onMouseEnter={() => setActiveCode(item.code)}
                 onFocus={() => setActiveCode(item.code)}
                 onClick={() => setActiveCode((current) => current === item.code ? null : item.code)}
@@ -46,7 +46,10 @@ export default function Navbar({ items, labels }) {
                 <ChevronDown className={`size-3 transition-transform ${activeCode === item.code ? 'rotate-180' : ''}`} strokeWidth={1.5} />
               </button>
             ) : (
-              <Link href={item.href || '/shop'} className="flex h-full items-center text-[0.76rem] text-[#42474d] transition-colors hover:text-[#101820]">
+              <Link
+                href={item.href || '/shop'}
+                className={`flex h-full items-center text-[0.71rem] font-medium tracking-[-0.01em] transition-colors ${item.code === 'sale' ? 'font-semibold text-[#c52832] hover:text-[#991d25]' : 'text-[#4e5359] hover:text-[#101820]'}`}
+              >
                 {item.label}
               </Link>
             )}

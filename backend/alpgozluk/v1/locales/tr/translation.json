@@ -72,6 +72,14 @@
     "listed": "Navigasyon listelendi.",
     "updated": "Navigasyon güncellendi."
   },
+  "announcements": {
+    "listed": "Duyurular listelendi.",
+    "created": "Duyuru oluşturuldu.",
+    "updated": "Duyuru güncellendi.",
+    "reordered": "Duyuru sıralaması güncellendi.",
+    "deleted": "Duyuru silindi.",
+    "not_found": "Duyuru bulunamadı."
+  },
   "errors": {
     "not_found": "İstenen kaynak bulunamadı.",
     "rate_limit": "Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin.",

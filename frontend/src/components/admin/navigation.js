@@ -1,5 +1,5 @@
 import {
-  BadgePercent, Boxes, ChartNoAxesCombined, ClipboardList, FileText,
+  BadgePercent, Boxes, ChartNoAxesCombined, ClipboardList, FileText, Megaphone,
   FolderTree, ImageIcon, LayoutDashboard, ListTree, Package, Settings, ShieldCheck,
   ShoppingBag, SlidersHorizontal, Tags, Users, Warehouse,
 } from 'lucide-react';
@@ -31,6 +31,7 @@ export const adminNavigationGroups = [
     label: 'Büyüme',
     items: [
       { label: 'Kampanyalar', href: '/admin/campaigns', icon: BadgePercent },
+      { label: 'Duyuru barı', href: '/admin/announcements', icon: Megaphone },
       { label: 'İçerik', href: '/admin/content', icon: FileText },
       { label: 'Raporlar', href: '/admin/reports', icon: ChartNoAxesCombined },
     ],
@@ -48,7 +49,7 @@ export const adminNavigationGroups = [
 
 const editorPaths = new Set([
   '/admin', '/admin/products', '/admin/categories', '/admin/collections', '/admin/audiences',
-  '/admin/attributes', '/admin/brands', '/admin/inventory', '/admin/media', '/admin/content',
+  '/admin/attributes', '/admin/brands', '/admin/inventory', '/admin/media', '/admin/content', '/admin/announcements',
 ]);
 
 export function getAdminNavigation(user) {

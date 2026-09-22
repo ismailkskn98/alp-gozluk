@@ -28,6 +28,8 @@ test('admin katalog ve navigasyon endpointleri tokensız istekleri reddeder', as
   const app = createApp();
   await request(app).get('/api/alpgozluk/v1/admin/catalog').expect(401);
   await request(app).get('/api/alpgozluk/v1/admin/navigation/header').expect(401);
+  await request(app).get('/api/alpgozluk/v1/admin/announcements').expect(401);
+  await request(app).put('/api/alpgozluk/v1/admin/announcements/reorder').send({ ids: [1] }).expect(401);
 });
 
 test('süper admin kullanıcı yönetimi endpointi tokensız istekleri reddeder', async () => {

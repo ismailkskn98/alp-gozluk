@@ -33,7 +33,7 @@ export default function MobileNavbar({ items, labels }) {
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-x-0 bottom-0 top-16 overflow-y-auto border-t border-black/10 bg-white px-[4vw] pb-10 pt-3">
+        <div className="absolute inset-x-0 top-full max-h-[calc(100svh-3.5rem)] overflow-y-auto border-t border-black/10 bg-white px-[4vw] pb-10 pt-3 shadow-[0_24px_50px_rgba(16,24,32,0.12)]">
           <nav aria-label={labels.navigation}>
             <ul>
               {items.map((item) => {
@@ -41,7 +41,7 @@ export default function MobileNavbar({ items, labels }) {
                 return (
                   <li key={item.code} className="border-b border-black/10">
                     <div className="flex items-center justify-between gap-3">
-                      <Link href={item.href || '/shop'} onClick={closeMenu} className="flex-1 py-4 text-xl leading-none">
+                      <Link href={item.href || '/shop'} onClick={closeMenu} className={`flex-1 py-4 text-xl leading-none ${item.code === 'sale' ? 'font-semibold text-[#c52832]' : ''}`}>
                         {item.label}
                       </Link>
                       {item.children?.length ? (

@@ -72,6 +72,14 @@
     "listed": "Navigation listed.",
     "updated": "Navigation updated."
   },
+  "announcements": {
+    "listed": "Announcements listed.",
+    "created": "Announcement created.",
+    "updated": "Announcement updated.",
+    "reordered": "Announcement order updated.",
+    "deleted": "Announcement deleted.",
+    "not_found": "Announcement not found."
+  },
   "errors": {
     "not_found": "The requested resource was not found.",
     "rate_limit": "Too many requests. Please try again later.",
