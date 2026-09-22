@@ -1,22 +1,188 @@
 'use client';
 
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoaderCircle, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, LoaderCircle, MapPin, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import ConfirmActionDialog from '@/components/admin/ui/confirm-action-dialog';
+import AccountSectionHeader from './section-header';
 
-const schema = z.object({ title: z.string().trim().min(2, 'Adres başlığı gerekli.').max(80), firstName: z.string().trim().min(2, 'Ad gerekli.').max(80), lastName: z.string().trim().min(2, 'Soyad gerekli.').max(80), phone: z.string().trim().min(8, 'Geçerli bir telefon yazın.').max(32), city: z.string().trim().min(2, 'İl gerekli.').max(100), district: z.string().trim().min(2, 'İlçe gerekli.').max(100), postalCode: z.string().trim().max(20), addressLine: z.string().trim().min(8, 'Açık adres en az 8 karakter olmalı.').max(1000), isDefault: z.boolean() });
-const inputClass = 'mt-1.5 h-10 w-full rounded-lg border border-black/12 bg-white px-3 text-sm outline-none transition focus:border-[#1b2635]';
+const schema = z.object({
+  title: z.string().trim().min(2, 'Adres başlığı gerekli.').max(80),
+  firstName: z.string().trim().min(2, 'Ad gerekli.').max(80),
+  lastName: z.string().trim().min(2, 'Soyad gerekli.').max(80),
+  phone: z.string().trim().min(8, 'Geçerli bir telefon yazın.').max(32),
+  city: z.string().trim().min(2, 'İl gerekli.').max(100),
+  district: z.string().trim().min(2, 'İlçe gerekli.').max(100),
+  postalCode: z.string().trim().max(20),
+  addressLine: z.string().trim().min(8, 'Açık adres en az 8 karakter olmalı.').max(1000),
+  isDefault: z.boolean(),
+});
 
-export default function AddressBook({ addresses, onUpdated }) {
-  const [open, setOpen] = useState(false); const [editing, setEditing] = useState(null); const [message, setMessage] = useState(''); const [removing, setRemoving] = useState(null); const [deleteTarget, setDeleteTarget] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema), defaultValues: { isDefault: addresses.length === 0 } });
-  async function submit(values) { setMessage(''); const response = await fetch(editing ? `/api/account/addresses/${editing}` : '/api/account/addresses', { method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) }); const payload = await response.json(); if (!response.ok) { setMessage(payload.message || 'Adres kaydedilemedi.'); return; } onUpdated(payload.data); reset({ isDefault: false }); setOpen(false); setEditing(null); }
-  function startCreate() { setEditing(null); reset({ title: '', firstName: '', lastName: '', phone: '', city: '', district: '', postalCode: '', addressLine: '', isDefault: addresses.length === 0 }); setOpen(true); }
-  function startEdit(address) { setEditing(address.id); reset(address); setOpen(true); }
-  async function remove() { if (!deleteTarget) return; setRemoving(deleteTarget.id); const response = await fetch(`/api/account/addresses/${deleteTarget.id}`, { method: 'DELETE' }); const payload = await response.json(); if (response.ok) { onUpdated(payload.data); setDeleteTarget(null); } else setMessage(payload.message || 'Adres silinemedi.'); setRemoving(null); }
-  return <section><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#69717b]">Teslimat için kullanacağın kayıtlı bilgiler</p><h1 className="mt-1 text-[clamp(2rem,4vw,3rem)] tracking-[-0.05em]">Adreslerim</h1></div><button type="button" onClick={startCreate} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#1b2635] px-4 text-sm font-medium text-white"><Plus className="size-4" />Yeni adres</button></div>{message ? <p role="alert" className="mt-4 text-sm text-[#bb3d3d]">{message}</p> : null}{open ? <form onSubmit={handleSubmit(submit)} className="mt-6 rounded-2xl border border-black/10 bg-white p-5"><div className="grid gap-4 sm:grid-cols-2"><Field label="Adres başlığı" error={errors.title?.message}><input className={inputClass} placeholder="Ev, iş" {...register('title')} /></Field><Field label="Telefon" error={errors.phone?.message}><input className={inputClass} inputMode="tel" {...register('phone')} /></Field><Field label="Ad" error={errors.firstName?.message}><input className={inputClass} {...register('firstName')} /></Field><Field label="Soyad" error={errors.lastName?.message}><input className={inputClass} {...register('lastName')} /></Field><Field label="İl" error={errors.city?.message}><input className={inputClass} {...register('city')} /></Field><Field label="İlçe" error={errors.district?.message}><input className={inputClass} {...register('district')} /></Field><Field label="Posta kodu"><input className={inputClass} {...register('postalCode')} /></Field><Field label="Açık adres" error={errors.addressLine?.message}><textarea className={`${inputClass} h-20 py-2`} {...register('addressLine')} /></Field></div><label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" className="size-4 accent-[#1b2635]" {...register('isDefault')} />Varsayılan teslimat adresim yap</label><div className="mt-5 flex gap-3"><button type="button" onClick={() => { setOpen(false); setEditing(null); }} className="h-10 rounded-lg border border-black/12 px-4 text-sm">Vazgeç</button><button type="submit" disabled={isSubmitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#1b2635] px-4 text-sm font-medium text-white disabled:opacity-60">{isSubmitting && <LoaderCircle className="size-4 animate-spin" />}{editing ? 'Adresi güncelle' : 'Adresi kaydet'}</button></div></form> : null}<div className="mt-6 grid gap-3 md:grid-cols-2">{addresses.map((address) => <article key={address.id} className="rounded-2xl border border-black/10 bg-white p-5"><div className="flex items-start justify-between gap-4"><div><div className="flex items-center gap-2"><MapPin className="size-4" /><h2 className="font-medium">{address.title}</h2>{address.isDefault ? <span className="rounded-full bg-[#e9f4ed] px-2 py-0.5 text-xs text-[#356a50]">Varsayılan</span> : null}</div><p className="mt-4 text-sm">{address.firstName} {address.lastName}</p><p className="mt-1 text-sm leading-6 text-[#69717b]">{address.addressLine}<br />{address.district} / {address.city}<br />{address.phone}</p></div><div className="flex gap-1"><button type="button" onClick={() => startEdit(address)} aria-label={`${address.title} adresini düzenle`} className="grid size-9 place-items-center rounded-lg hover:bg-[#f3f4f2]"><Pencil className="size-4" /></button><button type="button" disabled={removing === address.id} onClick={() => setDeleteTarget(address)} aria-label={`${address.title} adresini sil`} className="grid size-9 place-items-center rounded-lg text-[#a84242] hover:bg-[#fff0f0] disabled:opacity-50">{removing === address.id ? <LoaderCircle className="size-4 animate-spin" /> : <Trash2 className="size-4" />}</button></div></div></article>)}</div>{addresses.length === 0 && !open ? <p className="mt-7 rounded-2xl border border-dashed border-black/15 bg-white p-10 text-center text-sm text-[#69717b]">Henüz kayıtlı adresin yok. Teslimatı hızlandırmak için ilk adresini ekleyebilirsin.</p> : null}<ConfirmActionDialog open={Boolean(deleteTarget)} onOpenChange={(nextOpen) => !nextOpen && setDeleteTarget(null)} onConfirm={remove} title="Adresi sil" description="Bu adrese ait kayıt hesabından kaldırılacak. Bu işlem geri alınamaz." itemName={deleteTarget?.title} pending={Boolean(removing)} /></section>;
+const inputClass = 'mt-1.5 h-11 w-full rounded-lg border border-[#cfd5d1] bg-white px-3.5 text-sm text-[#172536] outline-none transition-colors placeholder:text-[#9aa39f] focus:border-[#65746e]';
+
+export default function AddressBook({ addresses, onUpdated, onDemoChange }) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [message, setMessage] = useState('');
+  const [removing, setRemoving] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const reduceMotion = useReducedMotion();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { isDefault: addresses.length === 0 },
+  });
+
+  function closeForm() {
+    setOpen(false);
+    setEditing(null);
+    setMessage('');
+  }
+
+  async function submit(values) {
+    setMessage('');
+    if (String(editing).startsWith('demo-')) {
+      onDemoChange(addresses.map((address) => address.id === editing
+        ? { ...address, ...values }
+        : { ...address, isDefault: values.isDefault ? false : address.isDefault }));
+      closeForm();
+      return;
+    }
+    const response = await fetch(editing ? `/api/account/addresses/${editing}` : '/api/account/addresses', {
+      method: editing ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setMessage(payload.message || 'Adres kaydedilemedi.');
+      return;
+    }
+    onUpdated(payload.data);
+    reset({ isDefault: false });
+    closeForm();
+  }
+
+  function startCreate() {
+    setEditing(null);
+    reset({ title: '', firstName: '', lastName: '', phone: '', city: '', district: '', postalCode: '', addressLine: '', isDefault: addresses.length === 0 });
+    setOpen(true);
+  }
+
+  function startEdit(address) {
+    setEditing(address.id);
+    reset(address);
+    setOpen(true);
+  }
+
+  async function remove() {
+    if (!deleteTarget) return;
+    setRemoving(deleteTarget.id);
+    if (deleteTarget.isDemo) {
+      onDemoChange(addresses.filter((address) => address.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setRemoving(null);
+      return;
+    }
+    const response = await fetch(`/api/account/addresses/${deleteTarget.id}`, { method: 'DELETE' });
+    const payload = await response.json();
+    if (response.ok) {
+      onUpdated(payload.data);
+      setDeleteTarget(null);
+    } else {
+      setMessage(payload.message || 'Adres silinemedi.');
+    }
+    setRemoving(null);
+  }
+
+  return (
+    <section>
+      <AccountSectionHeader
+        kicker="Teslimat ve fatura bilgilerin"
+        title="Adreslerim"
+        description="Sık kullandığın adresleri kaydet; ödeme sırasında teslimat bilgilerini yeniden yazma."
+        action={(
+          <button type="button" onClick={startCreate} className="inline-flex h-10 items-center gap-2 rounded-full bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a]">
+            <Plus className="size-4" /> Yeni adres
+          </button>
+        )}
+      />
+      {message ? <p role="alert" className="mt-4 text-sm text-[#a53e3e]">{message}</p> : null}
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.form
+            onSubmit={handleSubmit(submit)}
+            initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="mt-7 border-y border-[#d8ddd7] bg-white px-4 py-6 sm:px-6">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-lg font-medium text-[#172536]">{editing ? 'Adresi düzenle' : 'Yeni adres'}</h3>
+                <button type="button" onClick={closeForm} aria-label="Adres formunu kapat" className="grid size-8 place-items-center rounded-full hover:bg-[#f1f3f0]"><X className="size-4" /></button>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <Field label="Adres başlığı" error={errors.title?.message}><input className={inputClass} placeholder="Ev, iş" {...register('title')} /></Field>
+                <Field label="Telefon" error={errors.phone?.message}><input className={inputClass} inputMode="tel" autoComplete="tel" {...register('phone')} /></Field>
+                <Field label="Ad" error={errors.firstName?.message}><input className={inputClass} autoComplete="given-name" {...register('firstName')} /></Field>
+                <Field label="Soyad" error={errors.lastName?.message}><input className={inputClass} autoComplete="family-name" {...register('lastName')} /></Field>
+                <Field label="İl" error={errors.city?.message}><input className={inputClass} autoComplete="address-level1" {...register('city')} /></Field>
+                <Field label="İlçe" error={errors.district?.message}><input className={inputClass} autoComplete="address-level2" {...register('district')} /></Field>
+                <Field label="Posta kodu"><input className={inputClass} inputMode="numeric" autoComplete="postal-code" {...register('postalCode')} /></Field>
+                <Field label="Açık adres" error={errors.addressLine?.message}><textarea className={`${inputClass} h-[5.5rem] resize-none py-3`} autoComplete="street-address" {...register('addressLine')} /></Field>
+              </div>
+              <label className="mt-5 inline-flex cursor-pointer items-center gap-3 text-sm text-[#46534e]">
+                <input type="checkbox" className="size-4 accent-[#172536]" {...register('isDefault')} /> Varsayılan teslimat adresim yap
+              </label>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button type="submit" disabled={isSubmitting} className="inline-flex h-10 items-center gap-2 rounded-full bg-[#172536] px-5 text-sm font-medium text-white disabled:opacity-60">
+                  {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}{editing ? 'Değişiklikleri kaydet' : 'Adresi kaydet'}
+                </button>
+                <button type="button" onClick={closeForm} className="h-10 rounded-full border border-[#cfd5d1] px-5 text-sm text-[#46534e]">Vazgeç</button>
+              </div>
+            </div>
+          </motion.form>
+        ) : null}
+      </AnimatePresence>
+
+      {addresses.length ? (
+        <div className="mt-7 grid gap-x-8 border-y border-[#d8ddd7] md:grid-cols-2">
+          {addresses.map((address) => (
+            <article key={address.id} className="flex min-h-56 flex-col border-b border-[#d8ddd7] py-6 last:border-b-0 md:[&:nth-last-child(-n+2)]:border-b-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                  <MapPin className="size-4 text-[#172536]" strokeWidth={1.45} />
+                  <h3 className="font-medium text-[#172536]">{address.title}</h3>
+                  {address.isDefault ? <span className="rounded-full bg-[#e9f1eb] px-2 py-0.5 text-[11px] text-[#356a50]">Varsayılan</span> : null}
+                </div>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(address)} aria-label={`${address.title} adresini düzenle`} className="grid size-8 place-items-center rounded-full text-[#68736f] hover:bg-white hover:text-[#172536]"><Pencil className="size-3.5" /></button>
+                  <button type="button" onClick={() => setDeleteTarget(address)} aria-label={`${address.title} adresini sil`} className="grid size-8 place-items-center rounded-full text-[#68736f] hover:bg-[#fff0f0] hover:text-[#a84242]"><Trash2 className="size-3.5" /></button>
+                </div>
+              </div>
+              <p className="mt-7 text-sm font-medium text-[#172536]">{address.firstName} {address.lastName}</p>
+              <address className="mt-2 max-w-sm text-sm not-italic leading-6 text-[#68736f]">{address.addressLine}<br />{address.postalCode ? `${address.postalCode} · ` : ''}{address.district} / {address.city}<br />{address.phone}</address>
+            </article>
+          ))}
+        </div>
+      ) : !open ? (
+        <div className="mt-7 border-y border-[#d8ddd7] py-14 text-center">
+          <MapPin className="mx-auto size-6 text-[#7a8781]" strokeWidth={1.35} />
+          <h3 className="mt-4 text-lg text-[#172536]">Kayıtlı adresin yok</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#68736f]">İlk adresini ekleyerek ödeme adımını hızlandırabilirsin.</p>
+        </div>
+      ) : null}
+
+      <ConfirmActionDialog open={Boolean(deleteTarget)} onOpenChange={(nextOpen) => !nextOpen && setDeleteTarget(null)} onConfirm={remove} title="Adresi sil" description="Bu adres hesabından kaldırılacak. Sipariş geçmişindeki teslimat bilgileri değişmez." itemName={deleteTarget?.title} pending={Boolean(removing)} />
+    </section>
+  );
 }
-function Field({ label, error, children }) { return <label className="block text-sm font-medium">{label}{children}{error ? <span className="mt-1 block text-xs text-[#bb3d3d]">{error}</span> : null}</label>; }
+
+function Field({ label, error, children }) {
+  return <label className="block text-sm font-medium text-[#263630]">{label}{children}{error ? <span className="mt-1.5 block text-xs font-normal text-[#a53e3e]">{error}</span> : null}</label>;
+}
