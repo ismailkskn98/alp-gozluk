@@ -11,10 +11,12 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
   const color = typeof item.color === "string" ? item.color : item.color?.[locale] || item.color?.tr || item.color?.en || "";
 
   return (
-    <article className={cn(
-      "grid grid-cols-[1.25rem_5.75rem_minmax(0,1fr)] gap-3 border border-black/10 p-3 transition-[background-color,opacity] sm:grid-cols-[1.25rem_9rem_minmax(0,1fr)] sm:gap-5 sm:p-5 lg:grid-cols-[1.25rem_10rem_minmax(0,1fr)]",
-      selected ? "bg-white" : "bg-[#f7f8f5]",
-    )}>
+    <article
+      className={cn(
+        "grid grid-cols-[1.25rem_5.75rem_minmax(0,1fr)] gap-3 border border-black/10 p-3 transition-[background-color,opacity] sm:grid-cols-[1.25rem_9rem_minmax(0,1fr)] sm:gap-5 sm:p-5 lg:grid-cols-[1.25rem_10rem_minmax(0,1fr)]",
+        selected ? "bg-white" : "bg-[#f7f8f5]",
+      )}
+    >
       <SiteCheckbox
         checked={selected}
         disabled={pending || !item.available}
@@ -23,7 +25,7 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
         className="self-center"
       />
       <Link href={`/product/${item.slug}`} className="relative aspect-[4/3] self-center overflow-hidden bg-white" aria-label={`${item.name} ${labels.viewProduct}`}>
-        {item.image ? <Image src={item.image} alt={item.imageAlt || item.name} fill sizes="(max-width: 640px) 108px, (max-width: 1024px) 144px, 160px" className="object-contain p-2" /> : null}
+        {item.image ? <Image src={item.image} alt={item.imageAlt || item.name} fill sizes="(max-width: 640px) 108px, (max-width: 1024px) 144px, 160px" className="object-contain" /> : null}
       </Link>
 
       <div className={cn("grid min-w-0 gap-5 transition-opacity sm:grid-cols-[minmax(0,1fr)_auto]", !selected && "opacity-65")}>
@@ -59,12 +61,21 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
               <Plus className="size-3.5" />
             </button>
           </div>
-          {item.available ? <p className="mt-3 text-xs text-success">{labels.campaignApplied}</p> : (
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-danger"><AlertTriangle className="size-3.5" />{labels.unavailable}</p>
+          {item.available ? (
+            <p className="mt-3 text-xs text-success">{labels.campaignApplied}</p>
+          ) : (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-danger">
+              <AlertTriangle className="size-3.5" />
+              {labels.unavailable}
+            </p>
           )}
           {item.warnings.map((warning) => {
             const warningLabels = { price_changed: labels.priceChanged, unavailable: labels.unavailable, out_of_stock: labels.outOfStock, insufficient_stock: labels.insufficientStock };
-            return <p key={String(warning)} className="mt-2 text-xs text-[#9a5b00]">{warningLabels[warning] || labels.unavailable}</p>;
+            return (
+              <p key={String(warning)} className="mt-2 text-xs text-[#9a5b00]">
+                {warningLabels[warning] || labels.unavailable}
+              </p>
+            );
           })}
           {!selected ? <p className="mt-2 text-xs text-[#68736f]">{labels.excludedFromTotal}</p> : null}
         </div>
@@ -75,11 +86,23 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
             <p className="text-sm font-semibold sm:text-base">{formatCurrency(linePrice)}</p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-x-3">
-            <button type="button" disabled={pending || !item.productId} className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-45" onClick={() => onMoveToFavorites(item)}>
-              <Heart className="size-3.5" />{labels.moveToFavorites}
+            <button
+              type="button"
+              disabled={pending || !item.productId}
+              className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-45"
+              onClick={() => onMoveToFavorites(item)}
+            >
+              <Heart className="size-3.5" />
+              {labels.moveToFavorites}
             </button>
-            <button type="button" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-danger disabled:opacity-45" onClick={() => onRemove(item)}>
-              <Trash2 className="size-3.5" />{labels.remove}
+            <button
+              type="button"
+              disabled={pending}
+              className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-danger disabled:opacity-45"
+              onClick={() => onRemove(item)}
+            >
+              <Trash2 className="size-3.5" />
+              {labels.remove}
             </button>
           </div>
         </div>

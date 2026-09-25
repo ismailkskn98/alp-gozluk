@@ -121,7 +121,7 @@ Demo katalog artık frontend sabiti değildir. `npm run db:seed:demo-catalog` ko
 
 ## Sipariş çekirdeği — Aşama 9A
 
-Aşama 9A ödeme sağlayıcısından bağımsız olarak tamamlanmıştır:
+Aşama 9A'nın ödeme sağlayıcısından bağımsız uygulama çekirdeği tamamlanmıştır:
 
 - Sipariş durumu: `pending_payment → processing → shipped → delivered`; ödeme öncesi veya izin verilen operasyonlarda `cancelled`.
 - Ödeme durumu: `initialized → pending → paid / failed / cancelled / expired`; başarılı ödemeden sonra `partially_refunded → refunded`.
@@ -135,6 +135,78 @@ Aşama 9A ödeme sağlayıcısından bağımsız olarak tamamlanmıştır:
 - Ödeme başarılı olduğunda yalnız siparişe dönüşen sepet satırları temizlenir; seçilmemiş satırlar korunur.
 - `npm run stock:expire` süresi geçen rezervasyonları serbest bırakır. Production'da `npm run stock:expire:production` komutu dakikada bir çalışan tek bir cron/worker tarafından tetiklenmelidir; birden fazla scheduler aynı görevi paralel başlatmamalıdır.
 - `npm run test:order-core:db` gerçek development veritabanında sepet ekle/güncelle/seç/kaldır, rezervasyon, idempotency, iptal, başarısız ödeme, stok iadesi ve ödeme kesinleştirme akışını doğrulayıp kendi kayıtlarını temizler.
+
+25 Eylül 2026 doğrulamasında backend testlerinin tamamı (`48/48`) ve gerçek veritabanı sipariş smoke testi geçmiştir. Bununla birlikte aşağıdaki maddeler production kapanış işi olarak açık tutulur; bunlar tamamlanmadan 9A'nın operasyonel olarak kapandığı varsayılmaz:
+
+- [ ] Süresi geçmiş rezervasyon zorlanarak `expireReservations` akışının stoğu yalnız bir kez geri verdiği ve ikinci çalıştırmanın etkisiz kaldığı gerçek DB smoke testine eklenmeli.
+- [ ] Gerçek bir `payments` satırı üzerinden `paymentId` ile başarı/başarısızlık kesinleştirme dalları 9B entegrasyon testlerinde doğrulanmalı. Mevcut smoke testi sağlayıcıdan bağımsız sınırı `paymentId = null` ile sınar.
+- [ ] Production ortamı seçildiğinde dakikada bir çalışan tek `stock:expire:production` cron/worker görevi gerçekten kurulup gözlemlenmeli. Repository'de komut vardır; deployment scheduler tanımı henüz yoktur.
+
+Bu ayrım önemlidir: `commitPaidOrder` ve `failOrderPayment` transaction sınırları hazırdır; iyzico ödeme denemesi oluşturmak, sağlayıcı sonucunu doğrulamak ve bu sınırları gerçek `paymentId` ile çağırmak Aşama 9B'nin sorumluluğudur.
+
+## Ödeme, kargo ve iade teslimat sırası
+
+### Şimdiki adım — 9B: iyzico Direct API, zorunlu 3DS ve sandbox
+
+25 Eylül 2026 tarihli ürün kararıyla ilk sürümde iyzico Checkout Form yönlendirmesi yerine iyzico Direct API kullanılır. Kart numarası, kart sahibi, son kullanma tarihi ve CVC alanları ALP Gözlük checkout arayüzünde, sitenin kendi tasarım diliyle gösterilir; kart verisi yalnız ödeme anında ayrılmış Express ödeme ucundan iyzico'ya iletilir. Bütün kart ödemeleri zorunlu 3D Secure olarak başlatılır. Non-3DS ve kart saklama ilk sürüm kapsamı dışındadır.
+
+AlışverişKapıda yalnız SDK çağrı sırası, sandbox/live ayrımı ve 3DS akışını anlamak için teknik referanstır. Checkout görseli, bileşenleri veya büyük ödeme controller'ı kopyalanmaz. Hosted Checkout Form, Direct API için production PCI/onay şartları karşılanamazsa kullanılabilecek geri dönüş seçeneğidir; aynı anda ikinci bir aktif ödeme akışı olarak tutulmaz.
+
+9B aşağıdaki sırayla tamamlanır:
+
+1. **9B.1 — Sağlayıcı ve compliance sınırı:** Resmî `iyzipay` Node.js SDK'sı, sandbox/live config ayrımı, zorunlu env değerleri ve sabit güvenilir callback URL'si hazırlanır. iyzico'ya özel kod küçük bir payment adapter/service sınırında tutulur; sipariş servisi sağlayıcıdan bağımsız kalır. Production geliştirmesi bitmiş sayılsa bile, iyzico/acquirer ile Direct API kullanımının ve PCI DSS kapsamının yazılı olarak netleştirilmesi; gerekiyorsa QSA/ASV sürecinin tamamlanması canlıya çıkış kapısıdır.
+2. **9B.2 — Ödeme denemesi ve kart verisi sınırı:** `Satın Al` isteğinde backend sepeti ve sipariş snapshot'ını kanonik olarak yeniden doğrular, stok rezervasyonunu oluşturur ve siparişe bağlı benzersiz `payments` denemesini `initialized` durumunda yazar. Kart alanları yalnız ayrılmış ödeme endpoint'inde kabul edilir; controller/service boyunca açık allowlist kullanılır. PAN ve CVC veritabanı, Redis, session, cookie, dosya, audit log, request log, APM veya hata izleme sistemine yazılmaz. CVC hiçbir biçimde saklanmaz; başarılı sağlayıcı cevabından yalnız izin verilen kart markası, BIN ve son dört hane tutulabilir. Frontend de kart alanlarını `localStorage` veya benzeri kalıcı depoya yazmaz.
+3. **9B.3 — BIN ve taksit sorgusu:** Kartın yalnız gerekli ilk sekiz hanesi, rate limit uygulanmış backend ucu üzerinden iyzico BIN/taksit servisine gönderilir. Taksit sayıları ve toplamları frontend tarafından üretilmez; iyzico cevabı ve işyeri sözleşmesinin izin verdiği seçenekler gösterilir. Taksit yetkisi henüz açık değilse güvenli varsayılan tek çekimdir. Tam kart numarası BIN cache anahtarına veya loglara girmez.
+4. **9B.4 — Init 3DS:** `price`, `paidPrice`, para birimi, sepet, alıcı ve adres bilgileri request toplamlarından değil sipariş snapshot'ından üretilir. `registerCard = 0` ile zorunlu 3DS Initialize çağrısı yapılır; `conversationId`, `basketId`, payment attempt ve sipariş eşleşmesi saklanır. Başarılı Init sonucunda deneme `pending` olur. 3DS HTML içeriği ana uygulamayı `document.write()` ile değiştirmek yerine, dar yetkili ve tek kullanımlık bir 3DS köprü sayfasında çalıştırılır. Init kesin olarak başarısızsa deneme başarısızlaştırılır ve rezervasyon idempotent biçimde bırakılır; sonucu belirsiz ağ hataları doğrudan başarısız sayılmadan önce uzlaştırılır.
+5. **9B.5 — Callback, Auth 3DS ve merkezi kesinleştirme:** Callback'teki `mdStatus`, `paymentId` veya yönlendirme parametreleri tek başına ödeme kanıtı sayılmaz. Backend callback korelasyonunu kontrol eder, iyzico Auth 3DS çağrısını yapar, response signature'ını ve `conversationId`, `basketId`, tutar, para birimi, ödeme kimliği ile sipariş eşleşmesini doğrular. Ödeme ancak sağlayıcı sonucu başarılı, `fraudStatus = 1` ve ilgili kalem transaction durumları onaylıysa `commitPaidOrder` ile kesinleşir. `fraudStatus = 0` incelemede kabul edilir ve sipariş sevke açılmaz; terminal başarısız sonuç yalnız `failOrderPayment` üzerinden işlenir. İleride kalem bazlı refund için her `order_item` ile iyzico `paymentTransactionId` eşleşmesi saklanır.
+6. **9B.6 — Webhook, süre aşımı ve uzlaştırma:** Direct API webhook'u `X-IYZ-SIGNATURE-V3` ile doğrulanır ve olay `payment_webhook_events` benzersizliğiyle idempotent kaydedilir. Callback ile webhook aynı anda veya tekrar geldiğinde satır kilitleri ve durum kontrolleri sayesinde ikinci sipariş, ikinci kupon kullanımı ya da ikinci stok hareketi oluşmaz. Süre aşımı worker'ı aktif Init/Auth işlemini körlemesine serbest bırakmaz; sağlayıcı sonucu uzlaştırılır, belirsiz sonuç kontrollü yeniden denemeye ve operasyon kaydına alınır. Webhook kritik verinin tek doğruluk kaynağı değil, Auth 3DS sonucunun uzlaştırma kanalıdır.
+7. **9B.7 — Sandbox, güvenlik ve yarış testleri:** Başarılı 3DS, yetersiz bakiye, hatalı CVC, 3DS Initialize hatası, `mdStatus` başarısızlığı, geçersiz response/webhook imzası, Auth eşleşme hatası, kullanıcı terk etmesi, çift `Satın Al`, çift callback, tekrar webhook, callback-webhook yarışı, geç callback, son stok için iki eşzamanlı checkout ve başarılı ödemenin yalnızca bir kez kesinleşmesi otomatik doğrulanır. Kart verisinin log/DB/cache/APM çıktısına sızmadığı güvenlik testiyle kontrol edilir. 9A'daki süre aşımı ve gerçek `paymentId` test borçları da burada kapatılır.
+
+Teknik bağlantı sırası değişmez:
+
+```text
+checkout/sipariş oluştur
+→ stok rezervasyonu
+→ payment attempt oluştur
+→ iyzico Init 3DS
+→ izole 3DS doğrulama ekranı
+→ callback korelasyonu
+→ iyzico Auth 3DS + response signature/eşleşme doğrulaması
+→ idempotent commitPaidOrder veya failOrderPayment
+→ sonuç sayfası
+```
+
+Resmî uygulama referansları:
+
+- Direct API ödeme modeli: https://docs.iyzico.com/en/payment-methods/api
+- 3DS akışı: https://docs.iyzico.com/en/payment-methods/api/3ds/3ds-implementation
+- BIN ve taksit servisi: https://docs.iyzico.com/en/advanced/installment-and-bin-service
+- Response signature: https://docs.iyzico.com/en/advanced/response-signature-validation
+- Webhook ve `X-IYZ-SIGNATURE-V3`: https://docs.iyzico.com/en/advanced/webhook
+- Sandbox hesabı: https://docs.iyzico.com/on-hazirliklar/sandbox
+- Sandbox/live ayrımı: https://docs.iyzico.com/on-hazirliklar/live-vs-sandbox
+- Resmî test kartları: https://docs.iyzico.com/ek-bilgiler/test-kartlari
+- Hata kodları: https://docs.iyzico.com/en/add-ons/error-codes
+- Resmî Node.js SDK: https://github.com/iyzico/iyzipay-node
+- PCI ödeme sayfası kapsam farkı: https://www.pcisecuritystandards.org/faqs/1291/
+
+### Sandbox verisi ve erişim
+
+- Test kartlarının tek doğruluk kaynağı iyzico'nun resmî test kartları sayfasıdır; AlışverişKapıda'daki sabitler veya rastgele internet listeleri kanonik kaynak değildir.
+- Başarılı kredi kartı örneği `5526080000000006`; yetersiz bakiye `4111111111111129`; hatalı CVC `4124111111111116`; başarısız 3DS Initialize `4151111111111112`; özel `mdStatus` senaryoları `4131111111111117` ve `4141111111111115` ile test edilir. Liste güncellenebileceği için test fixture'ı hazırlanırken resmî sayfa yeniden kontrol edilir.
+- Sandbox kartlarında CVC doğru formatta rastgele bir değer, son kullanma tarihi ise gelecekte bir tarih olabilir. Sandbox OTP değeri resmî dokümana göre `123456` değeridir. Bunlar yalnız sandbox ortamında kullanılır; gerçek kartla sandbox testi yapılmaz.
+- Sandbox hesabı `https://sandbox-merchant.iyzipay.com/auth/register` adresinden kullanıcı tarafından açılır. API Key ve Secret Key panelde `Ayarlar → Firma Ayarları → API Anahtarları` bölümünden alınır. Anahtarlar sohbete, issue'ya, roadmap'e, test fixture'ına veya Git'e yazılmaz; yalnız ilgili development env/secret yönetimine eklenir.
+- Sandbox ve live base URL/credential çiftleri ayrı config olarak tutulur. Production süreç hiçbir koşulda sandbox anahtarına veya test kartına sessizce düşmez; yanlış ortam eşleşmesinde uygulama başlangıçta hata verir.
+
+### 9B sonrasındaki sıra
+
+1. **9C — Checkout frontend'i:** Misafir ve üyelikli checkout ALP Gözlük'ün mevcut public tasarım diliyle sıfırdan hazırlanır; AlışverişKapıda UI referansı kullanılmaz. Masaüstünde içerik + sticky sipariş özeti, mobilde tek kolon + klavye ve safe-area uyumlu eylem alanı; `Sepet özeti → Teslimat ve ödeme → Sipariş sonucu` ilerlemesi; ürün özeti accordion'u, adres/fatura, kargo, kendi kart formumuz, taksitler, sözleşme onayı ve sonuç durumları bulunur. Form köşeli, sade, nefes alan, responsive ve erişilebilir olur; ağır dekoratif animasyon kullanılmaz. Kart alanları küçük ve izole Client Component içinde yalnız bellekte tutulur, uygun `autocomplete` değerlerini kullanır, mobilde en az 16px input yazısı ve erişilebilir hata/odak durumları sağlar. `Satın Al` sırasında çift gönderim engellenir; kart değerleri TanStack Query cache'ine, global store'a, URL'ye veya kalıcı browser storage'a girmez. Bekleniyor/başarılı/başarısız/incelemede/rezervasyon süresi doldu ekranları backend'in kanonik durumunu okur.
+2. **9D — Tek kargo firması:** Shipment kaydı, takip numarası, kargoya verildi/teslim edildi durumları, admin operasyonu ve sağlayıcı webhook/polling adaptörü.
+3. **9E — İade talebi ve admin onayı:** Müşteri iade talebi, kalem/adet/neden seçimi, ayrı ve tahmin edilmesi zor `return_number`, uygunluk ve durum geçmişi.
+4. **9F — Para iadesi:** Onaylı/teslim alınmış iade sonrasında 9B'de saklanan kalem `paymentTransactionId` değerleri kullanılarak iyzico refund yapılır; bizim ayrı `refund_number` değerimiz ile iyzico `provider_refund_id` birlikte tutulur. İade talebi numarası para iadesi numarası değildir.
+5. **9G — Transactional e-posta ve sipariş operasyonu:** Sipariş alındı, ödeme, kargo, teslim, iade ve refund e-postaları; admin sipariş/iade/refund ekranları ve yeniden deneme/uzlaştırma araçları.
+
+Filtreleme, ürün detayları ve ana sayfa geliştirmeleri bu backend sırasını beklemek zorunda değildir; ancak ödeme-kargo-iade backend işlerinde yukarıdaki sıra korunur.
 
 ## Varyant bazlı stok yönetimi
 
@@ -264,10 +336,14 @@ OpenSearch, TensorFlow/ALS ve Socket.IO ilk production sürümünün zorunlu alt
 7. [ ] Katalog filtreleme, MariaDB tabanlı gerçek arama ve ayrıntılı SEO
 8. [x] Müşteri adresleri, MariaDB tabanlı kalıcı sepet ve favoriler
 9. [ ] Checkout, stok transaction'ı, ödeme ve webhook
-   - [x] 9A — Sağlayıcıdan bağımsız sipariş çekirdeği, snapshot, idempotency ve stok rezervasyonu
-   - [ ] 9B — iyzico sandbox ödeme başlatma, callback/webhook doğrulama ve başarısız ödeme akışları
-   - [ ] 9C — Misafir/üyelikli checkout frontend'i ve sipariş sonuç ekranı
+   - [x] 9A — Sağlayıcıdan bağımsız sipariş çekirdeği, snapshot, idempotency ve stok rezervasyonu uygulaması
+     - [ ] 9A production kapanışı — süre aşımı DB smoke testi ve tekil production cron kurulumu
+   - [ ] **ŞİMDİKİ ADIM: 9B — iyzico Direct API, zorunlu 3DS, payment attempt, Auth 3DS, response signature, V3 webhook ve sandbox/güvenlik testleri**
+   - [ ] 9C — Kendi tasarım dilimizle misafir/üyelikli checkout, kart formu ve sipariş sonuç ekranı
    - [ ] 9D — Kargo gönderisi, takip numarası ve sipariş durum senkronizasyonu
+   - [ ] 9E — İade talebi, ayrı `return_number` ve admin onayı
+   - [ ] 9F — iyzico refund, ayrı `refund_number` ve `provider_refund_id`
+   - [ ] 9G — Transactional e-posta ve sipariş/iade/refund operasyon ekranları
 10. [ ] Admin operasyon modüllerinin CRUD akışları, staging ve production hazırlığı
    - [x] 10A — Varyant envanter listesi, kontrollü stok hareketi, düşük stok eşiği ve hareket geçmişi
 11. [ ] Lansman sonrası davranış eventleri, arama ölçümleri ve kural tabanlı öneriler
@@ -279,7 +355,7 @@ Yedinci aşamanın hedef kitle/özellik filtreleme, lokalize katalog URL'leri, y
 
 Sekizinci aşamada misafir ve kullanıcı sepetleri, hesap ve misafir favorileri, login sonrası idempotent birleştirme, ürün seçimi, kupon, fiyat/stok uyarıları ve TanStack Query tabanlı optimistic arayüz akışları tamamlanmıştır. Sepet stok rezervasyonu yapmaz; kesin fiyat ve stok kontrolü checkout aşamasında yapılacaktır.
 
-Dokuzuncu aşamanın 9A sipariş çekirdeği tamamlanmıştır. Bir sonraki adım 9B'de iyzico sandbox sözleşmesini mevcut `payments` denemeleri ve `commitPaidOrder` sınırına bağlamaktır. Kart verisi sisteme alınmayacak; sağlayıcı callback/webhook sonucu imza ve idempotency doğrulamasından sonra sipariş transaction'ına aktarılacaktır.
+Dokuzuncu aşamanın 9A uygulama çekirdeği tamamlanmış ve 25 Eylül 2026 tarihinde backend testleri ile gerçek DB smoke testi yeniden geçmiştir. Süre aşımı DB smoke kapsamı ve production tekil cron kurulumu açık production kapanış maddeleridir. Bir sonraki geliştirme adımı 9B.1'de iyzico Direct API sağlayıcı/compliance sınırını ve sandbox sözleşmesini hazırlamak, ardından gerçek `payments` denemelerini mevcut `commitPaidOrder` / `failOrderPayment` transaction sınırlarına bağlamaktır. Kart alanları kendi checkout tasarımımızda bulunacak ve kart verisi yalnız ayrılmış ödeme endpoint'inden bellekte işlenerek iyzico'ya iletilecektir; kalıcı depoya veya loglara girmeyecektir. Callback parametreleri tek başına güvenilir sayılmayacak, Auth 3DS cevabı, response signature ve sipariş/tutar eşleşmeleri tamamlandıktan sonra sipariş kesinleştirilecektir.
 
 On birinci ve on ikinci aşamalar ilk production yayınının ön koşulu değildir. Bu aşamalar, gerçek kullanım verisi toplandıktan ve temel ticaret akışları kararlı hâle geldikten sonra ele alınır. İleri teknoloji kurulumu kendi başına hedef veya tamamlanma ölçütü sayılmaz; kullanıcı deneyimine ve operasyonel ihtiyaca kanıtlanabilir katkı sağlamalıdır.
 
@@ -287,7 +363,7 @@ On birinci ve on ikinci aşamalar ilk production yayınının ön koşulu değil
 
 Aşağıdaki sağlayıcılar seçilmeden production entegrasyonu tamamlanmış sayılmaz:
 
-- Ödeme kuruluşu: teknik hedef iyzico sandbox; production sözleşmesi ve canlı anahtarlar bekleniyor
+- Ödeme kuruluşu: teknik hedef iyzico Direct API + zorunlu 3DS sandbox; production sözleşmesi, Direct API/3DS aktivasyonu, PCI kapsam teyidi ve canlı anahtarlar bekleniyor
 - Kargo kuruluşu
 - Transactional e-posta servisi
 - S3-compatible production storage sağlayıcısı
@@ -305,6 +381,14 @@ Bu maddeler tamamlanmadan production yayını yapılmaz:
 - [ ] Otomatik yedekleme, geri yükleme ve geri dönüş senaryosu staging ortamında test edilmeli.
 - [ ] Production `DB_*` değerleri yalnızca yeni MariaDB 11.4 instance'ını göstermeli; paylaşımlı MariaDB 10.6 kullanılmamalı.
 - [ ] Redis servis sağlığı, kalıcılık tercihi, erişim kısıtları ve backend fallback davranışı staging'de doğrulanmalı.
+- [ ] Süresi dolan stok rezervasyonları için `npm run stock:expire:production` dakikada bir çalışan tek bir cron/worker olarak kurulmalı; başarısız çalıştırmalar log ve alarm üretmeli.
+- [ ] iyzico callback adresi public HTTPS ve sabit allowlist config'iyle hazırlanmalı; sandbox/live anahtarları ile base URL'ler birbirine karışmamalı.
+- [ ] iyzico hesabında Direct API/3DS ve webhook signature özellikleri etkinleştirilmeli; staging'de Init/Auth 3DS, Auth response signature, `X-IYZ-SIGNATURE-V3`, tekrar bildirim ve callback-webhook yarışı doğrulanmalı.
+- [ ] Direct API nedeniyle kart verisinin geçtiği browser sayfası, CDN/WAF/load balancer ve Express ödeme bileşenlerinin PCI DSS kapsamı iyzico/acquirer ile yazılı olarak doğrulanmalı; gerekiyorsa QSA/ASV süreci canlı yayından önce tamamlanmalı.
+- [ ] Kart numarası ve CVC'nin DB, Redis, session, cookie, request/audit log, reverse-proxy logu, APM, hata izleme, analytics ve destek araçlarına girmediği staging güvenlik testiyle kanıtlanmalı; ödeme endpoint'i için merkezi redaction ve body-log yasağı doğrulanmalı.
+- [ ] Checkout sayfasında gereksiz üçüncü taraf scriptler çalıştırılmamalı; CSP, HSTS, TLS, CORS/CSRF, rate limit, dependency/vulnerability taraması ve script değişiklik kontrolü staging'de doğrulanmalı.
+- [ ] Production `buyer.identityNumber` kaynağı, kullanıcıya açıklanması ve saklama/iletme politikası iyzico sözleşmesi ile KVKK/hukuk değerlendirmesinde kesinleştirilmeli; canlıda örnek veya sabit kimlik numarası kullanılmamalı.
+- [ ] Ön bilgilendirme ve mesafeli satış sözleşmesi metinleri hukuk kontrolünden geçirilmeli; sürüm/hash, doldurulmuş snapshot, kabul zamanı ve ispat kayıtlarının siparişle ilişkisi doğrulanmalı.
 - [ ] Tek kullanımlık bootstrap komutuyla korumalı `super_admin` oluşturulmalı; bootstrap e-posta ve şifresi env dosyasından hemen temizlenmeli.
 - [ ] `ADMIN_2FA_ENABLED=true` yapılmadan önce ayrı development/staging doğrulaması tamamlanmalı ve `ADMIN_2FA_ENCRYPTION_KEY` güvenli secret yönetimine taşınmalı.
 - [ ] Yönetim 2FA'sı açıkken Redis kesintisinin yönetici girişini güvenli biçimde kapattığı test edilmeli.

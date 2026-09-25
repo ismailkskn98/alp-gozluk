@@ -18,7 +18,7 @@ export default function ProductSpecifications({ specifications = {}, title }) {
   );
 
   return (
-    <section className="mt-8 pt-5" aria-label={title}>
+    <section className="pt-5" aria-label={title}>
       <BouncyAccordion
         radius={0}
         items={[{ id: "specifications", title, description: details }]}
