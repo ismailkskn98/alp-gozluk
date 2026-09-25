@@ -15,7 +15,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import SearchResultCard from './result-card';
 import SearchSuggestions from './suggestions';
 
-export default function SearchMenu({ locale, navigationItems, triggerLabel, hasAnnouncement }) {
+export default function SearchMenu({ locale, navigationItems, triggerLabel }) {
   const t = useTranslations('Search');
   const router = useRouter();
   const inputRef = useRef(null);
@@ -23,6 +23,7 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel, hasA
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [status, setStatus] = useState('idle');
+  const [panelTop, setPanelTop] = useState('3.75rem');
   const normalizedQuery = query.trim();
   const categories = navigationItems.slice(0, 5);
   const quickSearches = t.raw('quickSearches');
@@ -63,6 +64,11 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel, hasA
   }
 
   function handleOpenChange(nextOpen) {
+    if (nextOpen) {
+      const headerBottom = document.querySelector('[data-site-header]')?.getBoundingClientRect().bottom;
+      setPanelTop(`${Math.max(0, Math.round(headerBottom || 60))}px`);
+    }
+
     setOpen(nextOpen);
   }
 
@@ -79,8 +85,6 @@ export default function SearchMenu({ locale, navigationItems, triggerLabel, hasA
   const resultsTitle = normalizedQuery
     ? t('resultsFor', { query: normalizedQuery })
     : t('popularProducts');
-  const panelTop = hasAnnouncement ? '6rem' : '3.75rem';
-
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>

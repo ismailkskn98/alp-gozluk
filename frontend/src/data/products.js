@@ -1,46 +1,6 @@
-import { demoProducts } from './demo-products';
-
-export { demoProducts };
-
-export function getProduct(slug) {
-  return demoProducts.find((product) => product.slug === slug);
-}
+import 'server-only';
 
 const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-
-function normalizeSearchText(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-function matchesDemoFilters(product, filters) {
-  if (filters.audience) {
-    const acceptedAudiences = ['women', 'men'].includes(filters.audience)
-      ? [filters.audience, 'unisex']
-      : [filters.audience];
-    if (!product.audiences.some((audience) => acceptedAudiences.includes(audience))) return false;
-  }
-  if (filters.type && product.productType !== filters.type) return false;
-  if (filters.material && !product.material.includes(filters.material)) return false;
-  if (filters.feature && !product.features.includes(filters.feature)) return false;
-  if (filters.search) {
-    const searchValue = normalizeSearchText([
-      product.name,
-      product.brand,
-      product.code,
-      product.type,
-      product.productType,
-      product.slug,
-      ...product.audiences,
-      ...product.material,
-      ...product.features,
-    ].join(' '));
-    if (!searchValue.includes(normalizeSearchText(filters.search).trim())) return false;
-  }
-  return true;
-}
 
 function formatPrice(value, locale) {
   return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
@@ -86,9 +46,6 @@ function normalizeProductDetail(product, locale) {
 }
 
 export async function listProducts(locale, filters = {}) {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-    return demoProducts.filter((product) => matchesDemoFilters(product, filters));
-  }
   if (!apiUrl) return [];
   try {
     const query = new URLSearchParams({ locale });
@@ -115,9 +72,6 @@ export async function listProducts(locale, filters = {}) {
 }
 
 export async function findProduct(locale, slug) {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-    return normalizeProductDetail(getProduct(slug), locale);
-  }
   if (!apiUrl) return null;
   try {
     const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products/${encodeURIComponent(slug)}?locale=${locale}`, { next: { revalidate: 300 } });

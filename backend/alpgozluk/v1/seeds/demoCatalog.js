@@ -326,10 +326,63 @@ const rawDemoProducts = [
     ),
     images: createImages('RAYBAN_SCUDERIA-FERRARI_RB3674M_F002-6G', ['main.webp', '1.png', '3.png', '4.png']),
   },
+  {
+    code: 'VE2287',
+    slug: 'versace-ve2287',
+    name: 'Versace VE2287',
+    brand: 'Versace',
+    type: 'Güneş Gözlüğü',
+    color: '#ffffff',
+    audiences: ['unisex'],
+    productType: 'sunglasses',
+    material: ['metal'],
+    features: [],
+    shortDescription: 'Keskin geometrik formu ve metal çerçevesiyle güçlü bir Versace güneş gözlüğü.',
+    specifications: createSpecifications(
+      { Model: 'VE2287', 'Ürün tipi': 'Güneş gözlüğü', Materyal: 'Metal' },
+      { Model: 'VE2287', 'Product type': 'Sunglasses', Material: 'Metal' },
+    ),
+    images: ['/demo-gozlukler/versace-ve2287/main.webp', '/demo-gozlukler/versace-ve2287/1.webp', '/demo-gozlukler/versace-ve2287/2.webp'],
+  },
+  {
+    code: 'IP-VND268',
+    slug: 'inesta-polarized-ip-vnd268',
+    name: 'Inesta Polarized IP VND268',
+    brand: 'Inesta',
+    type: 'Güneş Gözlüğü',
+    color: '#ffffff',
+    audiences: ['unisex'],
+    productType: 'sunglasses',
+    material: ['acetate'],
+    features: ['polarized'],
+    shortDescription: 'Şeffaf kahve çerçevesi ve polarize füme camlarıyla günlük kullanıma uygun model.',
+    specifications: createSpecifications(
+      { Model: 'IP VND268', Ölçü: '53□18', 'Lens özelliği': 'Polarize', 'Çerçeve rengi': 'Şeffaf kahve' },
+      { Model: 'IP VND268', Size: '53□18', 'Lens feature': 'Polarized', 'Frame color': 'Transparent brown' },
+    ),
+    images: ['/demo-gozlukler/inesta-polarized-ip-vnd268/main.webp', '/demo-gozlukler/inesta-polarized-ip-vnd268/1.webp', '/demo-gozlukler/inesta-polarized-ip-vnd268/2.webp'],
+  },
 ];
 
-export const demoProducts = rawDemoProducts.map((product, index) => ({
-  ...product,
-  id: 900001 + index,
-  isDemoProduct: true,
-}));
+const prices = [
+  18990, 19990, 2490, 2790, 22990, 24990, 3290, 4490, 8990, 1990,
+  2290, 16990, 17990, 6490, 9490, 8290, 8990, 12990, 3790,
+];
+
+const demoProducts = rawDemoProducts.map((product, index) => {
+  const extraImages = product.code === 'RB2140-901'
+    ? ['/demo-gozlukler/rayban-rb2140-wayfarer-50mm/main.webp', '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/1.webp', '/demo-gozlukler/rayban-rb2140-wayfarer-50mm/2.webp']
+    : product.code === '8125S'
+      ? ['/demo-gozlukler/INNOXLIFE_8125S_52-18-145/1-png.png', '/demo-gozlukler/INNOXLIFE_8125S_52-18-145/2-png.png']
+      : [];
+  const price = prices[index];
+  return {
+    ...product,
+    price,
+    compareAtPrice: index % 3 === 0 ? Math.round(price * 1.12 / 10) * 10 : null,
+    stockQuantity: 12 + (index % 7),
+    images: [...product.images, ...extraImages],
+  };
+});
+
+module.exports = { demoProducts };

@@ -80,6 +80,13 @@
     "deleted": "Announcement deleted.",
     "not_found": "Announcement not found."
   },
+  "orders": {
+    "prepared": "The order is ready for payment.",
+    "reused": "The existing checkout operation was returned.",
+    "found": "The order was loaded.",
+    "cancelled": "The order was cancelled.",
+    "access_denied": "The order access credentials are invalid."
+  },
   "cart": {
     "loaded": "Cart loaded.",
     "item_added": "Item added to cart.",

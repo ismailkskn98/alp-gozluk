@@ -115,3 +115,69 @@ test('favori endpointleri kimlik doğrulaması olmadan kullanılamaz', async () 
   await request(createApp()).put('/api/alpgozluk/v1/account/favorites/1').expect(401);
   await request(createApp()).post('/api/alpgozluk/v1/account/favorites/merge').send({ productIds: [1] }).expect(401);
 });
+
+test('checkout endpointi idempotency anahtarı ve adres doğrulamasını veritabanından önce yapar', async () => {
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/checkout/orders')
+    .send({})
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+});
+
+test('geçerli görünen misafir checkout isteği sepet erişim anahtarı olmadan reddedilir', async () => {
+  const address = {
+    firstName: 'Ada',
+    lastName: 'Yılmaz',
+    phone: '05555555555',
+    countryCode: 'TR',
+    city: 'İstanbul',
+    district: 'Kadıköy',
+    postalCode: '34710',
+    addressLine: 'Örnek Mahallesi Test Sokak No: 1',
+  };
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/checkout/orders')
+    .set('Idempotency-Key', 'checkout-security-test-0001')
+    .send({
+      customer: { firstName: 'Ada', lastName: 'Yılmaz', email: 'ada@example.com', phone: '05555555555' },
+      shippingAddress: address,
+      billingSameAsShipping: true,
+    })
+    .expect(401);
+
+  assert.equal(response.body.status, false);
+});
+
+test('misafir checkout isteği ayrı sipariş erişim anahtarı olmadan reddedilir', async () => {
+  const address = {
+    firstName: 'Ada',
+    lastName: 'Yılmaz',
+    phone: '05555555555',
+    countryCode: 'TR',
+    city: 'İstanbul',
+    district: 'Kadıköy',
+    postalCode: '34710',
+    addressLine: 'Örnek Mahallesi Test Sokak No: 1',
+  };
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/checkout/orders')
+    .set('Idempotency-Key', 'checkout-security-test-0002')
+    .set('X-Cart-Token', 'A'.repeat(43))
+    .send({
+      customer: { firstName: 'Ada', lastName: 'Yılmaz', email: 'ada@example.com', phone: '05555555555' },
+      shippingAddress: address,
+      billingSameAsShipping: true,
+    })
+    .expect(401);
+
+  assert.equal(response.body.status, false);
+});
+
+test('misafir siparişi erişim anahtarı olmadan okunamaz', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/checkout/orders/AG-26-23456789AB')
+    .expect(401);
+
+  assert.equal(response.body.status, false);
+});

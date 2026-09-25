@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Glasses } from 'lucide-react';
 import { useState } from 'react';
-import { PRODUCT_IMAGE_QUALITY, shouldUseOriginalProductImage } from '@/lib/product-images';
+import { PRODUCT_IMAGE_QUALITY } from '@/lib/product-images';
 
-const hasPreparedWhiteCanvas = (src) => typeof src === 'string' && src.startsWith('/gozlukler/');
+const hasPreparedWhiteCanvas = (src) => typeof src === 'string' && src.includes('/uploads/public/products/demo/');
 
 export default function ProductGallery({ color, images = [], name, imageLabel, previousLabel, nextLabel }) {
   const availableImages = images.filter(Boolean).slice(0, 5);
@@ -39,7 +39,6 @@ export default function ProductGallery({ color, images = [], name, imageLabel, p
                 alt=""
                 fill
                 quality={PRODUCT_IMAGE_QUALITY}
-                unoptimized={shouldUseOriginalProductImage(src)}
                 sizes="72px"
                 className={`object-contain ${hasPreparedWhiteCanvas(src) ? 'p-0' : 'p-1'}`}
               />
@@ -59,7 +58,6 @@ export default function ProductGallery({ color, images = [], name, imageLabel, p
             alt={`${name} ${imageLabel} ${activeIndex + 1}`}
             fill
             quality={PRODUCT_IMAGE_QUALITY}
-            unoptimized={shouldUseOriginalProductImage(activeImage)}
             fetchPriority={activeIndex === 0 ? 'high' : 'auto'}
             sizes="(min-width: 1440px) 55rem, (min-width: 1024px) 62vw, 96vw"
             className={`object-contain ${hasPreparedWhiteCanvas(activeImage) ? 'p-0' : 'p-[clamp(1.5rem,5vw,5rem)]'}`}

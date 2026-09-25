@@ -80,6 +80,13 @@
     "deleted": "Duyuru silindi.",
     "not_found": "Duyuru bulunamadı."
   },
+  "orders": {
+    "prepared": "Sipariş ödeme için hazırlandı.",
+    "reused": "Mevcut checkout işlemi getirildi.",
+    "found": "Sipariş getirildi.",
+    "cancelled": "Sipariş iptal edildi.",
+    "access_denied": "Sipariş erişim bilgisi geçersiz."
+  },
   "cart": {
     "loaded": "Sepet yüklendi.",
     "item_added": "Ürün sepete eklendi.",

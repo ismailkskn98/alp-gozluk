@@ -3,7 +3,7 @@ const path = require('node:path');
 const { config } = require('../../alpgozluk/v1/config/env');
 const { encodeStorageKey } = require('../../general_helpers/storageKey');
 
-const rootPath = path.resolve(process.cwd(), config.storage.localPath);
+const rootPath = config.storage.localPath;
 
 const resolveStoragePath = (storageKey) => {
   const normalizedKey = String(storageKey).replaceAll('\\', '/');
@@ -23,7 +23,7 @@ const resolveStoragePath = (storageKey) => {
 const save = async (file, options) => {
   const absolutePath = resolveStoragePath(options.key);
   await fs.mkdir(path.dirname(absolutePath), { recursive: true });
-  await fs.writeFile(absolutePath, file.buffer, { flag: 'wx' });
+  await fs.writeFile(absolutePath, file.buffer, { flag: options.overwrite ? 'w' : 'wx' });
   return { key: options.key, driver: 'local' };
 };
 

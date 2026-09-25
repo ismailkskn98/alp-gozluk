@@ -117,6 +117,25 @@ Frontend query anahtarları:
 ['commerce', 'favorites', 'list']
 ```
 
+Demo katalog artık frontend sabiti değildir. `npm run db:seed:demo-catalog` komutu ürünleri, varyantları, stokları, markaları, kategorileri, özellikleri, kuponu ve medya kayıtlarını idempotent biçimde hazırlar. Görsel dosyaları aynı storage adapter'ı üzerinden development'ta local, production'da S3-compatible depoya aktarılır. Seed tekrar çalıştırıldığında mevcut stok satış hareketleri sıfırlanmaz.
+
+## Sipariş çekirdeği — Aşama 9A
+
+Aşama 9A ödeme sağlayıcısından bağımsız olarak tamamlanmıştır:
+
+- Sipariş durumu: `pending_payment → processing → shipped → delivered`; ödeme öncesi veya izin verilen operasyonlarda `cancelled`.
+- Ödeme durumu: `initialized → pending → paid / failed / cancelled / expired`; başarılı ödemeden sonra `partially_refunded → refunded`.
+- Gönderim durumu: `unfulfilled → preparing → shipped → delivered`; ayrıca `returned` ve `cancelled`.
+- Checkout başladığında seçili varyant satırları transaction içinde kilitlenir, stok 20 dakika için ayrılır ve satılabilir `stock_quantity` aynı transaction'da azaltılır.
+- Ödeme başarılı olduğunda rezervasyon `committed` olur. İptal veya süre aşımında yalnız aktif rezervasyonlar bir kez geri bırakılır ve inventory movement kaydı oluşturulur.
+- İç `orders.id` API'de sipariş kimliği olarak kullanılmaz. Müşteriye `AG-YY-XXXXXXXXXX` biçiminde, belirsiz karakterleri içermeyen ve 50-bit rastgele bölüm taşıyan `order_number` gösterilir.
+- Checkout isteği zorunlu `Idempotency-Key` ile tekrar gönderilebilir; aynı anahtar ikinci sipariş veya ikinci stok düşümü üretmez.
+- Misafir siparişinde sepet token'ından ayrı üretilen 256-bit rastgele erişim anahtarının yalnız SHA-256 hash'i saklanır. Sipariş numarası veya sepet token'ı tek başına erişim sağlamaz.
+- Ürün kodu, marka, ad, SKU, renk, ölçü, ana görsel storage bilgisi, birim fiyat, indirim, vergi, toplam, müşteri, adres, kupon ve kargo yöntemi sipariş anında snapshot olarak saklanır.
+- Ödeme başarılı olduğunda yalnız siparişe dönüşen sepet satırları temizlenir; seçilmemiş satırlar korunur.
+- `npm run stock:expire` süresi geçen rezervasyonları serbest bırakır. Production'da bu komut tekil çalışan cron/worker görevi olarak planlanacaktır.
+- `npm run test:order-core:db` gerçek development veritabanında sepet ekle/güncelle/seç/kaldır, rezervasyon, idempotency, iptal, başarısız ödeme, stok iadesi ve ödeme kesinleştirme akışını doğrulayıp kendi kayıtlarını temizler.
+
 ## Katalog taksonomisi ve navigasyon
 
 Katalog verisi aşağıdaki sorumluluklara ayrılır:
@@ -156,6 +175,33 @@ Public URL yapısı:
 Buradaki `{locale?}` Türkçe için boş, diğer diller için zorunlu prefix'tir (`/shop`, `/en/shop`).
 
 Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` query parametreleriyle taşınır. İçerik sayfaları slug tabanlı kalır; filtre kombinasyonları yeni ve kontrolsüz SEO sayfaları üretmez.
+
+## Arama, öneri ve gerçek zamanlı iletişim kararları
+
+OpenSearch, TensorFlow/ALS ve Socket.IO ilk production sürümünün zorunlu altyapıları değildir. Bu teknolojiler yalnızca somut ürün ihtiyacı ve ölçülmüş veri oluştuğunda devreye alınır. AlışverişKapıda projesi uygulama kodu ve kullanım örneği olarak incelenebilir; çoklu mağaza, satıcı iletişimi ve geniş katalog ihtiyaçları ALP Gözlük'e doğrudan taşınmaz.
+
+### Arama ve OpenSearch
+
+- İlk sürümde ürün aramasının doğruluk kaynağı MariaDB'dir. Mevcut `LIKE` tabanlı arama geçici başlangıçtır; katalog büyümeden önce güvenli sorgu normalizasyonu, uygun indeksler, sonuç sayfası, sıralama ve arama analitiği tamamlanır.
+- Frontend belirli bir arama motoruna bağlanmaz. Backend'de arama sözleşmesi sabit tutulur; ileride MariaDB uygulaması OpenSearch sağlayıcısıyla değiştirilebilmelidir.
+- OpenSearch; yazım hatası toleransı, Türkçe metin analizi, gelişmiş autocomplete, relevance ağırlıkları, yoğun facet kullanımı veya ölçülen arama gecikmesi MariaDB çözümünü yetersiz bıraktığında değerlendirilir.
+- OpenSearch kullanılırsa MariaDB tek doğruluk kaynağı olarak kalır; arama indeksi yeniden üretilebilir bir okuma modelidir. Ürün ekleme, güncelleme ve silme senkronizasyonu; toplu reindex, sağlık kontrolü, izleme ve OpenSearch kesintisi fallback'i birlikte tasarlanmadan production'a alınmaz.
+
+### Öneri sistemi ve davranış verisi
+
+- TensorFlow ve ALS aynı teknoloji değildir. TensorFlow tabanlı metin/embedding çözümleri ile ALS collaborative filtering modeli ayrı ihtiyaçlar olarak değerlendirilir; AlışverişKapıda uygulaması doğrudan kopyalanmaz.
+- İlk öneriler makine öğrenmesi kullanmaz. Yeni gelenler, çok satanlar, aynı marka, benzer fiyat aralığı ve gözlüğün ürün tipi, hedef kitle, çerçeve şekli, materyali, rengi ve cam özellikleri gibi yönetilen katalog verileriyle kural tabanlı öneriler üretilir.
+- Kişiselleştirme için model kurmadan önce `product_view`, `search_result_click`, `add_to_cart`, `purchase` ve gerekli diğer etkileşimlerin tutarlı event sözleşmesi hazırlanır. Üyelerde kullanıcı, misafirlerde anonim oturum kimliği kullanılır; hassas veri event payload'ına yazılmaz ve saklama/izin yaklaşımı production öncesinde belirlenir.
+- Event altyapısının amacı ilk aşamada veri toplamak ve ölçüm yapmaktır; ayrı recommendation veritabanı, TensorFlow, Spark veya ALS kurulmasını zorunlu kılmaz.
+- ALS ancak yeterli gerçek kullanıcı-ürün etkileşimi oluştuğunda, cold-start fallback'leri belirlendiğinde ve öneri kalitesi ölçülebilir hâle geldiğinde değerlendirilir. Model yokken veya kullanıcı/ürün yeniyken kural tabanlı öneriler çalışmaya devam eder.
+
+### Socket.IO ve gerçek zamanlı özellikler
+
+- İlk sürümde Socket.IO/WebSocket kullanılmaz. Mevcut HTTP API ve TanStack Query akışı sipariş, iade, hesap ve admin işlemleri için yeterlidir.
+- Ödeme sonucu sağlayıcı webhook'u, kargo durumu webhook veya kontrollü sorgulama, transactional e-posta ise kalıcı iş akışı üzerinden yürür. Bu kritik süreçlerin doğruluğu aktif socket bağlantısına bağlı olmaz.
+- Socket.IO; canlı destek, anlık kullanıcı bildirimi, admin ekranında anlık yeni sipariş görünümü veya çevrimiçi kullanıcı takibi gibi onaylanmış bir ürün ihtiyacı oluştuğunda eklenir.
+- Gerçek zamanlı olaylar yalnız bildirim/invalidation katmanıdır. Kalıcı durum MariaDB'de saklanır; istemci bir olay aldığında kanonik veriyi API'den yeniden çeker. Bağlantı kesilmesi ödeme, sipariş, stok veya iade verisi kaybına neden olmaz.
+- Çoklu backend instance'ına geçilirse Socket.IO adapter, mesaj dağıtımı ve load balancer oturum yönlendirmesi production tasarımının parçası olarak ayrıca ele alınır.
 
 ## Müşteri kimlik doğrulama
 
@@ -197,22 +243,32 @@ Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` quer
 4. [x] MariaDB başlangıç şeması, rol/izin ve audit log
 5. [x] Local/S3 storage ve güvenli medya yönetimi
 6. [x] Admin ürün oluşturma → DB → cache invalidation → public ürün dikey akışı
-7. [ ] Katalog filtreleme, gerçek arama ve ayrıntılı SEO
+7. [ ] Katalog filtreleme, MariaDB tabanlı gerçek arama ve ayrıntılı SEO
 8. [x] Müşteri adresleri, MariaDB tabanlı kalıcı sepet ve favoriler
 9. [ ] Checkout, stok transaction'ı, ödeme ve webhook
+   - [x] 9A — Sağlayıcıdan bağımsız sipariş çekirdeği, snapshot, idempotency ve stok rezervasyonu
+   - [ ] 9B — iyzico sandbox ödeme başlatma, callback/webhook doğrulama ve başarısız ödeme akışları
+   - [ ] 9C — Misafir/üyelikli checkout frontend'i ve sipariş sonuç ekranı
+   - [ ] 9D — Kargo gönderisi, takip numarası ve sipariş durum senkronizasyonu
 10. [ ] Admin operasyon modüllerinin CRUD akışları, staging ve production hazırlığı
+11. [ ] Lansman sonrası davranış eventleri, arama ölçümleri ve kural tabanlı öneriler
+12. [ ] Ölçülmüş ihtiyaca göre OpenSearch, ALS/TensorFlow ve Socket.IO değerlendirmesi
 
 İlk altı aşamanın mimari ve çalışan iskeleti uygulanmıştır. Admin modül ekranları hazırdır; ürün oluşturma dışındaki CRUD iş akışları ilgili geliştirme aşamalarında API'lere bağlanacaktır. Şifre sıfırlama ve e-posta doğrulama ekranları mevcut olmakla birlikte e-posta sağlayıcısı seçilene kadar bilgilendirme durumundadır.
 
-Yedinci aşamanın hedef kitle/özellik filtreleme, lokalize katalog URL'leri, yönetilebilir mega menü ve admin taksonomi CRUD bölümü uygulanmıştır. Gerçek arama sonuç sayfası, canonical stratejisi, breadcrumb/schema çıktıları ve ileri SEO çalışmaları tamamlanmadığı için aşama henüz kapatılmamıştır.
+Yedinci aşamanın hedef kitle/özellik filtreleme, lokalize katalog URL'leri, yönetilebilir mega menü ve admin taksonomi CRUD bölümü uygulanmıştır. İlk gerçek arama MariaDB üzerinde tamamlanacaktır; OpenSearch bu aşamanın kabul kriteri değildir. Arama sonuç sayfası, canonical stratejisi, breadcrumb/schema çıktıları ve ileri SEO çalışmaları tamamlanmadığı için aşama henüz kapatılmamıştır.
 
 Sekizinci aşamada misafir ve kullanıcı sepetleri, hesap ve misafir favorileri, login sonrası idempotent birleştirme, ürün seçimi, kupon, fiyat/stok uyarıları ve TanStack Query tabanlı optimistic arayüz akışları tamamlanmıştır. Sepet stok rezervasyonu yapmaz; kesin fiyat ve stok kontrolü checkout aşamasında yapılacaktır.
+
+Dokuzuncu aşamanın 9A sipariş çekirdeği tamamlanmıştır. Bir sonraki adım 9B'de iyzico sandbox sözleşmesini mevcut `payments` denemeleri ve `commitPaidOrder` sınırına bağlamaktır. Kart verisi sisteme alınmayacak; sağlayıcı callback/webhook sonucu imza ve idempotency doğrulamasından sonra sipariş transaction'ına aktarılacaktır.
+
+On birinci ve on ikinci aşamalar ilk production yayınının ön koşulu değildir. Bu aşamalar, gerçek kullanım verisi toplandıktan ve temel ticaret akışları kararlı hâle geldikten sonra ele alınır. İleri teknoloji kurulumu kendi başına hedef veya tamamlanma ölçütü sayılmaz; kullanıcı deneyimine ve operasyonel ihtiyaca kanıtlanabilir katkı sağlamalıdır.
 
 ## Açık dış entegrasyon kararları
 
 Aşağıdaki sağlayıcılar seçilmeden production entegrasyonu tamamlanmış sayılmaz:
 
-- Ödeme kuruluşu
+- Ödeme kuruluşu: teknik hedef iyzico sandbox; production sözleşmesi ve canlı anahtarlar bekleniyor
 - Kargo kuruluşu
 - Transactional e-posta servisi
 - S3-compatible production storage sağlayıcısı

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Glasses } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { PRODUCT_IMAGE_QUALITY, shouldUseOriginalProductImage } from '@/lib/product-images';
+import { PRODUCT_IMAGE_QUALITY } from '@/lib/product-images';
 
 export default function ProductMedia({ product, explore, imageLabel }) {
   const images = (product.images || []).filter(Boolean).slice(0, 5);
@@ -40,7 +40,6 @@ export default function ProductMedia({ product, explore, imageLabel }) {
             alt={index === 0 ? `${product.name} ${imageLabel}` : ''}
             fill
             quality={PRODUCT_IMAGE_QUALITY}
-            unoptimized={shouldUseOriginalProductImage(src)}
             sizes="(min-width: 1024px) 30vw, (min-width: 640px) 48vw, 82vw"
             className={`object-contain transition-[opacity,transform] duration-300 ease-out ${activeIndex === index ? 'scale-100 opacity-100' : 'pointer-events-none scale-[0.985] opacity-0'}`}
           />

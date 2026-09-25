@@ -25,7 +25,7 @@ const createApp = () => {
       return callback(error);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Request-Id', 'X-Cart-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'Idempotency-Key', 'X-Request-Id', 'X-Cart-Token', 'X-Order-Token'],
     exposedHeaders: ['X-Cart-Token', 'X-Request-Id'],
     credentials: false,
     maxAge: 600,
@@ -36,7 +36,7 @@ const createApp = () => {
   if (config.storage.driver === 'local') {
     app.use(
       '/uploads/public',
-      express.static(path.resolve(process.cwd(), config.storage.localPath, 'public'), {
+      express.static(path.resolve(config.storage.localPath, 'public'), {
         fallthrough: false,
         immutable: config.isProduction,
         maxAge: config.isProduction ? '7d' : 0,

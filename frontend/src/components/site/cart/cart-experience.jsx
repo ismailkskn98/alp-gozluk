@@ -22,8 +22,6 @@ import {
   useUpdateCartSelection,
 } from "@/features/commerce";
 
-const mockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
-
 function localized(value, locale, fallback = "") {
   if (typeof value === "string") return value;
   return value?.[locale] || value?.tr || value?.en || fallback;
@@ -58,27 +56,19 @@ function normalizeItem(item, locale) {
   };
 }
 
-function normalizeMockItems(items, locale) {
-  return items.map((item) => normalizeItem({ ...item, selected: item.selected ?? true, available: true }, locale));
-}
-
-function summaryFromItems(items, couponApplied = false) {
-  const selected = items.filter((item) => item.selected && item.available);
-  const subtotalAmount = selected.reduce((total, item) => total + item.originalPrice * item.quantity, 0);
-  const saleTotal = selected.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
-  const couponDiscount = couponApplied ? Math.round(saleTotal * 0.1) : 0;
+function emptySummary() {
   return {
-    totalItemCount: items.reduce((total, item) => total + item.quantity, 0),
-    selectedItemCount: selected.reduce((total, item) => total + item.quantity, 0),
-    subtotalAmount,
-    discountAmount: subtotalAmount - saleTotal + couponDiscount,
+    totalItemCount: 0,
+    selectedItemCount: 0,
+    subtotalAmount: 0,
+    discountAmount: 0,
     shippingAmount: 0,
-    totalAmount: saleTotal - couponDiscount,
+    totalAmount: 0,
     currency: "TRY",
   };
 }
 
-export default function CartExperience({ locale, initialItems = [], recommendations, authenticated = false }) {
+export default function CartExperience({ locale, recommendations, authenticated = false }) {
   const t = useTranslations("Cart");
   const cartQuery = useCart();
   const cartSummaryQuery = useCartSummary();
@@ -87,18 +77,14 @@ export default function CartExperience({ locale, initialItems = [], recommendati
   const removeCartItem = useRemoveCartItem();
   const applyCartCoupon = useApplyCartCoupon();
   const toggleFavorite = useToggleFavorite({ authenticated });
-  const [mockItems, setMockItems] = useState(() => normalizeMockItems(initialItems, locale));
   const [couponCode, setCouponCode] = useState("");
-  const [mockCouponApplied, setMockCouponApplied] = useState(false);
   const [couponMessage, setCouponMessage] = useState("");
   const [removeTarget, setRemoveTarget] = useState(null);
   const [liveMessage, setLiveMessage] = useState("");
 
   const remoteItems = useMemo(() => (cartQuery.data?.items || []).map((item) => normalizeItem(item, locale)), [cartQuery.data?.items, locale]);
-  const items = mockMode ? mockItems : remoteItems;
-  const summary = mockMode
-    ? summaryFromItems(items, mockCouponApplied)
-    : (cartSummaryQuery.data || cartQuery.data?.summary || summaryFromItems([]));
+  const items = remoteItems;
+  const summary = cartSummaryQuery.data || cartQuery.data?.summary || emptySummary();
 
   const labels = useMemo(() => ({
     checkoutProgress: t("checkoutProgress"), cartSummary: t("cartSummary"), deliveryAndPayment: t("deliveryAndPayment"), orderResult: t("orderResult"),
@@ -122,36 +108,19 @@ export default function CartExperience({ locale, initialItems = [], recommendati
   const selectionPending = updateSelection.isPending;
 
   function updateQuantity(id, quantity) {
-    if (mockMode) {
-      setMockItems((current) => current.map((item) => item.id === id ? { ...item, quantity } : item));
-      return;
-    }
     updateItem.mutate({ itemId: id, quantity });
   }
 
   function toggleItem(id, selected) {
-    if (mockMode) {
-      setMockItems((current) => current.map((item) => item.id === id ? { ...item, selected } : item));
-      return;
-    }
     updateSelection.mutate({ itemIds: [id], selected });
   }
 
   function toggleAll(selected) {
-    if (mockMode) {
-      setMockItems((current) => current.map((item) => ({ ...item, selected })));
-      return;
-    }
     updateSelection.mutate({ selected });
   }
 
   function removeItem() {
     if (!removeTarget) return;
-    if (mockMode) {
-      setMockItems((current) => current.filter((item) => item.id !== removeTarget.id));
-      setRemoveTarget(null);
-      return;
-    }
     removeCartItem.mutate(removeTarget.id, {
       onSuccess: () => {
         setLiveMessage(t("removedSuccess"));
@@ -163,11 +132,6 @@ export default function CartExperience({ locale, initialItems = [], recommendati
   async function moveToFavorites(item) {
     const productId = Number(item.productId);
     if (!Number.isInteger(productId) || productId < 1) return;
-    if (mockMode) {
-      setMockItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
-      setLiveMessage(t("movedToFavorites"));
-      return;
-    }
     try {
       await toggleFavorite.mutateAsync({ productId, isFavorite: false });
       await removeCartItem.mutateAsync(item.id);
@@ -181,19 +145,13 @@ export default function CartExperience({ locale, initialItems = [], recommendati
     event.preventDefault();
     const code = couponCode.trim();
     if (!code) return;
-    if (mockMode) {
-      const accepted = code.toUpperCase() === "ALP10";
-      setMockCouponApplied(accepted);
-      setCouponMessage(accepted ? t("promoSuccess") : t("promoInvalid"));
-      return;
-    }
     applyCartCoupon.mutate(code, {
       onSuccess: () => setCouponMessage(t("promoSuccess")),
       onError: () => setCouponMessage(t("promoInvalid")),
     });
   }
 
-  if (!mockMode && cartQuery.isPending) {
+  if (cartQuery.isPending) {
     return <div className="grid min-h-[28rem] place-items-center" role="status"><p className="flex items-center gap-2 text-sm text-muted-foreground"><RefreshCw className="size-4 animate-spin" />{t("loading")}</p></div>;
   }
 
@@ -206,7 +164,7 @@ export default function CartExperience({ locale, initialItems = [], recommendati
         <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("description")}</p>
       </div>
 
-      {!mockMode && cartQuery.isError ? (
+      {cartQuery.isError ? (
         <div className="mt-8 flex flex-col items-start gap-4 border border-danger/25 bg-danger/5 p-5" role="alert">
           <p className="flex items-center gap-2 text-sm text-danger"><AlertCircle className="size-4" />{t("loadError")}</p>
           <button type="button" className="text-sm font-medium underline" onClick={() => cartQuery.refetch()}>{t("tryAgain")}</button>
@@ -233,7 +191,7 @@ export default function CartExperience({ locale, initialItems = [], recommendati
           <OrderSummary totals={{ subtotal: summary.subtotalAmount, discount: summary.discountAmount, shipping: summary.shippingAmount, total: summary.totalAmount }} labels={labels}
             formatCurrency={formatCurrency} couponCode={couponCode} couponMessage={couponMessage} onCouponChange={setCouponCode} onCouponSubmit={applyCoupon}
             couponPending={applyCartCoupon.isPending} canCheckout={Number(summary.selectedItemCount || 0) > 0} />
-          <div className="min-w-0 lg:col-start-1 lg:row-start-2"><CartRecommendations products={recommendations} labels={labels} locale={locale} formatCurrency={formatCurrency} /></div>
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2"><CartRecommendations products={recommendations} labels={labels} formatCurrency={formatCurrency} /></div>
         </div>
       ) : !cartQuery.isError ? (
         <div className="mt-10 border border-border bg-[#f7f7f4] px-6 py-16 text-center sm:py-24">

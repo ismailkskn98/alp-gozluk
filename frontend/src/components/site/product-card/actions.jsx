@@ -71,13 +71,13 @@ export default function ProductCardActions({ product, authenticated = false, loc
       >
         <Heart className={cn('size-4', isFavorite && 'fill-current')} strokeWidth={1.45} />
       </button>
-      <div className="pointer-events-none absolute inset-x-3 bottom-7 z-30 translate-y-0 opacity-100 transition-[opacity,transform] duration-200 md:translate-y-2 md:opacity-0 md:group-hover/card:translate-y-0 md:group-hover/card:opacity-100 md:group-focus-within/card:translate-y-0 md:group-focus-within/card:opacity-100">
+      <div className="absolute inset-x-3 bottom-7 z-30 opacity-100 transition-opacity duration-300 ease-in-out motion-reduce:transition-none md:pointer-events-none md:opacity-0 md:group-hover/card:pointer-events-auto md:group-hover/card:opacity-100 md:group-focus-within/card:pointer-events-auto md:group-focus-within/card:opacity-100">
         {canAddDirectly ? (
           <button
             type="button"
             onClick={handleAdd}
             disabled={addCartItem.isPending}
-            className="pointer-events-auto flex h-11 w-full items-center justify-center gap-2 bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a] disabled:cursor-wait disabled:opacity-60"
+            className="flex h-11 w-full items-center justify-center gap-2 bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a] disabled:cursor-wait disabled:opacity-60"
           >
             <ShoppingBag className="size-4" strokeWidth={1.45} />
             {addCartItem.isPending ? (tr ? 'Ekleniyor…' : 'Adding…') : (tr ? 'Sepete ekle' : 'Add to cart')}
@@ -85,7 +85,7 @@ export default function ProductCardActions({ product, authenticated = false, loc
         ) : (
           <Link
             href={`/product/${product.slug}`}
-            className="pointer-events-auto flex h-11 w-full items-center justify-center gap-2 bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a]"
+            className="flex h-11 w-full items-center justify-center gap-2 bg-[#172536] px-4 text-sm font-medium text-white transition-colors hover:bg-[#24364a]"
           >
             <ShoppingBag className="size-4" strokeWidth={1.45} />
             {tr ? 'Seçenekleri gör' : 'View options'}

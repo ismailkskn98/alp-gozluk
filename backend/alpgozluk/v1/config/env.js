@@ -2,13 +2,14 @@ const path = require('node:path');
 const dotenv = require('dotenv');
 
 const nodeEnv = process.env.NODE_ENV || 'development';
+const backendRoot = path.resolve(__dirname, '../../..');
 
 if (!['development', 'production', 'test'].includes(nodeEnv)) {
   throw new Error(`Desteklenmeyen NODE_ENV değeri: ${nodeEnv}`);
 }
 
 if (nodeEnv !== 'test') {
-  dotenv.config({ path: path.resolve(process.cwd(), `.env.${nodeEnv}`) });
+  dotenv.config({ path: path.resolve(backendRoot, `.env.${nodeEnv}`) });
 }
 
 const toNumber = (value, fallback) => {
@@ -64,7 +65,7 @@ const config = {
   },
   storage: {
     driver: process.env.STORAGE_DRIVER || (nodeEnv === 'production' ? 's3' : 'local'),
-    localPath: process.env.LOCAL_STORAGE_PATH || 'uploads',
+    localPath: path.resolve(backendRoot, process.env.LOCAL_STORAGE_PATH || 'uploads'),
     maxUploadSizeMb: toNumber(process.env.MAX_UPLOAD_SIZE_MB, 10),
     maxUploadFiles: toNumber(process.env.MAX_UPLOAD_FILES, 8),
     s3: {

@@ -11,31 +11,20 @@ import Favorites from "./favorites";
 import { GooeyNav } from "@/components/ui/gooey-nav";
 import Orders from "./orders";
 import ProfileForm from "./profile-form";
-import { withDemoAccount } from "@/data/demo-account";
 import { useFavorites, useToggleFavorite } from "@/features/commerce";
-
-const demoEnabled = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
 
 export default function AccountExperience({ locale, user, account, initialSection = "overview", logout }) {
   const [active, setActive] = useState(initialSection);
-  const [data, setData] = useState(() => (demoEnabled ? withDemoAccount(account, user) : account || { profile: user, addresses: [], orders: [], returns: [], favorites: [] }));
+  const [data, setData] = useState(() => account || { profile: user, addresses: [], orders: [], returns: [], favorites: [] });
   const favoritesQuery = useFavorites({ authenticated: true });
   const toggleFavorite = useToggleFavorite({ authenticated: true });
   const reduceMotion = useReducedMotion();
   const profile = data.profile || user;
-  const favorites = demoEnabled ? (data.favorites || []) : (favoritesQuery.data || data.favorites || []);
+  const favorites = favoritesQuery.data || data.favorites || [];
   const accountData = { ...data, favorites };
 
   async function removeFavorite(productId) {
-    if (String(productId).startsWith("demo-")) {
-      setData((current) => ({ ...current, favorites: current.favorites.filter((product) => product.id !== productId) }));
-      return;
-    }
     await toggleFavorite.mutateAsync({ productId: Number(productId), isFavorite: true });
-  }
-
-  function updateDemoAddresses(addresses) {
-    setData((current) => ({ ...current, addresses }));
   }
 
   const view =
@@ -44,7 +33,7 @@ export default function AccountExperience({ locale, user, account, initialSectio
     ) : active === "orders" ? (
       <Orders orders={data.orders || []} returns={data.returns || []} locale={locale} />
     ) : active === "addresses" ? (
-      <AddressBook addresses={data.addresses || []} onUpdated={setData} onDemoChange={updateDemoAddresses} />
+      <AddressBook addresses={data.addresses || []} onUpdated={setData} />
     ) : active === "favorites" ? (
       <Favorites favorites={favorites} locale={locale} onRemove={removeFavorite} pending={toggleFavorite.isPending} error={favoritesQuery.isError || toggleFavorite.isError} />
     ) : (

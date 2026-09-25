@@ -27,6 +27,19 @@ test('local storage kaydetme, URL çözme ve silme sözleşmesini uygular', asyn
       await localStorage.getUrl(key, { visibility: 'public' }),
       'http://localhost:4000/uploads/public/products/test-file.png',
     );
+
+    await assert.rejects(
+      localStorage.save({ buffer: Buffer.from('duplicate') }, { key }),
+      { code: 'EEXIST' },
+    );
+    await localStorage.save(
+      { buffer: Buffer.from('updated-image-data') },
+      { key, overwrite: true },
+    );
+    assert.equal(
+      await fs.readFile(path.join(temporaryDirectory, key), 'utf8'),
+      'updated-image-data',
+    );
     assert.equal(await localStorage.delete(key), true);
   } finally {
     await fs.rm(temporaryDirectory, { recursive: true, force: true });
