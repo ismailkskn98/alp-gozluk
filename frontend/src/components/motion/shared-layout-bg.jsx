@@ -1,6 +1,4 @@
 "use client";;
-// beui.dev/components/motion/shared-layout-bg
-
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Children, cloneElement, forwardRef, isValidElement, useId, useState } from "react";
 import { SPRING_LAYOUT } from "@/lib/ease";
@@ -71,7 +69,7 @@ const reduce = useReducedMotion();
                     layoutId={`shared-bg-${uid}`}
                     transition={reduce ? { duration: 0 } : SPRING_LAYOUT}
                     className={cn(
-                      "pointer-events-none h-full w-full rounded-2xl bg-primary/[0.06]",
+                      "pointer-events-none h-full w-full rounded-2xl bg-muted/80",
                       pillClassName,
                     )}
                   />

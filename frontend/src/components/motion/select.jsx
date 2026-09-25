@@ -148,9 +148,7 @@ export function Select({
 
 export function SelectTrigger({
   className,
-  children,
-  onKeyDown,
-  ...props
+  children
 }) {
   const ctx = useSelectContext("SelectTrigger");
   const isTop = ctx.placement === "top";
@@ -171,17 +169,6 @@ export function SelectTrigger({
       aria-expanded={ctx.open}
       aria-controls={ctx.listId}
       onClick={() => ctx.setOpen(!ctx.open)}
-      onKeyDown={(event) => {
-        onKeyDown?.(event);
-        if (event.defaultPrevented || !['ArrowDown', 'ArrowUp'].includes(event.key)) return;
-        event.preventDefault();
-        ctx.setOpen(true);
-        requestAnimationFrame(() => {
-          const options = document.getElementById(ctx.listId)?.querySelectorAll('[role="option"]:not(:disabled)');
-          options?.[event.key === 'ArrowUp' ? options.length - 1 : 0]?.focus();
-        });
-      }}
-      {...props}
       // Gooey: the edge facing the panel snaps flat (panel attached) then rounds
       // back once the panel pulls away — the two pinch apart.
       initial={false}
@@ -234,8 +221,7 @@ export function SelectValue({
 
 export function SelectContent({
   className,
-  children,
-  ...props
+  children
 }) {
   const ctx = useSelectContext("SelectContent");
   const innerRef = useRef(null);
@@ -291,7 +277,6 @@ export function SelectContent({
       aria-labelledby={ctx.triggerId}
       aria-hidden={!open}
       inert={!open}
-      {...props}
       initial={false}
       animate={
         ctx.reduce
@@ -362,32 +347,11 @@ export function SelectItem({
   const ctx = useSelectContext("SelectItem");
   const selected = ctx.value === value;
   const label = typeof children === "string" ? children : value;
-  const { register, unregister } = ctx;
-
-  function handleKeyDown(event) {
-    const options = [...event.currentTarget.closest('[role="listbox"]').querySelectorAll('[role="option"]:not(:disabled)')];
-    const currentIndex = options.indexOf(event.currentTarget);
-    let nextIndex;
-
-    if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % options.length;
-    if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + options.length) % options.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = options.length - 1;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      ctx.setOpen(false);
-      document.getElementById(ctx.triggerId)?.focus();
-      return;
-    }
-    if (nextIndex === undefined) return;
-    event.preventDefault();
-    options[nextIndex]?.focus();
-  }
 
   useLayoutEffect(() => {
-    register(value, label);
-    return () => unregister(value);
-  }, [register, unregister, value, label]);
+    ctx.register(value, label);
+    return () => ctx.unregister(value);
+  }, [ctx.register, ctx.unregister, value, label]);
 
   return (
     <motion.li variants={ctx.reduce ? undefined : ITEM_VARIANTS}>
@@ -395,10 +359,8 @@ export function SelectItem({
         type="button"
         role="option"
         aria-selected={selected}
-        data-state={selected ? 'selected' : 'unselected'}
         disabled={disabled}
         onClick={() => ctx.select(value)}
-        onKeyDown={handleKeyDown}
         className={cn(
           "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors",
           selected

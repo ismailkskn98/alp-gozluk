@@ -1,4 +1,6 @@
 "use client";;
+// beui.dev/components/motion/checkbox
+
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useId } from "react";
 import { EASE_OUT, SPRING_PRESS } from "@/lib/ease";
@@ -14,8 +16,6 @@ export function Checkbox({
   indeterminate,
   label,
   className,
-  indicatorClassName,
-  labelClassName,
   id: idProp,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy
@@ -56,7 +56,6 @@ export function Checkbox({
           showMark
             ? "border-primary bg-primary text-primary-foreground"
             : "border-muted-foreground/50 bg-background hover:border-muted-foreground",
-          indicatorClassName,
         )}
       >
         <AnimatePresence initial={false}>
@@ -103,7 +102,7 @@ export function Checkbox({
         </AnimatePresence>
       </motion.button>
       {label ? (
-        <span className={cn("select-none text-sm text-foreground", disabled && "opacity-60", labelClassName)}>
+        <span className={cn("select-none text-sm text-foreground", disabled && "opacity-60")}>
           {label}
         </span>
       ) : null}

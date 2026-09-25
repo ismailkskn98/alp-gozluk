@@ -1,6 +1,4 @@
 "use client";;
-// beui.dev/components/motion/tooltip
-
 import { AnimatePresence } from "motion/react";
 import {
   cloneElement,
