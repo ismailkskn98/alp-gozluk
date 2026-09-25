@@ -33,7 +33,7 @@ const ownsOrder = (order, identity) => (
 const findIdempotentOrder = async (connection, idempotencyKey, identity) => {
   const [rows] = await connection.query(
     `SELECT id, user_id, guest_access_token_hash
-     FROM orders WHERE checkout_idempotency_key = ? LIMIT 1 FOR UPDATE`,
+     FROM orders WHERE checkout_idempotency_key = ? LIMIT 1`,
     [idempotencyKey],
   );
   if (!rows[0]) return null;
@@ -87,7 +87,7 @@ const loadCheckoutItems = async (connection, cartId, locale) => {
      LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?
      LEFT JOIN product_translations fallback_pt ON fallback_pt.product_id = p.id AND fallback_pt.locale = 'tr'
      WHERE ci.cart_id = ? AND ci.is_selected = 1
-     ORDER BY ci.id FOR UPDATE`,
+     ORDER BY ci.id`,
     [locale, cartId],
   );
   return rows;
@@ -189,6 +189,16 @@ const insertAddress = (connection, orderId, addressType, address) => connection.
 const insertOrderItemAndReservation = async (connection, order, item, amounts) => {
   const quantity = Number(item.quantity);
   const unitPriceMinor = toMinorUnits(item.price);
+  const [stockResult] = await connection.query(
+    `UPDATE product_variants
+     SET stock_quantity = stock_quantity - ?
+     WHERE id = ? AND status = 'active' AND deleted_at IS NULL AND stock_quantity >= ?`,
+    [quantity, item.variant_id, quantity],
+  );
+  if (stockResult.affectedRows !== 1) {
+    throw commerceError(409, `${item.product_name} için yeterli stok bulunmuyor.`, 'insufficient_stock');
+  }
+
   const [itemResult] = await connection.query(
     `INSERT INTO order_items
       (order_id, product_id, variant_id, source_cart_item_id, product_code, brand_name, product_name, sku,
@@ -217,16 +227,6 @@ const insertOrderItemAndReservation = async (connection, order, item, amounts) =
       fromMinorUnits(amounts.subtotalMinor - amounts.discountMinor),
     ],
   );
-
-  const [stockResult] = await connection.query(
-    `UPDATE product_variants
-     SET stock_quantity = stock_quantity - ?
-     WHERE id = ? AND status = 'active' AND deleted_at IS NULL AND stock_quantity >= ?`,
-    [quantity, item.variant_id, quantity],
-  );
-  if (stockResult.affectedRows !== 1) {
-    throw commerceError(409, `${item.product_name} için yeterli stok bulunmuyor.`, 'insufficient_stock');
-  }
 
   const [balanceRows] = await connection.query(
     'SELECT stock_quantity FROM product_variants WHERE id = ? LIMIT 1',
@@ -341,7 +341,7 @@ const loadOrder = async (database, orderId) => {
   };
 };
 
-const prepareOrder = async ({ identity, idempotencyKey, customer, shippingAddress, billingAddress, notes, locale }, database = getDb()) => {
+const prepareOrderAttempt = async ({ identity, idempotencyKey, customer, shippingAddress, billingAddress, notes, locale }, database) => {
   const connection = await database.getConnection();
   let orderId;
   let reused = false;
@@ -405,6 +405,28 @@ const prepareOrder = async ({ identity, idempotencyKey, customer, shippingAddres
   }
 
   return { order: await loadOrder(database, orderId), reused };
+};
+
+const prepareOrder = async (payload, database = getDb()) => {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prepareOrderAttempt(payload, database);
+    } catch (error) {
+      const idempotencyCollision = error.code === 'ER_DUP_ENTRY'
+        && String(error.message).includes('uq_orders_checkout_idempotency');
+      if (idempotencyCollision) {
+        const existingOrder = await findIdempotentOrder(database, payload.idempotencyKey, payload.identity);
+        if (existingOrder) return { order: await loadOrder(database, existingOrder.id), reused: true };
+      }
+      const retryableDeadlock = ['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT'].includes(error.code);
+      if ((idempotencyCollision || retryableDeadlock) && attempt < 2) continue;
+      if (retryableDeadlock) {
+        throw commerceError(409, 'Checkout sırasında stok değişti. Sepeti yenileyip tekrar deneyin.', 'checkout_conflict');
+      }
+      throw error;
+    }
+  }
+  throw commerceError(409, 'Checkout işlemi tamamlanamadı. Sepeti yenileyip tekrar deneyin.', 'checkout_conflict');
 };
 
 const findAccessibleOrder = async (database, orderNumber, identity, lock = false) => {

@@ -17,7 +17,7 @@ const listCatalog = async (requestedLocale = 'tr', includeInactive = false) => {
   const statusCondition = includeInactive ? '' : "AND source.status = 'active'";
   const db = getDb();
 
-  const [brandsResult, audiencesResult, categoriesResult, collectionsResult, groupsResult, valuesResult] = await Promise.all([
+  const [brandsResult, audiencesResult, categoriesResult, collectionsResult, groupsResult, valuesResult, pricesResult] = await Promise.all([
     db.query(
       `SELECT source.id, source.code, source.name, source.slug, source.status, source.sort_order AS sortOrder
        FROM brands source WHERE source.deleted_at IS NULL ${statusCondition}
@@ -71,6 +71,13 @@ const listCatalog = async (requestedLocale = 'tr', includeInactive = false) => {
        ORDER BY source.sort_order, source.id`,
       [locale],
     ),
+    db.query(
+      `SELECT MIN(pv.price) AS min, MAX(pv.price) AS max
+       FROM product_variants pv
+       INNER JOIN products p ON p.id = pv.product_id
+       WHERE p.status = 'published' AND p.deleted_at IS NULL
+         AND pv.status = 'active' AND pv.deleted_at IS NULL`,
+    ),
   ]);
 
   const valuesByGroup = new Map();
@@ -86,6 +93,10 @@ const listCatalog = async (requestedLocale = 'tr', includeInactive = false) => {
     categories: categoriesResult[0],
     collections: collectionsResult[0],
     attributeGroups: groupsResult[0].map((group) => ({ ...group, values: valuesByGroup.get(group.id) || [] })),
+    priceRange: {
+      min: Number(pricesResult[0][0]?.min || 0),
+      max: Number(pricesResult[0][0]?.max || 0),
+    },
   };
 };
 

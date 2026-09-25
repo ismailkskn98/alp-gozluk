@@ -20,6 +20,10 @@ function favoriteImage(product) {
   return product.imageUrl || product.image || product.primaryImage?.url || product.images?.[0]?.url || product.images?.[0] || '';
 }
 
+function favoriteIsInStock(product) {
+  return product.isInStock === undefined ? Number(product.stockQuantity ?? 1) > 0 : Boolean(product.isInStock);
+}
+
 export default function Favorites({ favorites, locale, onRemove, pending = false, error = false }) {
   const [removingId, setRemovingId] = useState(null);
   const addCartItem = useAddCartItem();
@@ -65,7 +69,7 @@ export default function Favorites({ favorites, locale, onRemove, pending = false
   }
 
   function addFavoriteToCart(product) {
-    if (!product.defaultVariantId || Number(product.activeVariantCount) !== 1) return;
+    if (!favoriteIsInStock(product) || !product.defaultVariantId || Number(product.activeVariantCount) !== 1) return;
     addCartItem.mutate(
       { productId: Number(product.id), variantId: Number(product.defaultVariantId), quantity: 1 },
       { onSuccess: () => announceCartItemAdded({ productId: product.id, name: product.name }) },
@@ -97,7 +101,7 @@ export default function Favorites({ favorites, locale, onRemove, pending = false
                 >
                   <Heart className="size-4 fill-current" strokeWidth={1.4} />
                 </button>
-                {product.defaultVariantId && Number(product.activeVariantCount) === 1 ? (
+                {favoriteIsInStock(product) && product.defaultVariantId && Number(product.activeVariantCount) === 1 ? (
                   <button
                     type="button"
                     onClick={() => addFavoriteToCart(product)}
@@ -108,6 +112,7 @@ export default function Favorites({ favorites, locale, onRemove, pending = false
                     <ShoppingBag className="size-4" strokeWidth={1.4} />
                   </button>
                 ) : null}
+                {!favoriteIsInStock(product) ? <span className="absolute bottom-2.5 right-2.5 rounded-full bg-[#e5e7e8] px-3 py-2 text-xs font-medium text-[#6d7377]">{tr ? 'Tükendi' : 'Sold out'}</span> : null}
               </div>
               <div className="mt-3 border-t border-[#d8ddd7] pt-3">
                 <Link href={`/product/${product.slug}`} className="block truncate text-sm font-medium text-[#172536] hover:underline">{product.name}</Link>

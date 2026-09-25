@@ -20,7 +20,12 @@ const list = async (userId, requestedLocale = 'tr') => {
        COALESCE(pt.name, fallback_pt.name, p.code) AS name,
        MIN(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN pv.price END) AS price_amount,
        COUNT(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN 1 END) AS active_variant_count,
-       MIN(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN pv.id END) AS default_variant_id,
+       SUM(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN pv.stock_quantity ELSE 0 END) AS stock_quantity,
+       SUM(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL AND pv.stock_quantity > 0 THEN 1 ELSE 0 END) AS in_stock_variant_count,
+       COALESCE(
+         MIN(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL AND pv.stock_quantity > 0 THEN pv.id END),
+         MIN(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN pv.id END)
+       ) AS default_variant_id,
        'TRY' AS currency,
        (SELECT m.storage_key FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order, m.id LIMIT 1) AS storage_key,
        (SELECT m.storage_driver FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order, m.id LIMIT 1) AS storage_driver,
@@ -42,6 +47,9 @@ const list = async (userId, requestedLocale = 'tr') => {
     priceAmount: row.price_amount === null ? null : Number(row.price_amount),
     currency: row.currency,
     activeVariantCount: Number(row.active_variant_count),
+    inStockVariantCount: Number(row.in_stock_variant_count),
+    stockQuantity: Number(row.stock_quantity),
+    isInStock: Number(row.in_stock_variant_count) > 0,
     defaultVariantId: row.default_variant_id,
     imageUrl: row.storage_key
       ? await getStorage(row.storage_driver).getUrl(row.storage_key, { visibility: row.visibility })

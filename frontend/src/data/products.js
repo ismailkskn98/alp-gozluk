@@ -11,7 +11,9 @@ function formatPrice(value, locale) {
 
 function getApiSpecifications(product, locale) {
   const tr = locale === 'tr';
-  const variant = product.variants?.[0] || {};
+  const variant = product.variants?.find((item) => Number(item.id) === Number(product.defaultVariantId))
+    || product.variants?.[0]
+    || {};
   const rows = [
     [tr ? 'Marka' : 'Brand', product.brand],
     [tr ? 'Model / kod' : 'Model / code', product.code],
@@ -52,7 +54,7 @@ export async function listProducts(locale, filters = {}) {
     for (const [key, value] of Object.entries(filters)) {
       if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
     }
-    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products?${query}`, { next: { revalidate: 300 } });
+    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products?${query}`, { cache: 'no-store' });
     if (!response.ok) return [];
     const payload = await response.json();
     return (payload.data?.products || []).map((product) => ({
@@ -74,15 +76,18 @@ export async function listProducts(locale, filters = {}) {
 export async function findProduct(locale, slug) {
   if (!apiUrl) return null;
   try {
-    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products/${encodeURIComponent(slug)}?locale=${locale}`, { next: { revalidate: 300 } });
+    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/products/${encodeURIComponent(slug)}?locale=${locale}`, { cache: 'no-store' });
     if (!response.ok) return null;
     const product = (await response.json()).data?.product;
     if (!product) return null;
+    const defaultVariant = product.variants?.find((variant) => Number(variant.id) === Number(product.defaultVariantId))
+      || product.variants?.find((variant) => Number(variant.stockQuantity) > 0)
+      || product.variants?.[0];
     return normalizeProductDetail({
       ...product,
       type: locale === 'tr' ? 'ALP Çerçeve' : 'ALP Frame',
-      priceAmount: product.variants?.[0]?.price === undefined ? null : Number(product.variants[0].price),
-      price: formatPrice(product.variants?.[0]?.price, locale),
+      priceAmount: defaultVariant?.price === undefined ? null : Number(defaultVariant.price),
+      price: formatPrice(defaultVariant?.price, locale),
       color: '#ffffff',
       images: (product.images || product.media || [])
         .map((image) => (typeof image === 'string' ? image : image.url))

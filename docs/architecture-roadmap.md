@@ -133,8 +133,17 @@ Aşama 9A ödeme sağlayıcısından bağımsız olarak tamamlanmıştır:
 - Misafir siparişinde sepet token'ından ayrı üretilen 256-bit rastgele erişim anahtarının yalnız SHA-256 hash'i saklanır. Sipariş numarası veya sepet token'ı tek başına erişim sağlamaz.
 - Ürün kodu, marka, ad, SKU, renk, ölçü, ana görsel storage bilgisi, birim fiyat, indirim, vergi, toplam, müşteri, adres, kupon ve kargo yöntemi sipariş anında snapshot olarak saklanır.
 - Ödeme başarılı olduğunda yalnız siparişe dönüşen sepet satırları temizlenir; seçilmemiş satırlar korunur.
-- `npm run stock:expire` süresi geçen rezervasyonları serbest bırakır. Production'da bu komut tekil çalışan cron/worker görevi olarak planlanacaktır.
+- `npm run stock:expire` süresi geçen rezervasyonları serbest bırakır. Production'da `npm run stock:expire:production` komutu dakikada bir çalışan tek bir cron/worker tarafından tetiklenmelidir; birden fazla scheduler aynı görevi paralel başlatmamalıdır.
 - `npm run test:order-core:db` gerçek development veritabanında sepet ekle/güncelle/seç/kaldır, rezervasyon, idempotency, iptal, başarısız ödeme, stok iadesi ve ödeme kesinleştirme akışını doğrulayıp kendi kayıtlarını temizler.
+
+## Varyant bazlı stok yönetimi
+
+- Satılabilir stok yalnız `product_variants.stock_quantity` alanında tutulur. Aktif checkout rezervasyonlarının toplamı `stock_reservations` üzerinden hesaplanır; fiziksel stok kullanılabilir ve ayrılmış stok toplamıdır.
+- Ürün oluştururken her varyant için, başlangıç miktarı sıfır olsa da `initial_stock` hareketi yazılır. Admin artırma/azaltmaları varyant satırını transaction içinde kilitler, negatif stoğu reddeder ve hem `inventory_movements` hem `audit_logs` kaydı üretir.
+- `GET /admin/inventory` kullanılabilir, ayrılmış ve fiziksel stoğu; `POST /admin/inventory/:variantId/adjustments` kontrollü stok hareketini; `PATCH /admin/inventory/:variantId` düşük stok eşiğini; `GET /admin/inventory/:variantId/movements` hareket geçmişini yönetir. Tüm uçlar `inventory.manage` izni ister.
+- Public ürün listesi `inStockVariantCount`, `isInStock` ve `stockStatus` döndürür. Aktif ama tükenen varyant detayda görünür ve seçilemez; tamamen tükenen ürün katalogda kalır, stoklu ürünlerden sonra sıralanır.
+- Stok taşıyan ürün listesi ve ürün detayı Redis/Next.js süreli cache kullanmaz. Facet, navigasyon ve stok taşımayan katalog sözlükleri cache'li kalır.
+- `npm run test:inventory:db` admin artırma/azaltma, negatif stok koruması, hareket ve audit kayıtlarını gerçek development veritabanında doğrular ve test değişikliklerini temizler.
 
 ## Katalog taksonomisi ve navigasyon
 
@@ -174,7 +183,16 @@ Public URL yapısı:
 
 Buradaki `{locale?}` Türkçe için boş, diğer diller için zorunlu prefix'tir (`/shop`, `/en/shop`).
 
-Filtreler `material`, `shape`, `feature`, `sale`, `sort`, `page` ve `limit` query parametreleriyle taşınır. İçerik sayfaları slug tabanlı kalır; filtre kombinasyonları yeni ve kontrolsüz SEO sayfaları üretmez.
+Filtreler `material`, `shape`, `frameType`, `feature`, `frameColor`, `lensColor`, `size`, `brand`, `priceMin`, `priceMax`, `sale`, `sort`, `page` ve `limit` query parametreleriyle taşınır. İçerik sayfaları slug tabanlı kalır; filtre kombinasyonları yeni ve kontrolsüz SEO sayfaları üretmez.
+
+Ürün-varyant kararı:
+
+- Ürüne ait ortak bilgiler, hedef kitle, kategori, koleksiyon, materyal ve form `products` ile `product_attribute_values` katmanında tutulur.
+- SKU, barkod, fiyat, stok, üretici renk kodu, ölçüler ve müşterinin seçtiği renk/cam/beden seçenekleri `product_variants` ile `variant_attribute_values` katmanında tutulur.
+- Her ürün en az bir satış varyantına sahiptir. Tek aktif varyant storefront'ta otomatik seçilir; birden fazla varyant varsa ilk stoklu varyant varsayılandır ve müşteri geçerli kombinasyonu açıkça seçebilir.
+- Admin ürün formu aynı ürün altında birden fazla varyant oluşturur. Renk, cam rengi ve ölçü değerleri admin taksonomi ekranından yönetilir; forma sabit liste olarak gömülmez.
+- Public ürün detayı varyant özelliklerini lokalize ad ve swatch değeriyle döndürür. Sepet satırı daima `variantId` üzerinden çalışır; böylece aynı ürünün farklı renk/ölçüleri ayrı satırlardır.
+- Demo seed varyant özelliklerini idempotent biçimde yeniden bağlar; tekrar çalıştırma aynı ürünü/varyantı çoğaltmaz ve mevcut satış stoğunu sıfırlamaz.
 
 ## Arama, öneri ve gerçek zamanlı iletişim kararları
 
@@ -251,6 +269,7 @@ OpenSearch, TensorFlow/ALS ve Socket.IO ilk production sürümünün zorunlu alt
    - [ ] 9C — Misafir/üyelikli checkout frontend'i ve sipariş sonuç ekranı
    - [ ] 9D — Kargo gönderisi, takip numarası ve sipariş durum senkronizasyonu
 10. [ ] Admin operasyon modüllerinin CRUD akışları, staging ve production hazırlığı
+   - [x] 10A — Varyant envanter listesi, kontrollü stok hareketi, düşük stok eşiği ve hareket geçmişi
 11. [ ] Lansman sonrası davranış eventleri, arama ölçümleri ve kural tabanlı öneriler
 12. [ ] Ölçülmüş ihtiyaca göre OpenSearch, ALS/TensorFlow ve Socket.IO değerlendirmesi
 

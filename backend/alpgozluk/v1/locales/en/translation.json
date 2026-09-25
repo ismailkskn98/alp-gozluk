@@ -60,6 +60,13 @@
     "created": "Product created.",
     "not_found": "Product not found."
   },
+  "inventory": {
+    "listed": "Variant inventory listed.",
+    "movements_listed": "Inventory movements listed.",
+    "adjusted": "Inventory quantity updated.",
+    "threshold_updated": "Low stock threshold updated.",
+    "not_found": "Active product variant not found."
+  },
   "catalog": {
     "listed": "Catalogue options listed.",
     "created": "Catalogue record created.",

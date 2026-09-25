@@ -14,6 +14,10 @@ test('ürün filtreleri sayfalama, sıralama ve kod allowlist kurallarını uygu
   assert.equal(parseProductFilters({ audience: 'women', limit: '500' }), null);
   assert.equal(parseProductFilters({ sort: 'DROP TABLE products' }), null);
   assert.equal(parseProductFilters({ material: 'acetate,metal' }).material.length, 2);
+  assert.deepEqual(parseProductFilters({ frameColor: 'black,havana' }).frameColor, ['black', 'havana']);
+  assert.deepEqual(parseProductFilters({ size: 'small,medium', brand: 'ray-ban' }).size, ['small', 'medium']);
+  assert.equal(parseProductFilters({ priceMin: '5000', priceMax: '1000' }), null);
+  assert.equal(parseProductFilters({ priceMin: '-1' }), null);
 });
 
 test('katalog payload doğrulaması bilinmeyen kaynak ve geçersiz slug değerini reddeder', () => {

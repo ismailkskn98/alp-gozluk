@@ -24,6 +24,14 @@ test('admin ürün oluşturma endpointi tokensız istekleri reddeder', async () 
   assert.ok(response.body.message);
 });
 
+test('admin stok endpointleri tokensız istekleri reddeder', async () => {
+  const app = createApp();
+  await request(app).get('/api/alpgozluk/v1/admin/inventory').expect(401);
+  await request(app).get('/api/alpgozluk/v1/admin/inventory/1/movements').expect(401);
+  await request(app).post('/api/alpgozluk/v1/admin/inventory/1/adjustments').send({}).expect(401);
+  await request(app).patch('/api/alpgozluk/v1/admin/inventory/1').send({ lowStockThreshold: 5 }).expect(401);
+});
+
 test('admin katalog ve navigasyon endpointleri tokensız istekleri reddeder', async () => {
   const app = createApp();
   await request(app).get('/api/alpgozluk/v1/admin/catalog').expect(401);

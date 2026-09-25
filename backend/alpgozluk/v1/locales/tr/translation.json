@@ -60,6 +60,13 @@
     "created": "Ürün oluşturuldu.",
     "not_found": "Ürün bulunamadı."
   },
+  "inventory": {
+    "listed": "Varyant stokları listelendi.",
+    "movements_listed": "Stok hareketleri listelendi.",
+    "adjusted": "Stok miktarı güncellendi.",
+    "threshold_updated": "Düşük stok eşiği güncellendi.",
+    "not_found": "Aktif ürün varyantı bulunamadı."
+  },
   "catalog": {
     "listed": "Katalog seçenekleri listelendi.",
     "created": "Katalog kaydı oluşturuldu.",

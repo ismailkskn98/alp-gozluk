@@ -35,6 +35,49 @@ const numericMeasurement = (value, position) => {
   return matches?.[position] ? Number(matches[position]) : null;
 };
 
+const normalizedSpec = (value) => String(value || '').toLocaleLowerCase('tr-TR');
+
+const inferFrameShapeCodes = (product) => {
+  const value = normalizedSpec(readSpecification(product, 'tr', ['Çerçeve formu', 'Form', 'Şekil']));
+  const mappings = [
+    ['cat-eye', ['cat-eye', 'kedi']],
+    ['aviator', ['pilot', 'aviator']],
+    ['wayfarer', ['wayfarer']],
+    ['browline', ['browline']],
+    ['oval', ['oval']],
+    ['round', ['yuvarlak']],
+    ['square', ['kare']],
+    ['rectangle', ['dikdörtgen']],
+    ['geometric', ['geometrik']],
+  ];
+  return mappings.filter(([, words]) => words.some((word) => value.includes(word))).map(([code]) => code);
+};
+
+const inferSingleCode = (value, mappings) => {
+  const normalized = normalizedSpec(value);
+  return mappings.find(([, words]) => words.some((word) => normalized.includes(word)))?.[0] || null;
+};
+
+const inferVariantAttributeKeys = (product, size) => {
+  const frameColor = readSpecification(product, 'tr', ['Çerçeve rengi']);
+  const lensColor = readSpecification(product, 'tr', ['Cam rengi']);
+  const lensWidth = numericMeasurement(size, 0);
+  const frameColorCode = inferSingleCode(frameColor, [
+    ['white', ['beyaz']], ['red', ['kırmızı', 'bordo']], ['navy', ['lacivert']],
+    ['green', ['yeşil']], ['gold', ['altın']], ['tortoise', ['havana', 'kahve']], ['black', ['siyah']],
+  ]);
+  const lensColorCode = inferSingleCode(lensColor, [
+    ['purple', ['mor', 'bordo']], ['blue', ['mavi']], ['yellow', ['sarı']],
+    ['green', ['yeşil']], ['brown', ['kahve', 'bej']], ['gray', ['gri', 'füme']], ['black', ['siyah']],
+  ]);
+  const sizeCode = lensWidth ? (lensWidth <= 51 ? 'small' : lensWidth <= 55 ? 'medium' : 'large') : null;
+  return [
+    frameColorCode && `frame_color:${frameColorCode}`,
+    lensColorCode && `lens_color:${lensColorCode}`,
+    sizeCode && `frame_size:${sizeCode}`,
+  ].filter(Boolean);
+};
+
 const upsertTaxonomy = async (connection) => {
   const brands = [...new Set(demoProducts.map((product) => product.brand))];
   for (const [index, name] of brands.entries()) {
@@ -180,7 +223,13 @@ const upsertProduct = async (connection, product, references, index) => {
     `product_type:${product.productType}`,
     ...product.material.map((code) => `frame_material:${code}`),
     ...product.features.map((code) => `lens_feature:${code}`),
+    ...inferFrameShapeCodes(product).map((code) => `frame_shape:${code}`),
   ];
+  const frameType = inferSingleCode(
+    readSpecification(product, 'tr', ['Çerçeve tipi', 'Çerçeve yapısı']),
+    [['rimless', ['çerçevesiz']], ['semi-rimless', ['yarım']], ['full-rim', ['tam']]],
+  );
+  if (frameType) attributeKeys.push(`frame_type:${frameType}`);
   await connection.query('DELETE FROM product_attribute_values WHERE product_id = ?', [productId]);
   for (const key of attributeKeys) {
     const attributeId = references.attributes.get(key);
@@ -188,6 +237,16 @@ const upsertProduct = async (connection, product, references, index) => {
     await connection.query(
       'INSERT INTO product_attribute_values (product_id, attribute_value_id) VALUES (?, ?)',
       [productId, attributeId],
+    );
+  }
+
+  await connection.query('DELETE FROM variant_attribute_values WHERE variant_id = ?', [variantId]);
+  for (const key of inferVariantAttributeKeys(product, size)) {
+    const attributeId = references.attributes.get(key);
+    if (!attributeId) continue;
+    await connection.query(
+      'INSERT INTO variant_attribute_values (variant_id, attribute_value_id) VALUES (?, ?)',
+      [variantId, attributeId],
     );
   }
   return productId;

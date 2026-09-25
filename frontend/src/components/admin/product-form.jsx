@@ -3,16 +3,45 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Plus } from 'lucide-react';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSelect } from '@/components/admin/ui/select';
+import ProductVariantEditor, { emptyVariant } from '@/components/admin/product-variant-editor';
 
 const optionalMeasurement = z.preprocess(
   (value) => value === '' || value === undefined || value === null ? undefined : Number(value),
   z.number().positive().max(300).optional(),
 );
+
+const requiredMoney = z.preprocess(
+  (value) => value === '' || value === undefined || value === null ? undefined : Number(value),
+  z.number().min(0),
+);
+
+const requiredStock = z.preprocess(
+  (value) => value === '' || value === undefined || value === null ? undefined : Number(value),
+  z.number().int().min(0),
+);
+
+const variantSchema = z.object({
+  sku: z.string().trim().min(2).max(100),
+  colorCode: z.string().trim().max(64).optional(),
+  frameSize: z.string().trim().max(64).optional(),
+  lensType: z.string().trim().max(80).optional(),
+  lensCategory: z.string().trim().max(20).optional(),
+  uvProtection: z.string().trim().max(40).optional(),
+  lensWidthMm: optionalMeasurement,
+  bridgeWidthMm: optionalMeasurement,
+  templeLengthMm: optionalMeasurement,
+  price: requiredMoney,
+  compareAtPrice: z.union([z.literal(''), z.coerce.number().min(0)]).optional(),
+  stockQuantity: requiredStock,
+  lowStockThreshold: requiredStock,
+  attributeValueIds: z.array(z.number().int().positive()).optional(),
+});
 
 const schema = z.object({
   code: z.string().trim().min(2).max(80).regex(/^[A-Za-z0-9][A-Za-z0-9_-]+$/, 'Yalnız harf, rakam, tire ve alt çizgi kullanın.'),
@@ -25,18 +54,7 @@ const schema = z.object({
     z.literal(''),
     z.string().trim().regex(/^[A-Za-z]{2}$/, 'ISO ülke kodu 2 harf olmalı.'),
   ]).optional(),
-  sku: z.string().trim().min(2).max(100),
-  colorCode: z.string().trim().max(64).optional(),
-  frameSize: z.string().trim().max(64).optional(),
-  lensType: z.string().trim().max(80).optional(),
-  lensCategory: z.string().trim().max(20).optional(),
-  uvProtection: z.string().trim().max(40).optional(),
-  lensWidthMm: optionalMeasurement,
-  bridgeWidthMm: optionalMeasurement,
-  templeLengthMm: optionalMeasurement,
-  price: z.coerce.number().min(0),
-  compareAtPrice: z.union([z.literal(''), z.coerce.number().min(0)]).optional(),
-  stockQuantity: z.coerce.number().int().min(0),
+  variants: z.array(variantSchema).min(1, 'En az bir varyant ekleyin.'),
   brandId: z.string().optional(),
   audienceIds: z.array(z.string()).min(1, 'En az bir hedef kitle seçin.'),
   categoryIds: z.array(z.string()).optional(),
@@ -50,28 +68,19 @@ export default function ProductForm() {
   const [serverError, setServerError] = useState('');
   const [catalogError, setCatalogError] = useState('');
   const [productAttributeIds, setProductAttributeIds] = useState([]);
-  const [variantAttributeIds, setVariantAttributeIds] = useState([]);
   const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       status: 'draft',
-      stockQuantity: 0,
+      variants: [emptyVariant()],
       audienceIds: [],
       categoryIds: [],
       collectionIds: [],
       enSlug: '',
-      compareAtPrice: '',
       originCountryCode: '',
-      colorCode: '',
-      frameSize: '',
-      lensType: '',
-      lensCategory: '',
-      uvProtection: '',
-      lensWidthMm: '',
-      bridgeWidthMm: '',
-      templeLengthMm: '',
     },
   });
+  const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({ control, name: 'variants' });
 
   useEffect(() => {
     let active = true;
@@ -89,9 +98,8 @@ export default function ProductForm() {
   const productGroups = useMemo(() => (catalog?.attributeGroups || []).filter((group) => group.scope === 'product'), [catalog]);
   const variantGroups = useMemo(() => (catalog?.attributeGroups || []).filter((group) => group.scope === 'variant'), [catalog]);
 
-  function toggleAttribute(group, valueId, variant = false) {
-    const setter = variant ? setVariantAttributeIds : setProductAttributeIds;
-    setter((current) => {
+  function toggleAttribute(group, valueId) {
+    setProductAttributeIds((current) => {
       if (group.selectionMode === 'single') {
         const groupIds = new Set(group.values.map((value) => value.id));
         const withoutGroup = current.filter((id) => !groupIds.has(id));
@@ -124,22 +132,22 @@ export default function ProductForm() {
         categoryIds: (values.categoryIds || []).map(Number),
         collectionIds: (values.collectionIds || []).map(Number),
         productAttributeValueIds: productAttributeIds,
-        variants: [{
-          sku: values.sku,
-          price: values.price,
-          compareAtPrice: values.compareAtPrice === '' ? undefined : values.compareAtPrice,
-          stockQuantity: values.stockQuantity,
-          lowStockThreshold: 5,
-          colorCode: values.colorCode || undefined,
-          frameSize: values.frameSize || undefined,
-          lensType: values.lensType || undefined,
-          lensCategory: values.lensCategory || undefined,
-          uvProtection: values.uvProtection || undefined,
-          lensWidthMm: values.lensWidthMm,
-          bridgeWidthMm: values.bridgeWidthMm,
-          templeLengthMm: values.templeLengthMm,
-          attributeValueIds: variantAttributeIds,
-        }],
+        variants: values.variants.map((variant) => ({
+          sku: variant.sku,
+          price: variant.price,
+          compareAtPrice: variant.compareAtPrice === '' ? undefined : variant.compareAtPrice,
+          stockQuantity: variant.stockQuantity,
+          lowStockThreshold: variant.lowStockThreshold,
+          colorCode: variant.colorCode || undefined,
+          frameSize: variant.frameSize || undefined,
+          lensType: variant.lensType || undefined,
+          lensCategory: variant.lensCategory || undefined,
+          uvProtection: variant.uvProtection || undefined,
+          lensWidthMm: variant.lensWidthMm,
+          bridgeWidthMm: variant.bridgeWidthMm,
+          templeLengthMm: variant.templeLengthMm,
+          attributeValueIds: variant.attributeValueIds || [],
+        })),
       }),
     });
     const payload = await response.json();
@@ -184,28 +192,30 @@ export default function ProductForm() {
       </section>
 
       <section className="border-x border-b border-border bg-card p-5 sm:p-6">
-        <h2 className="font-semibold">İlk varyant, fiyat ve stok</h2>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2"><Label htmlFor="sku">SKU</Label><Input id="sku" placeholder="ALP-ATLAS-01-BLK" {...register('sku')} /></div>
-          <div className="space-y-2"><Label htmlFor="price">Satış fiyatı (TRY)</Label><Input id="price" type="number" step="0.01" placeholder="3490" {...register('price')} /></div>
-          <div className="space-y-2"><Label htmlFor="compareAtPrice">Eski fiyat (opsiyonel)</Label><Input id="compareAtPrice" type="number" step="0.01" placeholder="3990" {...register('compareAtPrice')} /></div>
-          <div className="space-y-2"><Label htmlFor="stockQuantity">Başlangıç stoğu</Label><Input id="stockQuantity" type="number" placeholder="0" {...register('stockQuantity')} /></div>
-        </div>
-        <div className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold">Gözlük teknik bilgileri</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Ölçüler milimetre olarak tutulur; renk ve ölçü bilgileri varyanta aittir.</p>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2"><Label htmlFor="colorCode">Renk kodu</Label><Input id="colorCode" placeholder="F002/6G" {...register('colorCode')} /></div>
-            <div className="space-y-2"><Label htmlFor="frameSize">Gösterim ölçüsü</Label><Input id="frameSize" placeholder="51□21 - 145" {...register('frameSize')} /></div>
-            <div className="space-y-2"><Label htmlFor="lensWidthMm">Lens genişliği (mm)</Label><Input id="lensWidthMm" type="number" step="0.01" placeholder="51" aria-invalid={Boolean(errors.lensWidthMm)} {...register('lensWidthMm')} /></div>
-            <div className="space-y-2"><Label htmlFor="bridgeWidthMm">Köprü genişliği (mm)</Label><Input id="bridgeWidthMm" type="number" step="0.01" placeholder="21" aria-invalid={Boolean(errors.bridgeWidthMm)} {...register('bridgeWidthMm')} /></div>
-            <div className="space-y-2"><Label htmlFor="templeLengthMm">Sap uzunluğu (mm)</Label><Input id="templeLengthMm" type="number" step="0.01" placeholder="145" aria-invalid={Boolean(errors.templeLengthMm)} {...register('templeLengthMm')} /></div>
-            <div className="space-y-2"><Label htmlFor="lensType">Cam tipi</Label><Input id="lensType" placeholder="Polarize / degrade" {...register('lensType')} /></div>
-            <div className="space-y-2"><Label htmlFor="lensCategory">Cam kategorisi</Label><Input id="lensCategory" placeholder="3N" {...register('lensCategory')} /></div>
-            <div className="space-y-2"><Label htmlFor="uvProtection">UV koruması</Label><Input id="uvProtection" placeholder="UV400" {...register('uvProtection')} /></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-semibold">Varyantlar, fiyat ve stok</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">Her ürün en az bir satış varyantına sahiptir. Tek varyantlı üründe müşteri seçim yapmak zorunda kalmaz; seçenek otomatik kullanılır.</p>
           </div>
+          <button type="button" onClick={() => appendVariant(emptyVariant())} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium transition-colors hover:bg-muted">
+            <Plus className="size-4" /> Varyant ekle
+          </button>
         </div>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{variantGroups.map((group) => <fieldset key={group.id}><legend className="text-sm font-medium">{group.name}</legend><div className="mt-3 flex flex-wrap gap-2">{group.values.map((value) => { const selected = variantAttributeIds.includes(value.id); return <button key={value.id} type="button" aria-pressed={selected} onClick={() => toggleAttribute(group, value.id, true)} className={`rounded-lg border px-3 py-2 text-sm ${selected ? 'border-primary bg-accent-soft text-primary' : 'border-border bg-card hover:border-border-strong'}`}>{value.name}</button>; })}</div></fieldset>)}</div>
+        <div className="mt-5 space-y-4">
+          {variantFields.map((field, index) => (
+            <ProductVariantEditor
+              key={field.id}
+              index={index}
+              register={register}
+              control={control}
+              errors={errors.variants?.[index]}
+              groups={variantGroups}
+              removable={variantFields.length > 1}
+              onRemove={() => removeVariant(index)}
+            />
+          ))}
+        </div>
+        {errors.variants?.root ? <p className="mt-3 text-xs text-danger">{errors.variants.root.message}</p> : null}
       </section>
 
       <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><Label>Yayın durumu</Label><div className="mt-2 max-w-md"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} ariaLabel="Yayın durumu" options={[{ value: 'draft', label: 'Taslak' }, { value: 'published', label: 'Yayında' }]} />} /></div><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>

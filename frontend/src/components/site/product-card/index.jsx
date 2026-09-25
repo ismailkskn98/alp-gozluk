@@ -7,6 +7,8 @@ export default function ProductCard({ product, explore, locale, authenticated = 
     ? product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : product.type === 'Optik Çerçeve' ? 'Optical frame' : product.type
     : product.type;
   const imageLabel = locale === 'en' ? 'product view' : 'ürün görünümü';
+  const isInStock = product.isInStock === undefined ? Number(product.stockQuantity) > 0 : Boolean(product.isInStock);
+  const showLowStock = isInStock && product.stockStatus === 'low_stock' && Number(product.activeVariantCount) === 1;
 
   return (
     <article className={`group/card ${className}`}>
@@ -18,6 +20,8 @@ export default function ProductCard({ product, explore, locale, authenticated = 
         <div>
           <h3 className="text-sm font-medium">{product.name}</h3>
           <p className="mt-1 text-xs text-[#75787c]">{type}</p>
+          {!isInStock ? <p className="mt-1.5 text-xs font-medium text-[#8d3d37]">{locale === 'tr' ? 'Tükendi' : 'Sold out'}</p> : null}
+          {showLowStock ? <p className="mt-1.5 text-xs font-medium text-[#9a5b00]">{locale === 'tr' ? `Son ${product.stockQuantity} adet` : `Only ${product.stockQuantity} left`}</p> : null}
         </div>
         <p className="shrink-0 text-sm tabular-nums">{product.price}</p>
       </Link>

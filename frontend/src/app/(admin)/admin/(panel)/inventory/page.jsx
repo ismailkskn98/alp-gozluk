@@ -1,2 +1,5 @@
-import AdminModuleWorkspace from '@/components/admin/module-workspace';
-export default function Page() { return <AdminModuleWorkspace module="inventory" />; }
+import AdminInventory from '@/components/admin/inventory';
+
+export default function InventoryPage() {
+  return <AdminInventory />;
+}

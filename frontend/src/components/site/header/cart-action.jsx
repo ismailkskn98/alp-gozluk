@@ -33,6 +33,12 @@ function getCount(cartValue, summaryValue) {
   return getItems(cartValue).reduce((total, item) => total + Number(item.quantity || 0), 0);
 }
 
+function getSummary(cartValue, summaryValue) {
+  const remoteSummary = summaryValue?.summary || summaryValue?.data?.summary || summaryValue;
+  const cart = getCart(cartValue);
+  return remoteSummary && typeof remoteSummary === 'object' ? remoteSummary : cart.summary || {};
+}
+
 function itemImage(item) {
   return item.image?.url || item.imageUrl || item.image || item.product?.imageUrl || item.product?.images?.[0]?.url || item.product?.images?.[0] || '';
 }
@@ -47,7 +53,13 @@ export default function CartAction({ locale, label }) {
   const summaryQuery = useCartSummary();
   const items = useMemo(() => getItems(cartQuery.data).slice(0, 3), [cartQuery.data]);
   const itemCount = getCount(cartQuery.data, summaryQuery.data);
+  const summary = getSummary(cartQuery.data, summaryQuery.data);
   const tr = locale === 'tr';
+  const formatMoney = useMemo(() => new Intl.NumberFormat(tr ? 'tr-TR' : 'en-US', {
+    style: 'currency',
+    currency: summary.currency || 'TRY',
+    maximumFractionDigits: 0,
+  }), [summary.currency, tr]);
 
   useEffect(() => {
     const handleAdded = () => setOpen(true);
@@ -104,7 +116,17 @@ export default function CartAction({ locale, label }) {
                       </div>
                       <div className="min-w-0 self-center">
                         <p className="truncate text-sm font-medium">{itemName(item)}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{tr ? 'Adet' : 'Qty'}: {item.quantity}</p>
+                        {[item.colorCode, item.frameSize, item.lensType].filter(Boolean).length ? (
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {[item.colorCode, item.frameSize, item.lensType].filter(Boolean).join(' · ')}
+                          </p>
+                        ) : null}
+                        <div className="mt-1.5 flex items-center justify-between gap-3 text-xs">
+                          <span className="text-muted-foreground">{tr ? 'Adet' : 'Qty'}: {item.quantity}</span>
+                          <span className="font-medium tabular-nums">
+                            {formatMoney.format(Number(item.lineTotal) || (Number(item.unitPrice) || 0) * Number(item.quantity || 0))}
+                          </span>
+                        </div>
                       </div>
                     </li>
                   );
@@ -114,6 +136,28 @@ export default function CartAction({ locale, label }) {
           </div>
 
           <div className="border-t border-border p-5 sm:p-7">
+            {itemCount > 0 ? (
+              <dl className="mb-5 space-y-2.5 text-sm">
+                <div className="flex items-center justify-between gap-4 text-muted-foreground">
+                  <dt>{tr ? 'Ara toplam' : 'Subtotal'}</dt>
+                  <dd className="tabular-nums">{formatMoney.format(Number(summary.subtotalAmount) || 0)}</dd>
+                </div>
+                {Number(summary.discountAmount) > 0 ? (
+                  <div className="flex items-center justify-between gap-4 text-success">
+                    <dt>{tr ? 'İndirim' : 'Discount'}</dt>
+                    <dd className="tabular-nums">-{formatMoney.format(Number(summary.discountAmount))}</dd>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between gap-4 text-muted-foreground">
+                  <dt>{tr ? 'Kargo' : 'Shipping'}</dt>
+                  <dd className="tabular-nums">{Number(summary.shippingAmount) === 0 ? (tr ? 'Ücretsiz' : 'Free') : formatMoney.format(Number(summary.shippingAmount))}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4 border-t border-border pt-3 text-base font-medium text-[#172536]">
+                  <dt>{tr ? 'Toplam' : 'Total'}</dt>
+                  <dd className="tabular-nums">{formatMoney.format(Number(summary.totalAmount) || 0)}</dd>
+                </div>
+              </dl>
+            ) : null}
             <Link href="/cart" onClick={() => setOpen(false)} className={cn(siteButtonVariants({ size: 'wide' }))}>
               {tr ? 'Sepete git' : 'View cart'}
             </Link>

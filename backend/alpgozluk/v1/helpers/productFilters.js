@@ -7,6 +7,12 @@ const parseCodeList = (value) => {
   return [...new Set(values)];
 };
 
+const parsePrice = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 && number <= 100000000 ? number : undefined;
+};
+
 const parseProductFilters = (query = {}) => {
   const audience = query.audience ? String(query.audience).trim().toLowerCase() : null;
   const productType = query.type ? String(query.type).trim().toLowerCase() : null;
@@ -19,6 +25,13 @@ const parseProductFilters = (query = {}) => {
   const material = parseCodeList(query.material);
   const shape = parseCodeList(query.shape);
   const feature = parseCodeList(query.feature);
+  const frameType = parseCodeList(query.frameType);
+  const frameColor = parseCodeList(query.frameColor);
+  const lensColor = parseCodeList(query.lensColor);
+  const size = parseCodeList(query.size);
+  const brand = parseCodeList(query.brand);
+  const priceMin = parsePrice(query.priceMin);
+  const priceMax = parsePrice(query.priceMax);
 
   if (audience && !['women', 'men', 'kids', 'unisex'].includes(audience)) return null;
   if (productType && !filterCodePattern.test(productType)) return null;
@@ -27,7 +40,8 @@ const parseProductFilters = (query = {}) => {
   if (!Number.isInteger(page) || page < 1 || page > 10000) return null;
   if (!Number.isInteger(limit) || limit < 1 || limit > 60) return null;
   if (!['featured', 'newest', 'price-asc', 'price-desc', 'popular'].includes(sort)) return null;
-  if (material === null || shape === null || feature === null) return null;
+  if ([material, shape, feature, frameType, frameColor, lensColor, size, brand].includes(null)) return null;
+  if (priceMin === undefined || priceMax === undefined || (priceMin !== null && priceMax !== null && priceMin > priceMax)) return null;
 
   return {
     audience,
@@ -37,6 +51,13 @@ const parseProductFilters = (query = {}) => {
     material,
     shape,
     feature,
+    frameType,
+    frameColor,
+    lensColor,
+    size,
+    brand,
+    priceMin,
+    priceMax,
     search,
     sale: String(query.sale || '').toLowerCase() === 'true',
     sort,

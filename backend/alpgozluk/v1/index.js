@@ -12,6 +12,7 @@ const adminCatalogRoutes = require('./routes/adminCatalogRoutes');
 const adminNavigationRoutes = require('./routes/adminNavigationRoutes');
 const adminAnnouncementRoutes = require('./routes/adminAnnouncementRoutes');
 const adminUserRoutes = require('./routes/adminUserRoutes');
+const adminInventoryRoutes = require('./routes/adminInventoryRoutes');
 const customerAccountRoutes = require('./routes/customerAccountRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -61,6 +62,12 @@ router.use(
   verifyToken,
   requirePermission('content.manage'),
   adminAnnouncementRoutes,
+);
+router.use(
+  '/admin/inventory',
+  verifyToken,
+  requirePermission('inventory.manage'),
+  adminInventoryRoutes,
 );
 router.use(
   '/admin/users',

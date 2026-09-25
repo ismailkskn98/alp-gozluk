@@ -11,6 +11,8 @@ const guestToken = createGuestToken();
 const guestTokenHash = hashGuestToken(guestToken);
 const orderToken = createGuestOrderToken();
 const orderTokenHash = hashOrderAccessToken(orderToken);
+const guestTokenHashes = [guestTokenHash];
+const orderTokenHashes = [orderTokenHash];
 let variantId;
 let originalStock;
 
@@ -35,7 +37,11 @@ const cleanup = async () => {
   const connection = await database.getConnection();
   try {
     await connection.beginTransaction();
-    const [orders] = await connection.query('SELECT id FROM orders WHERE guest_access_token_hash = ? FOR UPDATE', [orderTokenHash]);
+    const orderPlaceholders = orderTokenHashes.map(() => '?').join(', ');
+    const [orders] = await connection.query(
+      `SELECT id FROM orders WHERE guest_access_token_hash IN (${orderPlaceholders}) FOR UPDATE`,
+      orderTokenHashes,
+    );
     const orderIds = orders.map((order) => order.id);
     if (orderIds.length) {
       const placeholders = orderIds.map(() => '?').join(', ');
@@ -45,7 +51,8 @@ const cleanup = async () => {
       );
       await connection.query(`DELETE FROM orders WHERE id IN (${placeholders})`, orderIds);
     }
-    await connection.query('DELETE FROM carts WHERE guest_token_hash = ?', [guestTokenHash]);
+    const cartPlaceholders = guestTokenHashes.map(() => '?').join(', ');
+    await connection.query(`DELETE FROM carts WHERE guest_token_hash IN (${cartPlaceholders})`, guestTokenHashes);
     if (variantId && Number.isInteger(originalStock)) {
       await connection.query('UPDATE product_variants SET stock_quantity = ? WHERE id = ?', [originalStock, variantId]);
     }
@@ -104,6 +111,12 @@ const run = async () => {
     reason: 'smoke_test_cancelled',
   });
   assert.equal(cancelled.order.status, 'cancelled');
+  const cancelledAgain = await orderService.cancelOrder({
+    orderNumber: first.order.orderNumber,
+    identity: { orderTokenHash },
+    reason: 'smoke_test_cancelled_again',
+  });
+  assert.equal(cancelledAgain.reused, true);
   const [[afterCancel]] = await database.query('SELECT stock_quantity FROM product_variants WHERE id = ?', [variantId]);
   assert.equal(Number(afterCancel.stock_quantity), originalStock);
 
@@ -118,6 +131,8 @@ const run = async () => {
   const failed = await orderService.failOrderPayment({ orderId: failedRow.id, reason: 'smoke_provider_declined' });
   assert.equal(failed.order.status, 'cancelled');
   assert.equal(failed.order.paymentStatus, 'failed');
+  const failedAgain = await orderService.failOrderPayment({ orderId: failedRow.id, reason: 'smoke_provider_declined_again' });
+  assert.equal(failedAgain.reused, true);
   const [[afterFailure]] = await database.query('SELECT stock_quantity FROM product_variants WHERE id = ?', [variantId]);
   assert.equal(Number(afterFailure.stock_quantity), originalStock);
 
@@ -141,7 +156,42 @@ const run = async () => {
     [guestTokenHash],
   );
   assert.equal(Number(cartCount.count), 0);
-  process.stdout.write('DB smoke testi geçti: sepet ekle/güncelle/seç/kaldır, rezervasyon, idempotency, iptal, başarısız ödeme ve ödeme kesinleştirme.\n');
+
+  await database.query('UPDATE product_variants SET stock_quantity = 1 WHERE id = ?', [variantId]);
+  const contenders = Array.from({ length: 2 }, () => {
+    const cartTokenHash = hashGuestToken(createGuestToken());
+    const accessTokenHash = hashOrderAccessToken(createGuestOrderToken());
+    guestTokenHashes.push(cartTokenHash);
+    orderTokenHashes.push(accessTokenHash);
+    return { cartTokenHash, accessTokenHash };
+  });
+  for (const contender of contenders) {
+    await cartService.addItem({ guestTokenHash: contender.cartTokenHash }, { variantId, quantity: 1 }, 'tr');
+  }
+  const concurrentResults = await Promise.allSettled(contenders.map((contender) => (
+    orderService.prepareOrder({
+      identity: { cartTokenHash: contender.cartTokenHash, orderTokenHash: contender.accessTokenHash },
+      idempotencyKey: `smoke-concurrent-${randomUUID()}`,
+      customer,
+      shippingAddress: address,
+      billingAddress: address,
+      notes: 'Eşzamanlı son ürün smoke testi',
+      locale: 'tr',
+    })
+  )));
+  const successfulCheckouts = concurrentResults.filter((result) => result.status === 'fulfilled');
+  const rejectedCheckouts = concurrentResults.filter((result) => result.status === 'rejected');
+  assert.equal(successfulCheckouts.length, 1);
+  assert.equal(rejectedCheckouts.length, 1);
+  assert.equal(
+    rejectedCheckouts[0].reason.statusCode,
+    409,
+    `Beklenen stok çakışması yerine ${rejectedCheckouts[0].reason.code || 'unknown'}: ${rejectedCheckouts[0].reason.message}`,
+  );
+  const [[afterConcurrentCheckout]] = await database.query('SELECT stock_quantity FROM product_variants WHERE id = ?', [variantId]);
+  assert.equal(Number(afterConcurrentCheckout.stock_quantity), 0);
+
+  process.stdout.write('DB smoke testi geçti: sepet, tek-seferlik rezervasyon/iade, ödeme kesinleştirme ve eşzamanlı son ürün koruması.\n');
 };
 
 run()

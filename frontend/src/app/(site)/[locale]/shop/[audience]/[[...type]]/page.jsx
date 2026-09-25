@@ -47,7 +47,7 @@ export default async function AudienceShopPage({ params, searchParams }) {
       <section className="grid-container py-12">
         <div>
           <CatalogToolbar locale={locale} activeAudience={audienceInfo.code} basePath={basePath} />
-          <ProductGrid locale={locale} filters={{ audience: audienceInfo.code, type: typeInfo?.code, sale: query.sale, sort: query.sort, material: query.material, shape: query.shape, feature: query.feature }} />
+          <ProductGrid locale={locale} filters={{ audience: audienceInfo.code, type: typeInfo?.code, sale: query.sale, sort: query.sort, material: query.material, shape: query.shape, feature: query.feature, frameType: query.frameType, frameColor: query.frameColor, lensColor: query.lensColor, size: query.size, brand: query.brand, priceMin: query.priceMin, priceMax: query.priceMax }} />
         </div>
       </section>
     </>

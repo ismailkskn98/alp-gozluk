@@ -3,6 +3,7 @@ const { resolveAudienceCodes } = require('../helpers/productFilters');
 const { getDb } = require('../models/db');
 const cache = require('./cacheService');
 const { MAX_CART_LINE_QUANTITY } = require('../helpers/commerce');
+const { getStockStatus } = require('../helpers/inventory');
 
 const allowedLocales = new Set(['tr', 'en']);
 const normalizeLocale = (locale) => allowedLocales.has(locale) ? locale : 'tr';
@@ -39,26 +40,31 @@ const attachMedia = async (products) => {
   return products.map((product) => ({ ...product, images: mediaByProduct.get(product.id) || [] }));
 };
 
-const addAttributeFilter = (conditions, parameters, groupCode, values) => {
+const addAttributeFilter = (conditions, parameters, groupCode, values, scope = 'product') => {
   if (!values?.length) return;
-  conditions.push(
-    `EXISTS (
+  const relation = scope === 'variant'
+    ? `EXISTS (
+      SELECT 1 FROM product_variants filter_variant
+      INNER JOIN variant_attribute_values filter_vav ON filter_vav.variant_id = filter_variant.id
+      INNER JOIN attribute_values filter_av ON filter_av.id = filter_vav.attribute_value_id
+      INNER JOIN attribute_groups filter_ag ON filter_ag.id = filter_av.attribute_group_id
+      WHERE filter_variant.product_id = p.id AND filter_variant.status = 'active'
+        AND filter_variant.deleted_at IS NULL AND filter_ag.code = ?
+        AND filter_av.code IN (${values.map(() => '?').join(', ')})
+    )`
+    : `EXISTS (
       SELECT 1 FROM product_attribute_values filter_pav
       INNER JOIN attribute_values filter_av ON filter_av.id = filter_pav.attribute_value_id
       INNER JOIN attribute_groups filter_ag ON filter_ag.id = filter_av.attribute_group_id
       WHERE filter_pav.product_id = p.id AND filter_ag.code = ?
         AND filter_av.code IN (${values.map(() => '?').join(', ')})
-    )`,
-  );
+    )`;
+  conditions.push(relation);
   parameters.push(groupCode, ...values);
 };
 
 const listPublished = async (requestedLocale, filters = {}) => {
   const locale = normalizeLocale(requestedLocale);
-  const cacheKey = ['catalog', 'products', locale, Buffer.from(JSON.stringify(filters)).toString('base64url')];
-  const cached = await cache.getJson(...cacheKey);
-  if (cached) return cached;
-
   const conditions = ["p.status = 'published'", 'p.deleted_at IS NULL'];
   const parameters = [locale];
   if (filters.audience) {
@@ -77,6 +83,26 @@ const listPublished = async (requestedLocale, filters = {}) => {
   addAttributeFilter(conditions, parameters, 'frame_material', filters.material);
   addAttributeFilter(conditions, parameters, 'frame_shape', filters.shape);
   addAttributeFilter(conditions, parameters, 'lens_feature', filters.feature);
+  addAttributeFilter(conditions, parameters, 'frame_type', filters.frameType);
+  addAttributeFilter(conditions, parameters, 'frame_color', filters.frameColor, 'variant');
+  addAttributeFilter(conditions, parameters, 'lens_color', filters.lensColor, 'variant');
+  addAttributeFilter(conditions, parameters, 'frame_size', filters.size, 'variant');
+  if (filters.brand?.length) {
+    conditions.push(`b.code IN (${filters.brand.map(() => '?').join(', ')})`);
+    parameters.push(...filters.brand);
+  }
+  if (Number.isFinite(filters.priceMin) || Number.isFinite(filters.priceMax)) {
+    const priceConditions = ["price_pv.status = 'active'", 'price_pv.deleted_at IS NULL'];
+    if (Number.isFinite(filters.priceMin)) {
+      priceConditions.push('price_pv.price >= ?');
+      parameters.push(filters.priceMin);
+    }
+    if (Number.isFinite(filters.priceMax)) {
+      priceConditions.push('price_pv.price <= ?');
+      parameters.push(filters.priceMax);
+    }
+    conditions.push(`EXISTS (SELECT 1 FROM product_variants price_pv WHERE price_pv.product_id = p.id AND ${priceConditions.join(' AND ')})`);
+  }
   if (filters.category) {
     conditions.push(
       `EXISTS (SELECT 1 FROM product_categories filter_pc
@@ -103,13 +129,14 @@ const listPublished = async (requestedLocale, filters = {}) => {
     parameters.push(term, term, term, term);
   }
 
-  const orderBy = {
+  const requestedOrder = {
     featured: 'p.featured DESC, p.created_at DESC',
     newest: 'p.created_at DESC',
     'price-asc': 'price ASC, p.created_at DESC',
     'price-desc': 'price DESC, p.created_at DESC',
     popular: 'p.featured DESC, p.created_at DESC',
   }[filters.sort || 'featured'];
+  const orderBy = `CASE WHEN SUM(CASE WHEN pv.stock_quantity > 0 THEN 1 ELSE 0 END) > 0 THEN 0 ELSE 1 END, ${requestedOrder}`;
   const limit = filters.limit || 24;
   const offset = ((filters.page || 1) - 1) * limit;
   parameters.push(limit, offset);
@@ -119,7 +146,10 @@ const listPublished = async (requestedLocale, filters = {}) => {
        pt.short_description AS shortDescription,
        MIN(pv.price) AS price, MAX(pv.compare_at_price) AS compareAtPrice,
        SUM(pv.stock_quantity) AS stockQuantity,
-       COUNT(pv.id) AS activeVariantCount, MIN(pv.id) AS defaultVariantId,
+       COUNT(pv.id) AS activeVariantCount,
+       SUM(CASE WHEN pv.stock_quantity > 0 THEN 1 ELSE 0 END) AS inStockVariantCount,
+       SUM(CASE WHEN pv.stock_quantity > 0 AND pv.stock_quantity <= pv.low_stock_threshold THEN 1 ELSE 0 END) AS lowStockVariantCount,
+       COALESCE(MIN(CASE WHEN pv.stock_quantity > 0 THEN pv.id END), MIN(pv.id)) AS defaultVariantId,
        ${MAX_CART_LINE_QUANTITY} AS maxPerOrder
      FROM products p
      INNER JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?
@@ -132,9 +162,23 @@ const listPublished = async (requestedLocale, filters = {}) => {
      LIMIT ? OFFSET ?`,
     parameters,
   );
-  const products = await attachMedia(rows);
+  const products = await attachMedia(rows.map((row) => {
+    const stockQuantity = Number(row.stockQuantity || 0);
+    const activeVariantCount = Number(row.activeVariantCount || 0);
+    const inStockVariantCount = Number(row.inStockVariantCount || 0);
+    const lowStockVariantCount = Number(row.lowStockVariantCount || 0);
+    return {
+      ...row,
+      stockQuantity,
+      activeVariantCount,
+      inStockVariantCount,
+      isInStock: inStockVariantCount > 0,
+      stockStatus: inStockVariantCount === 0
+        ? 'out_of_stock'
+        : inStockVariantCount === lowStockVariantCount ? 'low_stock' : 'in_stock',
+    };
+  }));
   const result = { products, pagination: { page: filters.page || 1, limit, hasMore: products.length === limit } };
-  await cache.setJson(cacheKey, result);
   return result;
 };
 
@@ -164,9 +208,6 @@ const listAdmin = async (requestedLocale = 'tr') => {
 
 const findPublishedBySlug = async (requestedLocale, slug) => {
   const locale = normalizeLocale(requestedLocale);
-  const cached = await cache.getJson('catalog', 'product', locale, slug);
-  if (cached) return cached;
-
   const [products] = await getDb().query(
     `SELECT p.id, p.code, COALESCE(b.name, p.brand) AS brand, p.featured, p.tax_rate AS taxRate,
        p.origin_country_code AS originCountryCode,
@@ -181,13 +222,14 @@ const findPublishedBySlug = async (requestedLocale, slug) => {
   );
   if (!products[0]) return null;
   const productId = products[0].id;
-  const [variants, audiences, attributes] = await Promise.all([
+  const [variants, audiences, attributes, variantAttributes] = await Promise.all([
     getDb().query(
       `SELECT id, sku, barcode, color_code AS colorCode, frame_size AS frameSize,
          lens_width_mm AS lensWidthMm, bridge_width_mm AS bridgeWidthMm,
          temple_length_mm AS templeLengthMm, lens_type AS lensType,
          lens_category AS lensCategory, uv_protection AS uvProtection,
-         price, compare_at_price AS compareAtPrice, stock_quantity AS stockQuantity
+         price, compare_at_price AS compareAtPrice, stock_quantity AS stockQuantity,
+         low_stock_threshold AS lowStockThreshold
        FROM product_variants WHERE product_id = ? AND status = 'active' AND deleted_at IS NULL ORDER BY id`,
       [productId],
     ),
@@ -209,10 +251,55 @@ const findPublishedBySlug = async (requestedLocale, slug) => {
        WHERE pav.product_id = ? ORDER BY ag.sort_order, av.sort_order`,
       [locale, locale, productId],
     ),
+    getDb().query(
+      `SELECT vav.variant_id AS variantId, ag.code AS groupCode,
+         COALESCE(agt.name, ag.code) AS groupName, ag.selection_mode AS selectionMode,
+         av.id AS valueId, av.code, COALESCE(avt.name, av.code) AS name,
+         av.swatch_value AS swatchValue
+       FROM variant_attribute_values vav
+       INNER JOIN attribute_values av ON av.id = vav.attribute_value_id AND av.status = 'active'
+       INNER JOIN attribute_groups ag ON ag.id = av.attribute_group_id AND ag.status = 'active'
+       LEFT JOIN attribute_group_translations agt ON agt.attribute_group_id = ag.id AND agt.locale = ?
+       LEFT JOIN attribute_value_translations avt ON avt.attribute_value_id = av.id AND avt.locale = ?
+       WHERE vav.variant_id IN (
+         SELECT id FROM product_variants WHERE product_id = ? AND status = 'active' AND deleted_at IS NULL
+       )
+       ORDER BY ag.sort_order, av.sort_order`,
+      [locale, locale, productId],
+    ),
   ]);
+  const attributesByVariant = new Map();
+  for (const attribute of variantAttributes[0]) {
+    const current = attributesByVariant.get(attribute.variantId) || [];
+    current.push(attribute);
+    attributesByVariant.set(attribute.variantId, current);
+  }
+  const productVariants = variants[0].map((variant) => {
+    const stockQuantity = Number(variant.stockQuantity || 0);
+    const lowStockThreshold = Number(variant.lowStockThreshold || 0);
+    return {
+      ...variant,
+      stockQuantity,
+      lowStockThreshold,
+      isInStock: stockQuantity > 0,
+      stockStatus: getStockStatus(stockQuantity, lowStockThreshold),
+      attributes: attributesByVariant.get(variant.id) || [],
+    };
+  });
   const [productWithMedia] = await attachMedia([products[0]]);
-  const product = { ...productWithMedia, variants: variants[0], audiences: audiences[0], attributes: attributes[0] };
-  await cache.setJson(['catalog', 'product', locale, slug], product);
+  const defaultVariant = productVariants.find((variant) => Number(variant.stockQuantity) > 0) || productVariants[0];
+  const product = {
+    ...productWithMedia,
+    variants: productVariants,
+    defaultVariantId: defaultVariant?.id || null,
+    inStockVariantCount: productVariants.filter((variant) => variant.isInStock).length,
+    isInStock: productVariants.some((variant) => variant.isInStock),
+    stockStatus: productVariants.some((variant) => variant.stockStatus === 'in_stock')
+      ? 'in_stock'
+      : productVariants.some((variant) => variant.stockStatus === 'low_stock') ? 'low_stock' : 'out_of_stock',
+    audiences: audiences[0],
+    attributes: attributes[0],
+  };
   return product;
 };
 
@@ -290,7 +377,13 @@ const create = async (payload, requestMeta) => {
           variant.frameSize || null, variant.lensWidthMm || null, variant.bridgeWidthMm || null,
           variant.templeLengthMm || null, variant.lensType || null, variant.lensCategory || null,
           variant.uvProtection || null, variant.price, variant.compareAtPrice || null,
-          variant.costPrice || null, variant.stockQuantity, variant.lowStockThreshold],
+          variant.costPrice || null, variant.stockQuantity, variant.lowStockThreshold ?? 5],
+      );
+      await connection.query(
+        `INSERT INTO inventory_movements
+          (variant_id, movement_type, quantity, balance_after, reference_type, reference_id, note, created_by)
+         VALUES (?, 'initial_stock', ?, ?, 'product', ?, 'Ürün oluşturulurken tanımlanan başlangıç stoğu', ?)`,
+        [variantResult.insertId, variant.stockQuantity, variant.stockQuantity, productResult.insertId, requestMeta.userId],
       );
       await insertLinks(connection, 'variant_attribute_values', ['variant_id', 'attribute_value_id'],
         (variant.attributeValueIds || []).map((id) => [variantResult.insertId, id]));

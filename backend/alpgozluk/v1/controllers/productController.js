@@ -40,7 +40,7 @@ const validCreatePayload = (body) => (
     String(variant.sku || '').trim().length >= 2 && Number.isFinite(variant.price) && variant.price >= 0 &&
     (variant.compareAtPrice === undefined || variant.compareAtPrice === null || (Number.isFinite(variant.compareAtPrice) && variant.compareAtPrice >= 0)) &&
     Number.isInteger(variant.stockQuantity) && variant.stockQuantity >= 0 &&
-    Number.isInteger(variant.lowStockThreshold) && variant.lowStockThreshold >= 0 &&
+    (variant.lowStockThreshold === undefined || (Number.isInteger(variant.lowStockThreshold) && variant.lowStockThreshold >= 0 && variant.lowStockThreshold <= 100000)) &&
     ['barcode', 'colorCode', 'frameSize', 'lensType', 'lensCategory', 'uvProtection'].every((field) =>
       validOptionalText(variant[field], field === 'barcode' ? 100 : 80)
     ) &&
