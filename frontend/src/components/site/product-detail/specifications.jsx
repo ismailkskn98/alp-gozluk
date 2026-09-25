@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { BouncyAccordion } from '@/components/motion/bouncy-accordion';
+import { BouncyAccordion } from "@/components/motion/bouncy-accordion";
 
 export default function ProductSpecifications({ specifications = {}, title }) {
   const rows = Object.entries(specifications).filter(([, value]) => value);
@@ -18,13 +18,15 @@ export default function ProductSpecifications({ specifications = {}, title }) {
   );
 
   return (
-    <section className="mt-8 border-t border-black/10 pt-5" aria-label={title}>
+    <section className="mt-8 pt-5" aria-label={title}>
       <BouncyAccordion
-        items={[{ id: 'specifications', title, description: details }]}
+        radius={0}
+        items={[{ id: "specifications", title, description: details }]}
         classNames={{
-          item: 'bg-[#f7f8f8]',
-          trigger: 'min-h-14 px-4 sm:px-5',
-          description: 'text-[#202326]',
+          item: "border-b border-black/10 bg-white",
+          trigger: "min-h-12 px-0",
+          title: "text-sm font-normal",
+          description: "text-[#202326]",
         }}
       />
     </section>

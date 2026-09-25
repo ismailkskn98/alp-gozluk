@@ -1,0 +1,8 @@
+const express = require('express');
+const settingsController = require('../controllers/settingsController');
+
+const router = express.Router();
+router.get('/commerce', settingsController.getCommerce);
+router.patch('/commerce', settingsController.updateCommerce);
+
+module.exports = router;

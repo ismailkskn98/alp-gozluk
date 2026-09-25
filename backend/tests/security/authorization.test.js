@@ -32,6 +32,16 @@ test('admin stok endpointleri tokensız istekleri reddeder', async () => {
   await request(app).patch('/api/alpgozluk/v1/admin/inventory/1').send({ lowStockThreshold: 5 }).expect(401);
 });
 
+test('admin mağaza ayarları endpointleri tokensız istekleri reddeder', async () => {
+  const app = createApp();
+  await request(app).get('/api/alpgozluk/v1/admin/settings/commerce').expect(401);
+  await request(app).patch('/api/alpgozluk/v1/admin/settings/commerce').send({
+    dispatchMinDays: 1,
+    dispatchMaxDays: 3,
+    returnWindowDays: 14,
+  }).expect(401);
+});
+
 test('admin katalog ve navigasyon endpointleri tokensız istekleri reddeder', async () => {
   const app = createApp();
   await request(app).get('/api/alpgozluk/v1/admin/catalog').expect(401);

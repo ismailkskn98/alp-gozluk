@@ -67,6 +67,10 @@
     "threshold_updated": "Low stock threshold updated.",
     "not_found": "Active product variant not found."
   },
+  "settings": {
+    "found": "Store settings retrieved.",
+    "updated": "Store settings updated."
+  },
   "catalog": {
     "listed": "Catalogue options listed.",
     "created": "Catalogue record created.",

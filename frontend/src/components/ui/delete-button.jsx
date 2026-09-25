@@ -125,6 +125,11 @@ export function DeleteButton({
   className,
   onConfirm,
   onCancel,
+  deleteLabel = "Delete",
+  confirmLabel = "Confirm delete",
+  cancelLabel = "Cancel",
+  deletedStatus = "Deleted",
+  keptStatus = "Kept",
   ...props
 }) {
   const reduced = useReducedMotion() ?? false;
@@ -178,7 +183,7 @@ export function DeleteButton({
       <motion.button
         ref={trigger}
         type="button"
-        aria-label="Delete"
+        aria-label={deleteLabel}
         aria-expanded={open}
         onClick={() => {
           if (open) return resolve("kept");
@@ -234,7 +239,7 @@ export function DeleteButton({
         </AnimatePresence>
       </motion.button>
       <span role="status" aria-live="polite" className="sr-only">
-        {status === "deleted" ? "Deleted" : status === "kept" ? "Kept" : ""}
+        {status === "deleted" ? deletedStatus : status === "kept" ? keptStatus : ""}
       </span>
       <AnimatePresence>
         {open && (
@@ -255,10 +260,10 @@ export function DeleteButton({
                 "absolute -left-1.25 top-1/2 z-20 h-2.5 w-1.5 -translate-y-1/2 [clip-path:polygon(100%_0,0_50%,100%_100%)]",
                 RECESS
               )} />
-            <Circle label="Confirm delete" onClick={() => resolve("deleted")}>
+            <Circle label={confirmLabel} onClick={() => resolve("deleted")}>
               <path d="M4 12.5 9.5 18 20 7" stroke={ACCENT} />
             </Circle>
-            <Circle label="Cancel" onClick={() => resolve("kept")}>
+            <Circle label={cancelLabel} onClick={() => resolve("kept")}>
               <path d="M6 6 18 18M18 6 6 18" />
             </Circle>
           </motion.div>

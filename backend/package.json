@@ -13,6 +13,7 @@
     "admin:bootstrap": "cross-env NODE_ENV=development node scripts/bootstrap-super-admin.js",
     "admin:bootstrap:production": "cross-env NODE_ENV=production node scripts/bootstrap-super-admin.js",
     "db:migrate:order-core": "cross-env NODE_ENV=development node scripts/apply-sql.js 2026-09-25_001_order_core.sql",
+    "db:migrate:commerce-settings": "cross-env NODE_ENV=development node scripts/apply-sql.js 2026-09-25_002_commerce_settings.sql",
     "db:seed:demo-catalog": "cross-env NODE_ENV=development node scripts/seed-demo-catalog.js",
     "stock:expire": "node scripts/expire-stock-reservations.js",
     "stock:expire:production": "cross-env NODE_ENV=production node scripts/expire-stock-reservations.js",

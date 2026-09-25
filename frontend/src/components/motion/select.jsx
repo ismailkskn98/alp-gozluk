@@ -48,6 +48,7 @@ export function Select({
   defaultOpen = false,
   onOpenChange,
   disabled = false,
+  radius = 12,
   className,
   children
 }) {
@@ -123,6 +124,7 @@ export function Select({
     disabled,
     placement,
     setPlacement,
+    radius: Math.max(0, Number(radius) || 0),
   }), [
     current,
     open,
@@ -135,6 +137,7 @@ export function Select({
     baseId,
     disabled,
     placement,
+    radius,
   ]);
 
   return (
@@ -154,7 +157,7 @@ export function SelectTrigger({
   const isTop = ctx.placement === "top";
   // edge facing the panel flattens then rounds; the far edge stays rounded.
   // All four corners are specified so none gets stranded when placement flips.
-  const kf = ctx.open ? [0, 0, 12] : [12, 0, 12];
+  const kf = ctx.open ? [0, 0, ctx.radius] : [ctx.radius, 0, ctx.radius];
   const kfT = ctx.reduce
     ? { duration: 0 }
     : ctx.open
@@ -173,10 +176,10 @@ export function SelectTrigger({
       // back once the panel pulls away — the two pinch apart.
       initial={false}
       animate={{
-        borderTopLeftRadius: isTop ? kf : 12,
-        borderTopRightRadius: isTop ? kf : 12,
-        borderBottomLeftRadius: isTop ? 12 : kf,
-        borderBottomRightRadius: isTop ? 12 : kf,
+        borderTopLeftRadius: isTop ? kf : ctx.radius,
+        borderTopRightRadius: isTop ? kf : ctx.radius,
+        borderBottomLeftRadius: isTop ? ctx.radius : kf,
+        borderBottomRightRadius: isTop ? ctx.radius : kf,
       }}
       transition={{
         borderTopLeftRadius: isTop ? kfT : INSTANT_TRANSITION,
@@ -258,7 +261,7 @@ export function SelectContent({
   // stranded square corner when the placement flips between opens.
   const isTop = ctx.placement === "top";
   const nearGap = open ? 8 : 0;
-  const nearRadius = open ? 12 : 0;
+  const nearRadius = open ? ctx.radius : 0;
 
   const gapT = open
     ? { type: "spring", duration: 0.6, bounce: 0.5, delay: 0.12 }
@@ -288,10 +291,10 @@ export function SelectContent({
               marginTop: isTop ? 0 : nearGap,
               marginBottom: isTop ? nearGap : 0,
               // near corners go flat->round; far corners stay rounded
-              borderTopLeftRadius: isTop ? 12 : nearRadius,
-              borderTopRightRadius: isTop ? 12 : nearRadius,
-              borderBottomLeftRadius: isTop ? nearRadius : 12,
-              borderBottomRightRadius: isTop ? nearRadius : 12,
+              borderTopLeftRadius: isTop ? ctx.radius : nearRadius,
+              borderTopRightRadius: isTop ? ctx.radius : nearRadius,
+              borderBottomLeftRadius: isTop ? nearRadius : ctx.radius,
+              borderBottomRightRadius: isTop ? nearRadius : ctx.radius,
             }
       }
       transition={
@@ -345,13 +348,14 @@ export function SelectItem({
   children
 }) {
   const ctx = useSelectContext("SelectItem");
+  const { register, unregister } = ctx;
   const selected = ctx.value === value;
   const label = typeof children === "string" ? children : value;
 
   useLayoutEffect(() => {
-    ctx.register(value, label);
-    return () => ctx.unregister(value);
-  }, [ctx.register, ctx.unregister, value, label]);
+    register(value, label);
+    return () => unregister(value);
+  }, [register, unregister, value, label]);
 
   return (
     <motion.li variants={ctx.reduce ? undefined : ITEM_VARIANTS}>

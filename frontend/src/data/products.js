@@ -92,7 +92,7 @@ export async function findProduct(locale, slug) {
       images: (product.images || product.media || [])
         .map((image) => (typeof image === 'string' ? image : image.url))
         .filter(Boolean)
-        .slice(0, 5),
+        .slice(0, 8),
     }, locale);
   } catch {
     return null;

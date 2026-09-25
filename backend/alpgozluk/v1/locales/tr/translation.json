@@ -67,6 +67,10 @@
     "threshold_updated": "Düşük stok eşiği güncellendi.",
     "not_found": "Aktif ürün varyantı bulunamadı."
   },
+  "settings": {
+    "found": "Mağaza ayarları getirildi.",
+    "updated": "Mağaza ayarları güncellendi."
+  },
   "catalog": {
     "listed": "Katalog seçenekleri listelendi.",
     "created": "Katalog kaydı oluşturuldu.",

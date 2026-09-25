@@ -1,96 +1,110 @@
 'use client';
 
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Glasses } from 'lucide-react';
-import { useState } from 'react';
+import { Glasses } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useLenis } from 'lenis/react';
+import { useReducedMotion } from 'motion/react';
 import { PRODUCT_IMAGE_QUALITY } from '@/lib/product-images';
+import { cn } from '@/lib/utils';
 
 const hasPreparedWhiteCanvas = (src) => typeof src === 'string' && src.includes('/uploads/public/products/demo/');
 
-export default function ProductGallery({ color, images = [], name, imageLabel, previousLabel, nextLabel }) {
-  const availableImages = images.filter(Boolean).slice(0, 5);
+export default function ProductGallery({ color, images = [], name, imageLabel }) {
+  const availableImages = images.filter(Boolean).slice(0, 8);
+  const imageRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeImage = availableImages[activeIndex];
-  const hasMultipleImages = availableImages.length > 1;
+  const reduceMotion = useReducedMotion();
+  const lenis = useLenis();
+  const remainingImageCount = Math.max(0, availableImages.length - 1);
 
-  function showPrevious() {
-    setActiveIndex((current) => (current === 0 ? availableImages.length - 1 : current - 1));
+  useEffect(() => {
+    const nodes = imageRefs.current.filter(Boolean);
+    if (nodes.length < 2) return undefined;
+
+    const observer = new IntersectionObserver((entries) => {
+      const visibleEntry = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+      if (visibleEntry) setActiveIndex(Number(visibleEntry.target.dataset.imageIndex));
+    }, {
+      rootMargin: '-18% 0px -58% 0px',
+      threshold: [0.05, 0.2, 0.45, 0.7],
+    });
+
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [availableImages.length]);
+
+  function focusImage(index) {
+    const target = imageRefs.current[index];
+    if (!target) return;
+    setActiveIndex(index);
+    if (lenis && !reduceMotion) {
+      lenis.scrollTo(target, { offset: -112, duration: 0.7 });
+      return;
+    }
+    const top = target.getBoundingClientRect().top + window.scrollY - 112;
+    window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
   }
 
-  function showNext() {
-    setActiveIndex((current) => (current + 1) % availableImages.length);
+  if (availableImages.length === 0) {
+    return (
+      <div className="grid min-h-[22rem] place-items-center border border-black/8 bg-white lg:min-h-[38rem]" style={{ backgroundColor: color }}>
+        <Glasses className="size-40 text-foreground/45 sm:size-56" strokeWidth={1} aria-hidden="true" />
+      </div>
+    );
   }
 
   return (
     <div className="grid min-w-0 gap-3 lg:grid-cols-[4.5rem_minmax(0,1fr)]">
-      {hasMultipleImages ? (
-        <div className="order-2 flex gap-2 overflow-x-auto pb-1 lg:order-1 lg:flex-col lg:overflow-visible lg:pb-0" aria-label={`${name} ${imageLabel}`}>
-          {availableImages.map((src, index) => (
-            <button
-              key={src}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              aria-label={`${name} ${imageLabel} ${index + 1}`}
-              aria-pressed={activeIndex === index}
-              className={`relative aspect-[4/3] w-[4.5rem] shrink-0 overflow-hidden border bg-white transition-colors ${activeIndex === index ? 'border-[#172536]' : 'border-black/10 hover:border-black/40'}`}
+      <div className="sticky top-[4.75rem] z-10 flex gap-2 self-start overflow-x-auto border-y border-black/8 bg-white/95 py-2 backdrop-blur lg:top-28 lg:flex-col lg:overflow-visible lg:border-0 lg:bg-transparent lg:py-0" aria-label={`${name} ${imageLabel}`}>
+        {availableImages.map((src, index) => (
+          <button
+            key={`${src}-${index}`}
+            type="button"
+            onClick={() => focusImage(index)}
+            aria-label={`${name} ${imageLabel} ${index + 1}`}
+            aria-pressed={activeIndex === index}
+            className={cn(
+              'relative aspect-[4/3] w-[4.5rem] shrink-0 overflow-hidden border bg-white transition-[border-color,opacity] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172536]/25',
+              activeIndex === index ? 'border-[#172536] opacity-100' : 'border-black/10 opacity-60 hover:border-black/40 hover:opacity-100',
+            )}
+          >
+            <Image src={src} alt="" fill quality={PRODUCT_IMAGE_QUALITY} sizes="72px" className={cn('object-contain', !hasPreparedWhiteCanvas(src) && 'p-1')} />
+          </button>
+        ))}
+      </div>
+
+      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+        {availableImages.map((src, index) => {
+          const isFirst = index === 0;
+          const isLastUnpaired = index > 0 && remainingImageCount % 2 === 1 && index === availableImages.length - 1;
+          return (
+            <figure
+              key={`${src}-panel-${index}`}
+              ref={(node) => { imageRefs.current[index] = node; }}
+              data-image-index={index}
+              className={cn(
+                'relative grid aspect-[4/3] scroll-mt-28 place-items-center overflow-hidden border border-black/8 bg-white',
+                (isFirst || isLastUnpaired) && 'sm:col-span-2',
+              )}
+              style={{ backgroundColor: color }}
             >
               <Image
                 src={src}
-                alt=""
+                alt={`${name} ${imageLabel} ${index + 1}`}
                 fill
                 quality={PRODUCT_IMAGE_QUALITY}
-                sizes="72px"
-                className={`object-contain ${hasPreparedWhiteCanvas(src) ? 'p-0' : 'p-1'}`}
+                priority={isFirst}
+                sizes={(isFirst || isLastUnpaired)
+                  ? '(min-width: 1440px) 55rem, (min-width: 1024px) 58vw, 96vw'
+                  : '(min-width: 1440px) 27rem, (min-width: 1024px) 29vw, (min-width: 640px) 48vw, 96vw'}
+                className={cn('object-contain', !hasPreparedWhiteCanvas(src) && 'p-[clamp(1rem,3vw,3rem)]')}
               />
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div
-        className={`group/gallery order-1 relative grid aspect-[4/3] min-h-[19rem] place-items-center overflow-hidden border border-black/8 lg:order-2 lg:min-h-[34rem] lg:aspect-[5/4] ${hasMultipleImages ? '' : 'lg:col-span-2'}`}
-        style={{ backgroundColor: color }}
-      >
-        {activeImage ? (
-          <Image
-            key={activeImage}
-            src={activeImage}
-            alt={`${name} ${imageLabel} ${activeIndex + 1}`}
-            fill
-            quality={PRODUCT_IMAGE_QUALITY}
-            fetchPriority={activeIndex === 0 ? 'high' : 'auto'}
-            sizes="(min-width: 1440px) 55rem, (min-width: 1024px) 62vw, 96vw"
-            className={`object-contain ${hasPreparedWhiteCanvas(activeImage) ? 'p-0' : 'p-[clamp(1.5rem,5vw,5rem)]'}`}
-          />
-        ) : (
-          <Glasses className="size-40 text-foreground/55 sm:size-56" strokeWidth={1} aria-hidden="true" />
-        )}
-
-        {hasMultipleImages ? (
-          <>
-            <button
-              type="button"
-              onClick={showPrevious}
-              aria-label={`${name} — ${previousLabel}`}
-              className="absolute left-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/92 opacity-100 shadow-sm transition-opacity md:opacity-0 md:group-hover/gallery:opacity-100 md:focus-visible:opacity-100"
-            >
-              <ChevronLeft className="size-4" strokeWidth={1.4} />
-            </button>
-            <button
-              type="button"
-              onClick={showNext}
-              aria-label={`${name} — ${nextLabel}`}
-              className="absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/92 opacity-100 shadow-sm transition-opacity md:opacity-0 md:group-hover/gallery:opacity-100 md:focus-visible:opacity-100"
-            >
-              <ChevronRight className="size-4" strokeWidth={1.4} />
-            </button>
-            <div className="absolute inset-x-3 bottom-2 flex gap-1 lg:hidden" aria-hidden="true">
-              {availableImages.map((src, index) => (
-                <span key={src} className={`h-px flex-1 ${activeIndex === index ? 'bg-[#172536]' : 'bg-black/18'}`} />
-              ))}
-            </div>
-          </>
-        ) : null}
+            </figure>
+          );
+        })}
       </div>
     </div>
   );

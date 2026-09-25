@@ -40,6 +40,40 @@ const attachMedia = async (products) => {
   return products.map((product) => ({ ...product, images: mediaByProduct.get(product.id) || [] }));
 };
 
+const attachVariantColors = async (products, locale) => {
+  if (products.length === 0) return products;
+  const ids = products.map((product) => product.id);
+  const [rows] = await getDb().query(
+    `SELECT pv.product_id AS productId, av.id, av.code,
+       COALESCE(avt.name, av.code) AS name, av.swatch_value AS swatchValue,
+       MAX(CASE WHEN pv.stock_quantity > 0 THEN 1 ELSE 0 END) AS isInStock
+     FROM product_variants pv
+     INNER JOIN variant_attribute_values vav ON vav.variant_id = pv.id
+     INNER JOIN attribute_values av ON av.id = vav.attribute_value_id AND av.status = 'active'
+     INNER JOIN attribute_groups ag ON ag.id = av.attribute_group_id
+       AND ag.code = 'frame_color' AND ag.status = 'active'
+     LEFT JOIN attribute_value_translations avt ON avt.attribute_value_id = av.id AND avt.locale = ?
+     WHERE pv.product_id IN (${ids.map(() => '?').join(', ')})
+       AND pv.status = 'active' AND pv.deleted_at IS NULL
+     GROUP BY pv.product_id, av.id, av.code, avt.name, av.swatch_value, av.sort_order
+     ORDER BY pv.product_id, av.sort_order, av.id`,
+    [locale, ...ids],
+  );
+  const colorsByProduct = new Map();
+  for (const row of rows) {
+    const current = colorsByProduct.get(row.productId) || [];
+    current.push({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      swatchValue: row.swatchValue,
+      isInStock: Number(row.isInStock) > 0,
+    });
+    colorsByProduct.set(row.productId, current);
+  }
+  return products.map((product) => ({ ...product, colors: colorsByProduct.get(product.id) || [] }));
+};
+
 const addAttributeFilter = (conditions, parameters, groupCode, values, scope = 'product') => {
   if (!values?.length) return;
   const relation = scope === 'variant'
@@ -162,7 +196,7 @@ const listPublished = async (requestedLocale, filters = {}) => {
      LIMIT ? OFFSET ?`,
     parameters,
   );
-  const products = await attachMedia(rows.map((row) => {
+  const productsWithMedia = await attachMedia(rows.map((row) => {
     const stockQuantity = Number(row.stockQuantity || 0);
     const activeVariantCount = Number(row.activeVariantCount || 0);
     const inStockVariantCount = Number(row.inStockVariantCount || 0);
@@ -178,6 +212,7 @@ const listPublished = async (requestedLocale, filters = {}) => {
         : inStockVariantCount === lowStockVariantCount ? 'low_stock' : 'in_stock',
     };
   }));
+  const products = await attachVariantColors(productsWithMedia, locale);
   const result = { products, pagination: { page: filters.page || 1, limit, hasMore: products.length === limit } };
   return result;
 };

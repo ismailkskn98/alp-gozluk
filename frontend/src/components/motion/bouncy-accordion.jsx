@@ -73,6 +73,7 @@ function BouncyAccordionRow({
   contentId,
   triggerId,
   reduce,
+  radius,
   classNames,
   onToggle
 }) {
@@ -108,10 +109,10 @@ function BouncyAccordionRow({
         data-state={open ? "open" : "closed"}
         initial={false}
         animate={{
-          borderTopLeftRadius: startsGroup ? 28 : 0,
-          borderTopRightRadius: startsGroup ? 28 : 0,
-          borderBottomLeftRadius: endsGroup ? 28 : 0,
-          borderBottomRightRadius: endsGroup ? 28 : 0,
+          borderTopLeftRadius: startsGroup ? radius : 0,
+          borderTopRightRadius: startsGroup ? radius : 0,
+          borderBottomLeftRadius: endsGroup ? radius : 0,
+          borderBottomRightRadius: endsGroup ? radius : 0,
         }}
         transition={reduce ? { duration: 0 } : ROW_TRANSITION}
         className={cn(
@@ -212,6 +213,7 @@ export function BouncyAccordion({
   defaultValue = null,
   onValueChange,
   collapsible = true,
+  radius = 28,
   className,
   classNames
 }) {
@@ -261,6 +263,7 @@ export function BouncyAccordion({
             contentId={contentId}
             triggerId={triggerId}
             reduce={reduce}
+            radius={Math.max(0, Number(radius) || 0)}
             classNames={classNames}
             onToggle={() => toggleItem(item.id)}
           />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import {
   useAddCartItem,
@@ -11,12 +11,7 @@ import {
   useUpdateCartItem,
 } from '@/features/commerce';
 import { announceCartItemAdded } from '@/components/site/commerce/events';
-import {
-  AdaptiveStepper,
-  AdaptiveStepperDecrement,
-  AdaptiveStepperIncrement,
-  AdaptiveStepperValue,
-} from '@/components/motion/adaptive-stepper';
+import QuantityControl from '@/components/site/commerce/quantity-control';
 import { cn } from '@/lib/utils';
 
 function activeVariants(product) {
@@ -112,22 +107,18 @@ export default function ProductCardActions({ product, authenticated = false, loc
             {tr ? 'Tükendi' : 'Sold out'}
           </div>
         ) : cartItem ? (
-          <div className="flex h-12 items-center justify-center bg-[#172536] px-3">
-            <AdaptiveStepper
+          <div className="bg-white">
+            <QuantityControl
               value={Number(cartItem.quantity) || 1}
-              min={0}
+              min={1}
               max={maxQuantity}
+              removeAtMinimum
               disabled={cartItemPending}
               onValueChange={handleQuantityChange}
-              aria-label={tr ? `${product.name} sepet adedi` : `${product.name} cart quantity`}
-              className="scale-[0.92]"
-            >
-              <AdaptiveStepperDecrement aria-label={tr ? 'Adedi azalt' : 'Decrease quantity'}>
-                {Number(cartItem.quantity) === 1 ? <Trash2 className="size-4" strokeWidth={1.7} /> : undefined}
-              </AdaptiveStepperDecrement>
-              <AdaptiveStepperValue className="text-base" />
-              <AdaptiveStepperIncrement aria-label={tr ? 'Adedi artır' : 'Increase quantity'} />
-            </AdaptiveStepper>
+              quantityLabel={tr ? `${product.name} sepet adedi` : `${product.name} cart quantity`}
+              decreaseLabel={Number(cartItem.quantity) === 1 ? (tr ? 'Sepetten kaldır' : 'Remove from cart') : (tr ? 'Adedi azalt' : 'Decrease quantity')}
+              increaseLabel={tr ? 'Adedi artır' : 'Increase quantity'}
+            />
           </div>
         ) : canAddDirectly ? (
           <button
