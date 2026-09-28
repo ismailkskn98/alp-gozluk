@@ -199,3 +199,33 @@ test('misafir siparişi erişim anahtarı olmadan okunamaz', async () => {
 
   assert.equal(response.body.status, false);
 });
+
+test('ödeme endpointi biçimsiz kartı veritabanı ve sağlayıcı çağrısından önce reddeder', async () => {
+  const cardNumber = '5526080000000007';
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/payments/iyzico/3ds/initialize')
+    .set('Idempotency-Key', 'payment-security-test-0001')
+    .send({
+      orderNumber: 'AG-26-23456789AB',
+      installment: 1,
+      card: {
+        cardHolderName: 'Ada Yılmaz',
+        cardNumber,
+        expireMonth: '12',
+        expireYear: '2030',
+        cvc: '123',
+      },
+    })
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+  assert.equal(JSON.stringify(response.body).includes(cardNumber), false);
+  assert.equal(JSON.stringify(response.body).includes('123'), false);
+});
+
+test('taksit endpointi tam kart numarası yerine yalnız sekiz haneli BIN kabul eder', async () => {
+  await request(createApp())
+    .post('/api/alpgozluk/v1/payments/iyzico/installments')
+    .send({ orderNumber: 'AG-26-23456789AB', binNumber: '5526080000000006' })
+    .expect(422);
+});

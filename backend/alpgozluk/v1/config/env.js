@@ -25,6 +25,12 @@ const toBoolean = (value, fallback = false) => {
 const splitOrigins = (value = '') =>
   value.split(',').map((origin) => origin.trim()).filter(Boolean);
 
+const iyzicoEnvironment = process.env.IYZICO_ENVIRONMENT || 'sandbox';
+const iyzicoBaseUrls = {
+  sandbox: 'https://sandbox-api.iyzipay.com',
+  production: 'https://api.iyzipay.com',
+};
+
 const config = {
   nodeEnv,
   isProduction: nodeEnv === 'production',
@@ -84,6 +90,21 @@ const config = {
     max: toNumber(process.env.RATE_LIMIT_MAX, 100),
     authMax: toNumber(process.env.AUTH_RATE_LIMIT_MAX, 10),
   },
+  payments: {
+    artifactEncryptionKey: process.env.PAYMENT_ARTIFACT_ENCRYPTION_KEY,
+    iyzico: {
+      enabled: toBoolean(process.env.IYZICO_ENABLED),
+      environment: iyzicoEnvironment,
+      baseUrl: iyzicoBaseUrls[iyzicoEnvironment],
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      callbackUrl: process.env.IYZICO_CALLBACK_URL ||
+        `${process.env.APP_URL || 'http://localhost:4000'}/api/alpgozluk/v1/payments/iyzico/3ds/callback`,
+      requestTimeoutMs: toNumber(process.env.IYZICO_REQUEST_TIMEOUT_MS, 15000),
+      sandboxIdentityNumber: process.env.IYZICO_SANDBOX_IDENTITY_NUMBER || '11111111111',
+      productionApproved: toBoolean(process.env.IYZICO_PRODUCTION_APPROVED),
+    },
+  },
 };
 
 const validateConfig = () => {
@@ -101,6 +122,35 @@ const validateConfig = () => {
 
   if (!['local', 's3'].includes(config.storage.driver)) {
     throw new Error('STORAGE_DRIVER yalnızca local veya s3 olabilir.');
+  }
+
+  if (!config.payments.iyzico.baseUrl) {
+    throw new Error('IYZICO_ENVIRONMENT yalnızca sandbox veya production olabilir.');
+  }
+
+  if (config.payments.iyzico.enabled) {
+    for (const [name, value] of Object.entries({
+      IYZICO_API_KEY: config.payments.iyzico.apiKey,
+      IYZICO_SECRET_KEY: config.payments.iyzico.secretKey,
+      PAYMENT_ARTIFACT_ENCRYPTION_KEY: config.payments.artifactEncryptionKey,
+      REDIS_URL: config.redis.url,
+    })) {
+      if (!value) missingValues.push(name);
+    }
+
+    if (config.payments.artifactEncryptionKey) {
+      const encryptionKey = Buffer.from(config.payments.artifactEncryptionKey, 'base64');
+      if (encryptionKey.length !== 32) {
+        throw new Error('PAYMENT_ARTIFACT_ENCRYPTION_KEY Base64 biçiminde 32 byte olmalıdır.');
+      }
+    }
+
+    if (config.payments.iyzico.environment === 'production') {
+      if (!config.payments.iyzico.productionApproved) missingValues.push('IYZICO_PRODUCTION_APPROVED');
+      if (!config.payments.iyzico.callbackUrl.startsWith('https://')) {
+        throw new Error('Canlı iyzico callback adresi HTTPS olmalıdır.');
+      }
+    }
   }
 
   if (config.storage.driver === 's3') {

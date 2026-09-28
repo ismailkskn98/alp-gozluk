@@ -91,6 +91,12 @@
     "deleted": "Duyuru silindi.",
     "not_found": "Duyuru bulunamadı."
   },
+  "payments": {
+    "installments_found": "Taksit seçenekleri getirildi.",
+    "initialized": "Güvenli ödeme oturumu başlatıldı.",
+    "reused": "Mevcut güvenli ödeme oturumu getirildi.",
+    "status_found": "Ödeme durumu getirildi."
+  },
   "orders": {
     "prepared": "Sipariş ödeme için hazırlandı.",
     "reused": "Mevcut checkout işlemi getirildi.",

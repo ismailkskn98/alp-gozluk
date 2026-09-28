@@ -652,8 +652,12 @@ const expireReservations = async (limit = 100, database = getDb()) => {
     `SELECT DISTINCT o.id
      FROM orders o INNER JOIN stock_reservations sr ON sr.order_id = o.id
      WHERE o.status = ? AND sr.status = ? AND sr.expires_at <= UTC_TIMESTAMP(6)
+       AND NOT EXISTS (
+         SELECT 1 FROM payments p
+         WHERE p.order_id = o.id AND p.status = ? AND p.callback_received_at IS NOT NULL
+       )
      ORDER BY o.id LIMIT ?`,
-    [ORDER_STATUSES.PENDING_PAYMENT, RESERVATION_STATUSES.ACTIVE, safeLimit],
+    [ORDER_STATUSES.PENDING_PAYMENT, RESERVATION_STATUSES.ACTIVE, PAYMENT_STATUSES.PENDING, safeLimit],
   );
   let expired = 0;
 
@@ -666,6 +670,16 @@ const expireReservations = async (limit = 100, database = getDb()) => {
         [orderRow.id],
       );
       if (lockedRows[0]?.status !== ORDER_STATUSES.PENDING_PAYMENT) {
+        await connection.commit();
+        continue;
+      }
+      const [protectedPaymentRows] = await connection.query(
+        `SELECT id FROM payments
+         WHERE order_id = ? AND status = ? AND callback_received_at IS NOT NULL
+         LIMIT 1 FOR UPDATE`,
+        [orderRow.id, PAYMENT_STATUSES.PENDING],
+      );
+      if (protectedPaymentRows[0]) {
         await connection.commit();
         continue;
       }

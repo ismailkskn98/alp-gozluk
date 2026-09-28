@@ -17,6 +17,7 @@ const customerAccountRoutes = require('./routes/customerAccountRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const adminSettingsRoutes = require('./routes/adminSettingsRoutes');
 const verifyToken = require('./middlewares/verifyToken');
 const optionalAuth = require('./middlewares/optionalAuth');
@@ -35,6 +36,7 @@ router.use('/announcements', announcementRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/cart', optionalAuth, cartRoutes);
 router.use('/checkout', optionalAuth, orderRoutes);
+router.use('/payments', paymentRoutes);
 router.use('/account', verifyToken, customerAccountRoutes);
 router.use(
   '/admin/products',

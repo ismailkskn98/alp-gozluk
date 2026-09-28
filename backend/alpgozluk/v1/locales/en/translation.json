@@ -91,6 +91,12 @@
     "deleted": "Announcement deleted.",
     "not_found": "Announcement not found."
   },
+  "payments": {
+    "installments_found": "Installment options retrieved.",
+    "initialized": "Secure payment session initialized.",
+    "reused": "Existing secure payment session retrieved.",
+    "status_found": "Payment status retrieved."
+  },
   "orders": {
     "prepared": "The order is ready for payment.",
     "reused": "The existing checkout operation was returned.",
