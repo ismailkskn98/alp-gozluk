@@ -103,7 +103,7 @@ export default function GoogleAuthSection({
       }
 
       onSuccess?.(payload.data?.user || null);
-      void mergeGuestCommerceAfterAuthentication();
+      await mergeGuestCommerceAfterAuthentication();
       if (redirectOnSuccess) {
         router.push(redirectTo || getPathname({ href: '/account', locale }));
       }

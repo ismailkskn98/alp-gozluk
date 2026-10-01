@@ -97,6 +97,8 @@ export default function CartExperience({ locale, recommendations, authenticated 
     removeTitle: t("removeTitle"), removeDescription: t("removeDescription"), removeConfirm: t("removeConfirm"), cancel: t("cancel"), product: t("product"),
     closeRemoveDialog: t("closeRemoveDialog"), moveToFavorites: t("moveToFavorites"), unavailable: t("unavailable"), priceChanged: t("priceChanged"),
     outOfStock: t("outOfStock"), insufficientStock: t("insufficientStock"),
+    guestTitle: t("guest.title"), guestDescription: t("guest.description"), continueAsGuest: t("guest.continueAsGuest"),
+    signInOrRegister: t("guest.signInOrRegister"), guestPrivacy: t("guest.privacy"), guestClose: t("guest.close"),
   }), [t]);
 
   const formatCurrency = useMemo(() => (value) => new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
@@ -159,9 +161,9 @@ export default function CartExperience({ locale, recommendations, authenticated 
     <div>
       <CheckoutSteps itemCount={Number(summary.selectedItemCount || 0)} labels={labels} />
 
-      <div className="mt-[clamp(2rem,4vw,3.5rem)] flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="text-sm text-muted-foreground">{t("eyebrow")}</p><h1 className="mt-2 text-[clamp(2.5rem,5vw,5.25rem)] font-light leading-[0.92] tracking-[-0.045em]">{t("title")}</h1></div>
-        <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("description")}</p>
+      <div className="mt-[clamp(1.5rem,3vw,2.5rem)] flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-xs text-muted-foreground">{t("eyebrow")}</p><h1 className="mt-1 text-[clamp(1.65rem,2.4vw,2.25rem)] font-medium leading-tight tracking-[-0.03em]">{t("title")}</h1></div>
+        <p className="max-w-md text-xs leading-5 text-muted-foreground sm:text-right">{t("description")}</p>
       </div>
 
       {cartQuery.isError ? (
@@ -172,13 +174,13 @@ export default function CartExperience({ locale, recommendations, authenticated 
       ) : null}
 
       {items.length ? (
-        <div className="mt-8 grid gap-x-[clamp(1.25rem,3vw,3rem)] gap-y-8 lg:grid-cols-[minmax(0,1fr)_clamp(19rem,24vw,23rem)]">
+        <div className="mt-5 grid gap-x-[clamp(1rem,2.5vw,2.25rem)] gap-y-6 lg:grid-cols-[minmax(0,1fr)_clamp(18.5rem,23vw,22rem)]">
           <div className="min-w-0">
             <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 border-t border-[#d8ddd7] px-1 py-2.5">
               <SiteCheckbox checked={allSelected} indeterminate={selectedItems.length > 0 && !allSelected} disabled={selectionPending} onCheckedChange={toggleAll} label={labels.selectAll} />
               <p className="text-xs text-[#68736f]">{selectedItems.length} / {items.length} {labels.selectedProducts}</p>
             </div>
-            <div className="mb-4 flex min-h-12 items-center justify-center bg-[#e9ece6] px-4 text-center text-sm">{t("campaign")}</div>
+            <div className="mb-3 flex min-h-10 items-center justify-center bg-[#e9ece6] px-4 text-center text-xs">{t("campaign")}</div>
             <div className="space-y-2">
               {items.map((item) => (
                 <CartItem key={item.id} item={item} labels={labels} locale={locale} formatCurrency={formatCurrency} selected={item.selected}
@@ -190,7 +192,7 @@ export default function CartExperience({ locale, recommendations, authenticated 
 
           <OrderSummary totals={{ subtotal: summary.subtotalAmount, discount: summary.discountAmount, shipping: summary.shippingAmount, total: summary.totalAmount }} labels={labels}
             formatCurrency={formatCurrency} couponCode={couponCode} couponMessage={couponMessage} onCouponChange={setCouponCode} onCouponSubmit={applyCoupon}
-            couponPending={applyCartCoupon.isPending} canCheckout={Number(summary.selectedItemCount || 0) > 0} />
+            couponPending={applyCartCoupon.isPending} canCheckout={Number(summary.selectedItemCount || 0) > 0} authenticated={authenticated} />
           <div className="min-w-0 lg:col-start-1 lg:row-start-2"><CartRecommendations products={recommendations} labels={labels} formatCurrency={formatCurrency} /></div>
         </div>
       ) : !cartQuery.isError ? (

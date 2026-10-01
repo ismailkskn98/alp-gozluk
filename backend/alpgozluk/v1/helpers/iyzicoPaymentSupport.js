@@ -49,7 +49,7 @@ const providerAddress = (address) => ({
   contactName: `${address.first_name} ${address.last_name}`.trim(),
   city: address.city,
   country: countryName(address.country_code),
-  address: `${address.address_line}, ${address.district}`,
+  address: [address.address_line, address.neighborhood, address.district].filter(Boolean).join(', '),
   zipCode: address.postal_code || undefined,
 });
 
@@ -93,7 +93,11 @@ const buildBuyer = (order, identityNumber, ipAddress) => ({
   identityNumber: resolveBuyerIdentityNumber(identityNumber),
   email: order.customer_email,
   gsmNumber: normalizePhone(order.customer_phone),
-  registrationAddress: `${order.billingAddress.address_line}, ${order.billingAddress.district}`,
+  registrationAddress: [
+    order.billingAddress.address_line,
+    order.billingAddress.neighborhood,
+    order.billingAddress.district,
+  ].filter(Boolean).join(', '),
   city: order.billingAddress.city,
   country: countryName(order.billingAddress.country_code),
   zipCode: order.billingAddress.postal_code || undefined,

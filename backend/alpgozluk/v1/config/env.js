@@ -90,6 +90,24 @@ const config = {
     max: toNumber(process.env.RATE_LIMIT_MAX, 100),
     authMax: toNumber(process.env.AUTH_RATE_LIMIT_MAX, 10),
   },
+  locations: {
+    providerBaseUrl: process.env.LOCATION_PROVIDER_BASE_URL || 'https://api.turkiyeapi.dev/v2',
+    requestTimeoutMs: toNumber(process.env.LOCATION_PROVIDER_TIMEOUT_MS, 8000),
+  },
+  orderTracking: {
+    secret: process.env.ORDER_TRACKING_SECRET || process.env.JWT_SECRET,
+    ttlDays: toNumber(process.env.ORDER_TRACKING_TTL_DAYS, 365),
+  },
+  mail: {
+    enabled: toBoolean(process.env.MAIL_ENABLED),
+    host: process.env.MAIL_HOST,
+    port: toNumber(process.env.MAIL_PORT, 587),
+    secure: toBoolean(process.env.MAIL_SECURE),
+    user: process.env.MAIL_USER,
+    password: process.env.MAIL_PASSWORD,
+    fromName: process.env.MAIL_FROM_NAME || 'ALP Gözlük',
+    fromAddress: process.env.MAIL_FROM_ADDRESS,
+  },
   payments: {
     artifactEncryptionKey: process.env.PAYMENT_ARTIFACT_ENCRYPTION_KEY,
     iyzico: {
@@ -169,6 +187,23 @@ const validateConfig = () => {
     if (!process.env.FRONTEND_URL) missingValues.push('FRONTEND_URL');
     if (!process.env.CORS_ORIGINS) missingValues.push('CORS_ORIGINS');
     if (!config.redis.url) missingValues.push('REDIS_URL');
+    if (!process.env.ORDER_TRACKING_SECRET) missingValues.push('ORDER_TRACKING_SECRET');
+  }
+
+  if (!Number.isInteger(config.orderTracking.ttlDays) || config.orderTracking.ttlDays < 1 ||
+      config.orderTracking.ttlDays > 730) {
+    throw new Error('ORDER_TRACKING_TTL_DAYS 1 ile 730 arasında tam sayı olmalıdır.');
+  }
+
+  if (config.mail.enabled) {
+    for (const [name, value] of Object.entries({
+      MAIL_HOST: config.mail.host,
+      MAIL_USER: config.mail.user,
+      MAIL_PASSWORD: config.mail.password,
+      MAIL_FROM_ADDRESS: config.mail.fromAddress,
+    })) {
+      if (!value) missingValues.push(name);
+    }
   }
 
   if (config.auth.adminTwoFactor.enabled) {

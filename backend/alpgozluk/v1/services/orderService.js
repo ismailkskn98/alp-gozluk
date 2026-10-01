@@ -10,6 +10,7 @@ const {
   createOrderNumber,
 } = require('../helpers/orderCore');
 const { getDb } = require('../models/db');
+const { verifyOrderTrackingToken } = require('../helpers/orderTracking');
 
 const RESERVATION_MINUTES = 20;
 const allowedLocales = new Set(['tr', 'en']);
@@ -170,8 +171,8 @@ const insertOrder = async (connection, values) => {
 const insertAddress = (connection, orderId, addressType, address) => connection.query(
   `INSERT INTO order_addresses
     (order_id, address_type, first_name, last_name, phone, country_code,
-     city, district, postal_code, address_line)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     city, district, neighborhood, postal_code, address_line)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   [
     orderId,
     addressType,
@@ -181,6 +182,7 @@ const insertAddress = (connection, orderId, addressType, address) => connection.
     address.countryCode,
     address.city,
     address.district,
+    address.neighborhood,
     address.postalCode || null,
     address.addressLine,
   ],
@@ -266,7 +268,7 @@ const loadOrder = async (database, orderId) => {
     ),
     database.query(
       `SELECT address_type, first_name, last_name, phone, country_code, city,
-         district, postal_code, address_line
+         district, neighborhood, postal_code, address_line
        FROM order_addresses WHERE order_id = ? ORDER BY id`,
       [orderId],
     ),
@@ -334,6 +336,7 @@ const loadOrder = async (database, orderId) => {
       countryCode: address.country_code,
       city: address.city,
       district: address.district,
+      neighborhood: address.neighborhood,
       postalCode: address.postal_code,
       addressLine: address.address_line,
     })),
@@ -446,6 +449,42 @@ const getOrder = async ({ orderNumber, identity }, database = getDb()) => {
   return loadOrder(database, row.id);
 };
 
+const getOrderById = (orderId, database = getDb()) => loadOrder(database, orderId);
+
+const getOrderTracking = async ({ orderNumber, trackingToken }, database = getDb()) => {
+  const [rows] = await database.query(
+    'SELECT id, order_number, customer_email FROM orders WHERE order_number = ? LIMIT 1',
+    [orderNumber],
+  );
+  const row = rows[0];
+  const authorized = row && verifyOrderTrackingToken({
+    token: trackingToken,
+    orderNumber: row.order_number,
+    customerEmail: row.customer_email,
+  });
+  if (!authorized) {
+    throw commerceError(404, 'Sipariş takip bilgisi bulunamadı.', 'order_tracking_not_found');
+  }
+
+  const order = await loadOrder(database, row.id);
+  const shippingAddress = order.addresses.find((address) => address.type === 'shipping');
+  return {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    fulfillmentStatus: order.fulfillmentStatus,
+    currency: order.currency,
+    placedAt: order.placedAt,
+    updatedAt: order.updatedAt,
+    shippingMethod: order.shippingMethod,
+    destination: shippingAddress ? {
+      city: shippingAddress.city,
+      district: shippingAddress.district,
+    } : null,
+    items: order.items,
+  };
+};
+
 const commitPaidOrder = async ({ orderId, paymentId = null }, database = getDb()) => {
   const connection = await database.getConnection();
   let resolvedOrderId = orderId;
@@ -511,6 +550,15 @@ const commitPaidOrder = async ({ orderId, paymentId = null }, database = getDb()
         payment: PAYMENT_STATUSES.PAID,
         fulfillment: FULFILLMENT_STATUSES.PREPARING,
       }, 'payment', 'Ödeme doğrulandı ve stok rezervasyonu kesinleştirildi.');
+      await connection.query(
+        `INSERT INTO transactional_email_outbox
+          (order_id, template, recipient_email, locale, status)
+         SELECT o.id, 'order_confirmation', o.customer_email,
+           COALESCE((SELECT p.locale FROM payments p WHERE p.id = ? LIMIT 1), 'tr'), 'pending'
+         FROM orders o WHERE o.id = ?
+         ON DUPLICATE KEY UPDATE recipient_email = VALUES(recipient_email), locale = VALUES(locale)`,
+        [paymentId, order.id],
+      );
       await connection.commit();
     }
   } catch (error) {
@@ -730,5 +778,7 @@ module.exports = {
   expireReservations,
   failOrderPayment,
   getOrder,
+  getOrderById,
+  getOrderTracking,
   prepareOrder,
 };

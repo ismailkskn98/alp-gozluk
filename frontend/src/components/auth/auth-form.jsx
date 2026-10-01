@@ -50,7 +50,7 @@ export default function AuthForm({ mode = 'login', admin = false, locale = 'tr',
       return;
     }
     onSuccess?.(payload.data?.user || null);
-    void mergeGuestCommerceAfterAuthentication();
+    await mergeGuestCommerceAfterAuthentication();
     if (redirectOnSuccess) {
       router.push(redirectTo || (admin ? '/admin' : getPathname({ href: '/account', locale })));
     }

@@ -55,9 +55,11 @@ npm run test:iyzico:sandbox:connection
 
 Yerel 3DS callback tarayıcı üzerinden localhost'a dönebilir. Webhook kabul testi için iyzico'nun erişebileceği sabit bir HTTPS staging/tunnel adresi gerekir. Production'da callback ve webhook yalnız HTTPS olmalı; sandbox ve canlı anahtarları aynı env'de karıştırılmamalıdır.
 
+3DS callback, iyzico'nun tarayıcı üzerinden yaptığı form POST isteğidir. Bu exact rota global frontend CORS allowlist'ine bağlı değildir; güven sınırı callback imzası, conversation/payment eşleşmesi ve tek-seferlik ödeme tamamlama işlemidir. iyzico origin'i diğer API rotalarına açılmaz.
+
 ## 4. Resmî sandbox senaryoları
 
-Kart sahibi adı serbest test metni, ileri bir son kullanma tarihi ve `CVC 123` kullanılabilir. Sandbox 3DS doğrulama kodu `123456` değeridir. Kartların güncel ve kanonik kaynağı iyzico'nun resmî test kartları sayfasıdır.
+Kart sahibi adı serbest test metni, ileri bir son kullanma tarihi ve `CVC 123` kullanılabilir. Sandbox mock ekranı doğrulama kodunu sayfada gösterir; ekranda gösterilen kod kullanılmalıdır. Kartların güncel ve kanonik kaynağı iyzico'nun resmî test kartları sayfasıdır.
 
 | Senaryo | Kart numarası |
 | --- | --- |
@@ -68,7 +70,25 @@ Kart sahibi adı serbest test metni, ileri bir son kullanma tarihi ve `CVC 123` 
 | `mdStatus = 0` | `4131111111111117` |
 | `mdStatus = 4` | `4141111111111115` |
 
-Tam tarayıcı akışı 9C checkout arayüzü bağlandıktan sonra sınanır. Her senaryoda sipariş, payment attempt, stok rezervasyonu ve tekrar bildirim davranışı birlikte kontrol edilir.
+9C checkout arayüzü bağlanmıştır. Tarayıcı testini her kart için yeni bir checkout oluşturarak aşağıdaki sırada yap:
+
+1. Sepete stoklu bir varyant ekle, ürünü seçili bırak ve **Sepeti onayla** ile `/tr/checkout` sayfasına geç.
+2. Misafir senaryosunda iletişim/teslimat alanlarını doldur; üyelikli senaryoda varsayılan adresin geldiğini ve başka kayıtlı adresin forma uygulanabildiğini doğrula.
+3. **Teslimatı onayla** dediğinde sipariş numarasının oluştuğunu, kart formunun açıldığını ve ürünlerin 20 dakikalık ödeme rezervasyonuna geçtiğini doğrula. Bu noktada sayfayı yenileyip aynı siparişin geri geldiğini kontrol et.
+4. Kartın ilk sekiz hanesinden sonra banka/taksit sorgusunun çalıştığını kontrol et. Taksit seçeneklerini frontend üretmez; görünen seçenek iyzico sandbox cevabıdır.
+5. Kart sahibi için test metni, ileri bir yıl, `CVC 123` ve tabloda ilgili kartı kullan. **Satın al** sonrasında iyzico 3DS ekranında sayfada gösterilen SMS koduyla devam et.
+6. Dönüşte `/checkout/result` ekranının URL'deki `status` değerine güvenmeden backend ödeme durumunu sorguladığını; başarılı senaryoda sipariş numarası ve tutarı gösterdiğini doğrula.
+
+Her terminal hata senaryosundan sonra eski sipariş tekrar ödenmez; stok rezervasyonu bırakılır ve sepete dönülerek yeni checkout başlatılır. Ayrıca şunları kontrol et:
+
+- **Çift tıklama:** Satın al sırasında düğme pasif olmalı ve tek Init 3DS isteği oluşmalı.
+- **Adres değiştirme:** Kart formu açıldıktan sonra teslimat adresini değiştirmek eski siparişi iptal edip rezervasyonu bırakmalı; yeni onay yeni sipariş oluşturmalı.
+- **Sekme yenileme:** Sipariş numarası dışında kart alanlarının hiçbiri geri gelmemeli; PAN/CVC `localStorage`, `sessionStorage`, cookie ve TanStack Query cache'inde bulunmamalı.
+- **Başarısız kartlar:** Yetersiz bakiye, hatalı CVC, Init 3DS hatası ve `mdStatus` kartlarında başarılı sipariş görünmemeli; stok yalnız bir kez geri bırakılmalı.
+- **Misafir sahipliği:** Başka tarayıcı/incognito oturumunda yalnız sipariş numarasıyla ödeme veya sonuç okunamamalı.
+- **Üyelikli akış:** Aynı test oturum açmış kullanıcıyla da tamamlanmalı; başarılı sipariş hesap siparişlerinde görünmeli.
+
+Webhook tekrarları ve callback-webhook yarışı localhost ile tam sınanamaz. Bunlar iyzico'nun erişebildiği sabit HTTPS staging adresinde, veritabanındaki payment attempt, sipariş geçmişi, stok rezervasyonu ve inventory movement kayıtları birlikte incelenerek kapatılır.
 
 ## 5. Canlıya geçiş kapısı
 

@@ -21,10 +21,12 @@ const {
   validProviderItemTransaction,
 } = require('../helpers/iyzicoPaymentSupport');
 const { getDb } = require('../models/db');
+const { createOrderTrackingToken, maskEmail } = require('../helpers/orderTracking');
 const orderService = require('./orderService');
 const { createIyzicoApiClient } = require('./iyzicoApiClient');
 const paymentRepository = require('./iyzicoPaymentRepository');
 const paymentArtifactService = require('./paymentArtifactService');
+const transactionalEmailService = require('./transactionalEmailService');
 const {
   claimCallback,
   createAttempt,
@@ -223,6 +225,7 @@ const finalizeProviderResponse = async (database, attempt, response) => {
   if (approved) {
     await saveProviderResult(database, attempt, response, response.paymentStatus || 'SUCCESS');
     const result = await orderService.commitPaidOrder({ orderId: attempt.order_id, paymentId: attempt.id }, database);
+    transactionalEmailService.scheduleOrderConfirmation(result.order.orderNumber);
     return { status: 'paid', order: result.order, reused: result.reused };
   }
   if (review || (Number(response.fraudStatus) === 1 && !itemTransactionsApproved)) {
@@ -438,9 +441,34 @@ const processWebhook = async (payload, signature, {
   }
 };
 
-const getPaymentStatus = (payload, database = getDb()) => (
-  paymentRepository.getPaymentStatus(payload, database)
-);
+const getPaymentStatus = async (payload, database = getDb()) => {
+  const payment = await paymentRepository.getPaymentStatus(payload, database);
+  const order = await orderService.getOrder({
+    orderNumber: payment.order.number,
+    identity: payload.identity,
+  }, database);
+  const paid = payment.status === 'paid' && order.paymentStatus === 'paid';
+
+  return {
+    ...payment,
+    order: {
+      ...payment.order,
+      fulfillmentStatus: order.fulfillmentStatus,
+      subtotalAmount: order.subtotalAmount,
+      discountAmount: order.discountAmount,
+      shippingAmount: order.shippingAmount,
+      totalAmount: order.totalAmount,
+      placedAt: order.placedAt,
+      shippingMethod: order.shippingMethod,
+      items: order.items,
+      contactEmail: maskEmail(order.customer.email),
+      trackingToken: paid ? createOrderTrackingToken({
+        orderNumber: order.orderNumber,
+        customerEmail: order.customer.email,
+      }) : null,
+    },
+  };
+};
 
 module.exports = {
   getInstallments,

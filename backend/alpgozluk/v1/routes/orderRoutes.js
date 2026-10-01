@@ -8,9 +8,15 @@ const checkoutRateLimit = createRateLimit({
   max: 20,
   windowSeconds: 60,
 });
+const trackingRateLimit = createRateLimit({
+  namespace: 'guest-order-tracking',
+  max: 10,
+  windowSeconds: 60,
+});
 
 router.post('/orders', checkoutRateLimit, controller.prepare);
 router.get('/orders/:orderNumber', controller.detail);
+router.post('/orders/:orderNumber/tracking', trackingRateLimit, controller.tracking);
 router.post('/orders/:orderNumber/cancel', checkoutRateLimit, controller.cancel);
 
 module.exports = router;

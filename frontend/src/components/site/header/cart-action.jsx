@@ -115,8 +115,8 @@ export default function CartAction({ locale, label }) {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" closeLabel={tr ? 'Sepeti kapat' : 'Close cart'} className="w-full gap-0 border-l border-border bg-white shadow-none sm:w-[min(30rem,100vw)]">
           <SheetHeader className="border-b border-border px-5 pb-5 pt-14 sm:px-7 sm:pt-16">
-            <SheetTitle className="text-2xl font-normal tracking-[-0.03em]">{tr ? 'Sepetin' : 'Your cart'}</SheetTitle>
-            <SheetDescription>{itemCount ? (tr ? `${itemCount} ürün sepetinde, ${selectedItemCount} ürün hesaba dahil.` : `${itemCount} items in your cart, ${selectedItemCount} included.`) : (tr ? 'Sepetin şu anda boş.' : 'Your cart is currently empty.')}</SheetDescription>
+            <SheetTitle className="text-2xl font-normal tracking-[-0.03em]">{tr ? 'Sepetim' : 'Your cart'}</SheetTitle>
+            <SheetDescription>{itemCount ? (tr ? `Sepetimde ${itemCount} ürün var; ${selectedItemCount} ürün hesaba dahil.` : `${itemCount} items in your cart, ${selectedItemCount} included.`) : (tr ? 'Sepetim şu anda boş.' : 'Your cart is currently empty.')}</SheetDescription>
           </SheetHeader>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
@@ -183,9 +183,9 @@ export default function CartAction({ locale, label }) {
                             className={cn('h-12 origin-left scale-75', pending && 'pointer-events-none opacity-45')}
                             onConfirm={() => remove(item)}
                             deleteLabel={tr ? `${itemName(item)} ürününü sepetten kaldır` : `Remove ${itemName(item)} from cart`}
-                            confirmLabel={tr ? 'Kaldırmayı onayla' : 'Confirm removal'}
+                            confirmLabel={tr ? 'Silmeyi onayla' : 'Confirm removal'}
                             cancelLabel={tr ? 'Vazgeç' : 'Cancel'}
-                            deletedStatus={tr ? 'Kaldırıldı' : 'Removed'}
+                            deletedStatus={tr ? 'Silindi' : 'Removed'}
                             keptStatus={tr ? 'Sepette tutuldu' : 'Kept in cart'}
                           />
                         </div>

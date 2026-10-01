@@ -13,7 +13,7 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
   return (
     <article
       className={cn(
-        "grid grid-cols-[1.25rem_5.75rem_minmax(0,1fr)] gap-3 border border-black/10 p-3 transition-[background-color,opacity] sm:grid-cols-[1.25rem_9rem_minmax(0,1fr)] sm:gap-5 sm:p-5 lg:grid-cols-[1.25rem_10rem_minmax(0,1fr)]",
+        "grid grid-cols-[1.125rem_4.75rem_minmax(0,1fr)] gap-2.5 border border-black/10 p-3 transition-[background-color,opacity] sm:grid-cols-[1.125rem_6.5rem_minmax(0,1fr)] sm:gap-4 sm:p-4 lg:grid-cols-[1.125rem_7.25rem_minmax(0,1fr)]",
         selected ? "bg-white" : "bg-[#f7f8f5]",
       )}
     >
@@ -28,20 +28,20 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
         {item.image ? <Image src={item.image} alt={item.imageAlt || item.name} fill sizes="(max-width: 640px) 108px, (max-width: 1024px) 144px, 160px" className="object-contain" /> : null}
       </Link>
 
-      <div className={cn("grid min-w-0 gap-5 transition-opacity sm:grid-cols-[minmax(0,1fr)_auto]", !selected && "opacity-65")}>
+      <div className={cn("grid min-w-0 gap-3 transition-opacity sm:grid-cols-[minmax(0,1fr)_auto]", !selected && "opacity-65")}>
         <div className="min-w-0">
-          <Link href={`/product/${item.slug}`} className="text-base font-medium leading-tight hover:text-primary sm:text-lg">
+          <Link href={`/product/${item.slug}`} className="line-clamp-2 text-sm font-medium leading-tight hover:text-primary">
             {item.name}
           </Link>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{category}</p>
-          <p className="mt-3 text-xs leading-5 text-muted-foreground sm:text-sm">
+          <p className="mt-1 text-[0.7rem] text-muted-foreground">{category}</p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
             {color} <span aria-hidden="true">/</span> {labels.size} {item.size}
           </p>
 
-          <div className="mt-4 inline-flex h-10 items-center border border-border bg-white" aria-label={labels.quantity}>
+          <div className="mt-3 inline-flex h-9 items-center border border-border bg-white" aria-label={labels.quantity}>
             <button
               type="button"
-              className="grid size-10 place-items-center hover:bg-muted disabled:cursor-not-allowed disabled:opacity-35"
+              className="grid size-9 place-items-center hover:bg-muted disabled:cursor-not-allowed disabled:opacity-35"
               aria-label={`${item.name} ${labels.decreaseQuantity}`}
               disabled={pending || item.quantity === 1 || !item.available}
               onClick={() => onQuantityChange(item.id, item.quantity - 1)}
@@ -53,7 +53,7 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
             </span>
             <button
               type="button"
-              className="grid size-10 place-items-center hover:bg-muted disabled:cursor-not-allowed disabled:opacity-35"
+              className="grid size-9 place-items-center hover:bg-muted disabled:cursor-not-allowed disabled:opacity-35"
               aria-label={`${item.name} ${labels.increaseQuantity}`}
               disabled={pending || item.quantity >= Math.min(item.stockQuantity || 10, 10) || !item.available}
               onClick={() => onQuantityChange(item.id, item.quantity + 1)}
@@ -80,28 +80,28 @@ export default function CartItem({ item, labels, locale, formatCurrency, selecte
           {!selected ? <p className="mt-2 text-xs text-[#68736f]">{labels.excludedFromTotal}</p> : null}
         </div>
 
-        <div className="flex items-end justify-between gap-4 sm:min-w-36 sm:flex-col sm:items-end">
+        <div className="flex items-end justify-between gap-3 sm:min-w-32 sm:flex-col sm:items-end">
           <div className="text-left sm:text-right">
             {originalLinePrice > linePrice ? <p className="text-xs text-muted-foreground line-through sm:text-sm">{formatCurrency(originalLinePrice)}</p> : null}
-            <p className="text-sm font-semibold sm:text-base">{formatCurrency(linePrice)}</p>
+            <p className="text-sm font-semibold">{formatCurrency(linePrice)}</p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-x-3">
             <button
               type="button"
               disabled={pending || !item.productId}
-              className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-45"
+              className="inline-flex min-h-8 items-center gap-1 px-0.5 text-[0.7rem] text-muted-foreground hover:text-foreground disabled:opacity-45"
               onClick={() => onMoveToFavorites(item)}
             >
-              <Heart className="size-3.5" />
+              <Heart className="size-3" />
               {labels.moveToFavorites}
             </button>
             <button
               type="button"
               disabled={pending}
-              className="inline-flex min-h-10 items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-danger disabled:opacity-45"
+              className="inline-flex min-h-8 items-center gap-1 px-0.5 text-[0.7rem] text-muted-foreground hover:text-danger disabled:opacity-45"
               onClick={() => onRemove(item)}
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 className="size-3" />
               {labels.remove}
             </button>
           </div>

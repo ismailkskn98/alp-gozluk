@@ -36,6 +36,7 @@ const address = {
   countryCode: 'TR',
   city: 'Ankara',
   district: 'Çankaya',
+  neighborhood: 'Kızılay',
   postalCode: '06800',
   addressLine: 'iyzico ödeme smoke testi için geçici adres.',
 };
@@ -265,6 +266,13 @@ const run = async () => {
   assert.equal(paidAgain.status, 'paid');
   assert.equal(paidAgain.reused, true);
   assert.equal(authorizeCount, 1);
+  const [[emailOutbox]] = await database.query(
+    `SELECT COUNT(*) AS count FROM transactional_email_outbox email_outbox
+     INNER JOIN orders o ON o.id = email_outbox.order_id
+     WHERE o.order_number = ? AND email_outbox.template = 'order_confirmation'`,
+    [paidOrder.order.orderNumber],
+  );
+  assert.equal(Number(emailOutbox.count), 1);
 
   const failedOrder = await preparePaymentOrder();
   const failedInitialized = await initializePayment(failedOrder);
@@ -280,7 +288,7 @@ const run = async () => {
   const [[stock]] = await database.query('SELECT stock_quantity FROM product_variants WHERE id = ?', [variantId]);
   assert.equal(Number(stock.stock_quantity), originalStock - 1);
 
-  process.stdout.write('iyzico DB smoke testi geçti: Init 3DS, imza, çift callback idempotency ve başarısız 3DS stok iadesi.\n');
+  process.stdout.write('iyzico DB smoke testi geçti: Init 3DS, imza, çift callback/e-posta idempotency ve başarısız 3DS stok iadesi.\n');
 };
 
 run()

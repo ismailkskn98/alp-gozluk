@@ -18,7 +18,7 @@ export default async function Cart({ locale }) {
       image: product.images[0],
     }));
   return (
-    <section className="grid-container py-[clamp(2rem,5vw,5rem)] max-w-full xl:max-w-11/12  2xl:max-w-10/12 mx-auto">
+    <section className="grid-container py-[clamp(1.5rem,3vw,3.25rem)]">
       <CartExperience locale={locale} authenticated={Boolean(user)} recommendations={recommendations} />
     </section>
   );

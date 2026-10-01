@@ -29,6 +29,7 @@ const address = {
   countryCode: 'TR',
   city: 'Ankara',
   district: 'Çankaya',
+  neighborhood: 'Kızılay',
   postalCode: '06800',
   addressLine: 'Smoke test için geçici ve temizlenen adres kaydı.',
 };

@@ -15,6 +15,7 @@ function SiteSelect({
   options,
   placeholder,
   disabled,
+  id,
   name,
   className,
   triggerClassName,
@@ -25,6 +26,7 @@ function SiteSelect({
     <Select value={value} onValueChange={onValueChange} disabled={disabled} className={className}>
       {name ? <input type="hidden" name={name} value={value ?? ''} /> : null}
       <SelectTrigger
+        id={id}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
         className={cn(

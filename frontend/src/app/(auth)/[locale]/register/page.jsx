@@ -1,11 +1,18 @@
 import AuthForm from '@/components/auth/auth-form';
 import AuthShell from '@/components/auth/auth-shell';
 import GoogleAuthSection from '@/components/auth/google-auth-section';
-import { Link } from '@/i18n/navigation';
+import { getPathname, Link } from '@/i18n/navigation';
 
-export default async function RegisterPage({ params }) {
-  const { locale } = await params;
+export default async function RegisterPage({ params, searchParams }) {
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   const tr = locale === 'tr';
+  const checkoutDestination = '/checkout';
+  const redirectTo = query?.next === checkoutDestination
+    ? getPathname({ href: checkoutDestination, locale })
+    : undefined;
+  const loginHref = query?.next === checkoutDestination
+    ? `/login?next=${encodeURIComponent(checkoutDestination)}`
+    : '/login';
   return (
     <AuthShell
       locale={locale}
@@ -15,14 +22,14 @@ export default async function RegisterPage({ params }) {
       footer={(
         <>
           {tr ? 'Zaten hesabın var mı? ' : 'Already registered? '}
-          <Link href="/login" className="font-semibold text-primary">
+          <Link href={loginHref} className="font-semibold text-primary">
             {tr ? 'Giriş yap' : 'Sign in'}
           </Link>
         </>
       )}
     >
-      <GoogleAuthSection locale={locale} mode="register" />
-      <AuthForm mode="register" locale={locale} />
+      <GoogleAuthSection locale={locale} mode="register" redirectTo={redirectTo} />
+      <AuthForm mode="register" locale={locale} redirectTo={redirectTo} />
     </AuthShell>
   );
 }

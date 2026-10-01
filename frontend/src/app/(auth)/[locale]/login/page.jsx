@@ -4,17 +4,22 @@ import GoogleAuthSection from '@/components/auth/google-auth-section';
 import { getPathname, Link } from '@/i18n/navigation';
 
 const favoriteDestination = '/account?section=favorites';
+const checkoutDestination = '/checkout';
+
+function resolveDestination(next, locale) {
+  if (next === favoriteDestination) {
+    return `${getPathname({ href: '/account', locale })}?section=favorites`;
+  }
+  if (next === checkoutDestination) return getPathname({ href: checkoutDestination, locale });
+  return getPathname({ href: '/account', locale });
+}
 
 export default async function LoginPage({ params, searchParams }) {
   const [{ locale }, query] = await Promise.all([params, searchParams]);
   const tr = locale === 'tr';
-  const accountPath = getPathname({ href: '/account', locale });
-  const redirectTo = query?.next === favoriteDestination
-    ? `${accountPath}?section=favorites`
-    : accountPath;
-  const registerHref = query?.next === favoriteDestination
-    ? `/register?next=${encodeURIComponent(favoriteDestination)}`
-    : '/register';
+  const safeNext = [favoriteDestination, checkoutDestination].includes(query?.next) ? query.next : null;
+  const redirectTo = resolveDestination(safeNext, locale);
+  const registerHref = safeNext ? `/register?next=${encodeURIComponent(safeNext)}` : '/register';
   return (
     <AuthShell locale={locale} eyebrow={tr ? 'Hesabım' : 'My account'} title={tr ? 'Tekrar hoş geldin.' : 'Welcome back.'} description={tr ? 'Siparişlerini ve adreslerini yönetmek için giriş yap.' : 'Sign in to manage your orders and addresses.'} footer={<>{tr ? 'Hesabın yok mu? ' : 'No account? '}<Link href={registerHref} className="font-semibold text-primary">{tr ? 'Hesap oluştur' : 'Create account'}</Link></>}>
       <GoogleAuthSection locale={locale} redirectTo={redirectTo} />

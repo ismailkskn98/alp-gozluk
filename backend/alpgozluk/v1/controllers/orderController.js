@@ -14,6 +14,7 @@ const normalizeAddress = (input = {}) => ({
   countryCode: normalizeText(input.countryCode || 'TR').toUpperCase(),
   city: normalizeText(input.city),
   district: normalizeText(input.district),
+  neighborhood: normalizeText(input.neighborhood),
   postalCode: normalizeText(input.postalCode),
   addressLine: normalizeText(input.addressLine),
 });
@@ -25,6 +26,7 @@ const validAddress = (address) => (
   /^[A-Z]{2}$/.test(address.countryCode) &&
   address.city.length >= 2 && address.city.length <= 100 &&
   address.district.length >= 2 && address.district.length <= 100 &&
+  address.neighborhood.length >= 2 && address.neighborhood.length <= 100 &&
   address.postalCode.length <= 20 &&
   address.addressLine.length >= 10 && address.addressLine.length <= 2000
 );
@@ -109,6 +111,23 @@ exports.detail = async (req, res, next) => {
     const order = await orderService.getOrder({
       orderNumber: req.params.orderNumber,
       identity: readOrderIdentity(req),
+    });
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({ status: true, message: req.t('orders.found'), data: { order } });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.tracking = async (req, res, next) => {
+  const trackingToken = String(req.body.trackingToken || '').trim();
+  if (!isValidOrderNumber(req.params.orderNumber) || trackingToken.length < 20 || trackingToken.length > 120) {
+    return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
+  }
+  try {
+    const order = await orderService.getOrderTracking({
+      orderNumber: req.params.orderNumber,
+      trackingToken,
     });
     res.setHeader('Cache-Control', 'no-store');
     return res.json({ status: true, message: req.t('orders.found'), data: { order } });

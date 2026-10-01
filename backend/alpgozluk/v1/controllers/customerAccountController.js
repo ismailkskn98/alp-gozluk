@@ -40,6 +40,7 @@ function serializeAddress(row) {
     countryCode: row.country_code,
     city: row.city,
     district: row.district,
+    neighborhood: row.neighborhood,
     postalCode: row.postal_code,
     addressLine: row.address_line,
     isDefault: Boolean(row.is_default),
@@ -65,7 +66,7 @@ async function getAccountData(userId) {
     database.query(`SELECT id, email, first_name, last_name, phone, birth_date, gender,
       marketing_email_opt_in, marketing_sms_opt_in, created_at FROM users WHERE id = ? LIMIT 1`, [userId]),
     database.query(`SELECT id, title, first_name, last_name, phone, country_code, city, district,
-      postal_code, address_line, is_default FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC`, [userId]),
+      neighborhood, postal_code, address_line, is_default FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC`, [userId]),
     database.query(`SELECT o.order_number, o.status, o.payment_status, o.fulfillment_status,
       o.total_amount, o.currency, o.placed_at, o.created_at, COUNT(oi.id) AS item_count
       FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
@@ -139,13 +140,14 @@ exports.createAddress = async (req, res) => {
   const values = Object.fromEntries(fields.map((field) => [field, stringValue(req.body[field], field === 'addressLine' ? 1000 : 100)]));
   if (Object.values(values).some((value) => !value)) return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
   const postalCode = stringValue(req.body.postalCode, 20);
+  const neighborhood = stringValue(req.body.neighborhood, 100);
   const isDefault = booleanValue(req.body.isDefault);
   const connection = await getDb().getConnection();
   try {
     await connection.beginTransaction();
     if (isDefault) await connection.query('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [req.user.id]);
-    await connection.query(`INSERT INTO addresses (user_id, title, first_name, last_name, phone, country_code, city, district, postal_code, address_line, is_default)
-      VALUES (?, ?, ?, ?, ?, 'TR', ?, ?, ?, ?, ?)`, [req.user.id, values.title, values.firstName, values.lastName, values.phone, values.city, values.district, postalCode, values.addressLine, isDefault]);
+    await connection.query(`INSERT INTO addresses (user_id, title, first_name, last_name, phone, country_code, city, district, neighborhood, postal_code, address_line, is_default)
+      VALUES (?, ?, ?, ?, ?, 'TR', ?, ?, ?, ?, ?, ?)`, [req.user.id, values.title, values.firstName, values.lastName, values.phone, values.city, values.district, neighborhood, postalCode, values.addressLine, isDefault]);
     await connection.commit();
     return res.status(201).json({ status: true, message: 'Adres eklendi.', data: await getAccountData(req.user.id) });
   } catch (error) {
@@ -161,13 +163,14 @@ exports.updateAddress = async (req, res) => {
   const values = Object.fromEntries(fields.map((field) => [field, stringValue(req.body[field], field === 'addressLine' ? 1000 : 100)]));
   if (!Number.isSafeInteger(addressId) || addressId < 1 || Object.values(values).some((value) => !value)) return res.status(422).json({ status: false, message: req.t('validation.invalid_request') });
   const postalCode = stringValue(req.body.postalCode, 20);
+  const neighborhood = stringValue(req.body.neighborhood, 100);
   const isDefault = booleanValue(req.body.isDefault);
   const connection = await getDb().getConnection();
   try {
     await connection.beginTransaction();
     if (isDefault) await connection.query('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [req.user.id]);
-    const [result] = await connection.query(`UPDATE addresses SET title = ?, first_name = ?, last_name = ?, phone = ?, city = ?, district = ?, postal_code = ?, address_line = ?, is_default = ? WHERE id = ? AND user_id = ?`, [
-      values.title, values.firstName, values.lastName, values.phone, values.city, values.district, postalCode, values.addressLine, isDefault, addressId, req.user.id,
+    const [result] = await connection.query(`UPDATE addresses SET title = ?, first_name = ?, last_name = ?, phone = ?, city = ?, district = ?, neighborhood = ?, postal_code = ?, address_line = ?, is_default = ? WHERE id = ? AND user_id = ?`, [
+      values.title, values.firstName, values.lastName, values.phone, values.city, values.district, neighborhood, postalCode, values.addressLine, isDefault, addressId, req.user.id,
     ]);
     if (result.affectedRows === 0) { await connection.rollback(); return res.status(404).json({ status: false, message: 'Adres bulunamadı.' }); }
     await connection.commit();

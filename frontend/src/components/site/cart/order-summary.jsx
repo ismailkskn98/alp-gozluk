@@ -1,22 +1,27 @@
+"use client";
+
 import { ChevronDown, LockKeyhole, PartyPopper, Tag } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { SiteButton, siteButtonVariants } from '@/components/site/ui/button';
 import { SiteInput } from '@/components/site/ui/input';
 import { cn } from '@/lib/utils';
+import GuestCheckoutDialog from './guest-checkout-dialog';
 
-export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit, couponPending = false, canCheckout }) {
+export default function OrderSummary({ totals, labels, formatCurrency, couponCode, couponMessage, onCouponChange, onCouponSubmit, couponPending = false, canCheckout, authenticated }) {
+  const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
-      <div className="border border-border bg-[#f7f7f4] p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <PartyPopper className="size-4 text-success" />
+      <div className="border border-border bg-[#f7f7f4] p-4">
+        <div className="flex items-center gap-2 text-xs font-medium">
+          <PartyPopper className="size-3.5 text-success" />
           <span>{labels.freeShippingReached}</span>
         </div>
         <div className="mt-3 h-1 overflow-hidden bg-border" aria-hidden="true">
           <div className="h-full w-full bg-success" />
         </div>
 
-        <dl className="mt-6 space-y-3 border-y border-border py-5 text-sm">
+        <dl className="mt-4 space-y-2.5 border-y border-border py-4 text-xs">
           <div className="flex justify-between gap-4">
             <dt className="text-muted-foreground">{labels.subtotal}</dt>
             <dd>{formatCurrency(totals.subtotal)}</dd>
@@ -31,21 +36,27 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
           </div>
         </dl>
 
-        <div className="flex items-center justify-between gap-4 py-5 font-semibold">
+        <div className="flex items-center justify-between gap-4 py-4 text-sm font-semibold">
           <span>{labels.total}</span>
-          <span className="text-lg">{formatCurrency(totals.total)}</span>
+          <span className="text-base">{formatCurrency(totals.total)}</span>
         </div>
 
-        <Link
-          href="/checkout"
-          aria-disabled={!canCheckout}
-          tabIndex={canCheckout ? undefined : -1}
-          onClick={(event) => !canCheckout && event.preventDefault()}
-          className={cn(siteButtonVariants({ size: 'wide' }), !canCheckout && 'pointer-events-none opacity-45')}
-        >
-          {labels.confirmCart}
-        </Link>
-        <Link href="/shop" className={cn(siteButtonVariants({ variant: 'secondary', size: 'wide' }), 'mt-2')}>
+        {authenticated ? (
+          <Link
+            href="/checkout"
+            aria-disabled={!canCheckout}
+            tabIndex={canCheckout ? undefined : -1}
+            onClick={(event) => !canCheckout && event.preventDefault()}
+            className={cn(siteButtonVariants({ size: 'wide' }), 'min-h-11 rounded-none text-sm', !canCheckout && 'pointer-events-none opacity-45')}
+          >
+            {labels.confirmCart}
+          </Link>
+        ) : (
+          <SiteButton type="button" size="wide" className="min-h-11 rounded-none text-sm" disabled={!canCheckout} onClick={() => setGuestDialogOpen(true)}>
+            {labels.confirmCart}
+          </SiteButton>
+        )}
+        <Link href="/shop" className={cn(siteButtonVariants({ variant: 'secondary', size: 'wide' }), 'mt-2 min-h-11 rounded-none text-sm')}>
           {labels.continueShopping}
         </Link>
         <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -55,7 +66,7 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
       </div>
 
       <details className="group mt-3 border border-border bg-[#f7f7f4]">
-        <summary className="flex min-h-14 list-none items-center justify-between gap-4 px-5 text-sm font-medium marker:content-none">
+        <summary className="flex min-h-12 list-none items-center justify-between gap-4 px-4 text-xs font-medium marker:content-none">
           <span className="flex items-center gap-2"><Tag className="size-4" />{labels.promoTitle}</span>
           <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
         </summary>
@@ -75,6 +86,7 @@ export default function OrderSummary({ totals, labels, formatCurrency, couponCod
           {couponMessage ? <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">{couponMessage}</p> : null}
         </form>
       </details>
+      <GuestCheckoutDialog open={guestDialogOpen} onOpenChange={setGuestDialogOpen} labels={labels} />
     </aside>
   );
 }

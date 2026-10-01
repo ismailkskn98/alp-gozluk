@@ -33,7 +33,7 @@ const loadOrderContext = async (database, orderNumber, identity, { lock = false 
 
   const [addressRows] = await database.query(
     `SELECT address_type, first_name, last_name, phone, country_code, city, district,
-       postal_code, address_line
+       neighborhood, postal_code, address_line
      FROM order_addresses WHERE order_id = ? ORDER BY id`,
     [order.id],
   );
@@ -217,8 +217,10 @@ const getPaymentStatus = async ({ publicId, identity }, database) => {
     `SELECT p.public_id, p.status, p.provider_status, p.amount, p.base_amount, p.currency,
        p.installment, p.failure_code, p.created_at, p.completed_at,
        o.order_number, o.user_id, o.guest_access_token_hash, o.status AS order_status,
-       o.payment_status AS order_payment_status
+       o.payment_status AS order_payment_status, email_outbox.status AS email_delivery_status
      FROM payments p INNER JOIN orders o ON o.id = p.order_id
+     LEFT JOIN transactional_email_outbox email_outbox
+       ON email_outbox.order_id = o.id AND email_outbox.template = 'order_confirmation'
      WHERE p.public_id = ? LIMIT 1`,
     [publicId],
   );
@@ -235,7 +237,12 @@ const getPaymentStatus = async ({ publicId, identity }, database) => {
     currency: row.currency,
     installment: Number(row.installment),
     failureCode: row.failure_code,
-    order: { number: row.order_number, status: row.order_status, paymentStatus: row.order_payment_status },
+    order: {
+      number: row.order_number,
+      status: row.order_status,
+      paymentStatus: row.order_payment_status,
+      emailDeliveryStatus: row.email_delivery_status || null,
+    },
     createdAt: row.created_at,
     completedAt: row.completed_at,
   };

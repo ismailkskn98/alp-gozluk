@@ -5,6 +5,27 @@ const request = require('supertest');
 process.env.NODE_ENV = 'test';
 const { createApp } = require('../../app');
 
+test('iyzico 3D Secure callback form POST isteği global origin kontrolüne takılmaz', async () => {
+  const response = await request(createApp())
+    .post('/api/alpgozluk/v1/payments/iyzico/3ds/callback')
+    .set('Origin', 'https://sandbox-api.iyzipay.com')
+    .type('form')
+    .send({})
+    .expect(422);
+
+  assert.equal(response.body.status, false);
+  assert.notEqual(response.body.message, 'Bu origin için erişim izni bulunmuyor.');
+});
+
+test('iyzico origin izni diğer API rotalarına taşınmaz', async () => {
+  const response = await request(createApp())
+    .get('/api/alpgozluk/v1/health')
+    .set('Origin', 'https://sandbox-api.iyzipay.com')
+    .expect(403);
+
+  assert.equal(response.body.message, 'Bu origin için erişim izni bulunmuyor.');
+});
+
 test('admin medya endpointi tokensız istekleri reddeder', async () => {
   const response = await request(createApp())
     .get('/api/alpgozluk/v1/admin/media/list')
@@ -151,6 +172,7 @@ test('geçerli görünen misafir checkout isteği sepet erişim anahtarı olmada
     countryCode: 'TR',
     city: 'İstanbul',
     district: 'Kadıköy',
+    neighborhood: 'Caferağa',
     postalCode: '34710',
     addressLine: 'Örnek Mahallesi Test Sokak No: 1',
   };
@@ -175,6 +197,7 @@ test('misafir checkout isteği ayrı sipariş erişim anahtarı olmadan reddedil
     countryCode: 'TR',
     city: 'İstanbul',
     district: 'Kadıköy',
+    neighborhood: 'Caferağa',
     postalCode: '34710',
     addressLine: 'Örnek Mahallesi Test Sokak No: 1',
   };

@@ -9,14 +9,11 @@ const { notFound, errorHandler } = require('./alpgozluk/v1/middlewares/errorHand
 const { connectRedis, closeRedis } = require('./alpgozluk/v1/models/redis');
 const { checkDatabase, closeDatabase } = require('./alpgozluk/v1/models/db');
 
+const IYZICO_THREE_DS_CALLBACK_PATH = '/api/alpgozluk/v1/payments/iyzico/3ds/callback';
+
 const createApp = () => {
   const app = express();
-
-  app.disable('x-powered-by');
-  app.set('trust proxy', 1);
-  app.use(requestContext);
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(cors({
+  const corsMiddleware = cors({
     origin(origin, callback) {
       if (!origin || config.corsOrigins.includes(origin)) return callback(null, true);
       const error = new Error('İzin verilmeyen origin.');
@@ -29,7 +26,16 @@ const createApp = () => {
     exposedHeaders: ['X-Cart-Token', 'X-Request-Id'],
     credentials: false,
     maxAge: 600,
-  }));
+  });
+
+  app.disable('x-powered-by');
+  app.set('trust proxy', 1);
+  app.use(requestContext);
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use((req, res, next) => {
+    if (req.method === 'POST' && req.path === IYZICO_THREE_DS_CALLBACK_PATH) return next();
+    return corsMiddleware(req, res, next);
+  });
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
