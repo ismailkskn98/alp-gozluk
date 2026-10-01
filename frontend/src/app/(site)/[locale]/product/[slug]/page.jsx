@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import Breadcrumb4 from '@/components/breadcrumb-4';
 import ProductGallery from '@/components/site/product-detail/gallery';
 import ProductSpecifications from '@/components/site/product-detail/specifications';
 import ProductDetailActions from '@/components/site/product-detail/actions';
@@ -19,9 +20,16 @@ export default async function ProductPage({ params }) {
   if (!product) notFound();
   const tr = locale === 'tr';
   const isSaleReady = !['Fiyat yakında', 'Price coming soon'].includes(product.price);
+  const productType = tr ? product.type : product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : 'Optical frame';
+  const productTypeHref = product.type === 'Güneş Gözlüğü' ? '/shop?type=sunglasses' : '/shop?type=optical';
   return (
-    <section className="grid-container py-[clamp(1.5rem,4vw,4rem)]">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.55fr)] lg:gap-[clamp(2rem,3.5vw,4rem)]">
+    <section className="grid-container pb-[clamp(1.5rem,4vw,4rem)] pt-5 sm:pt-7">
+      <Breadcrumb4 items={[
+        { label: tr ? 'Tüm ürünler' : 'Shop all', href: '/shop' },
+        { label: productType, href: productTypeHref },
+        { label: product.name },
+      ]} />
+      <div className="mt-[clamp(1.75rem,3vw,3rem)] grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.55fr)] lg:gap-[clamp(2rem,3.5vw,4rem)]">
         <ProductGallery
           color={product.color}
           images={product.images}
@@ -29,7 +37,7 @@ export default async function ProductPage({ params }) {
           imageLabel={tr ? 'ürün görünümü' : 'product view'}
         />
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <p className="text-xs text-muted-foreground">{tr ? product.type : product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : 'Optical frame'}</p>
+          <p className="text-xs text-muted-foreground">{productType}</p>
           <div className="mt-2 flex items-start justify-between gap-4">
             <h1 className="text-[clamp(1.5rem,2.2vw,2.2rem)] font-normal leading-[1.08] tracking-[-0.025em]">{product.name}</h1>
             <ShareButton name={product.name} locale={locale} />

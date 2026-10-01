@@ -40,10 +40,17 @@ export default async function AudienceShopPage({ params, searchParams }) {
   if (!audienceInfo || type?.length > 1 || (type?.[0] && !typeInfo)) notFound();
   const title = typeInfo ? typeInfo.label : audienceInfo.title;
   const basePath = `/shop/${audience}`;
+  const breadcrumbs = [
+    { label: locale === 'tr' ? 'Tüm ürünler' : 'Shop all', href: '/shop' },
+    typeInfo
+      ? { label: audienceInfo.title, href: basePath }
+      : { label: audienceInfo.title },
+    ...(typeInfo ? [{ label: typeInfo.label }] : []),
+  ];
 
   return (
     <>
-      <PageIntro eyebrow={audienceInfo.title} title={title} description={locale === 'tr' ? 'Unisex modeller ilgili kadın ve erkek seçkilerinde otomatik olarak birlikte gösterilir.' : 'Unisex styles automatically appear in the relevant women and men edits.'} />
+      <PageIntro breadcrumbs={breadcrumbs} eyebrow={audienceInfo.title} title={title} description={locale === 'tr' ? 'Unisex modeller ilgili kadın ve erkek seçkilerinde otomatik olarak birlikte gösterilir.' : 'Unisex styles automatically appear in the relevant women and men edits.'} />
       <section className="grid-container py-12">
         <div>
           <CatalogToolbar locale={locale} activeAudience={audienceInfo.code} basePath={basePath} />

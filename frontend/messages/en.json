@@ -5,6 +5,7 @@
   },
   "Navigation": {
     "home": "Home",
+    "breadcrumb": "Breadcrumb",
     "shop": "Shop all",
     "new": "New arrivals",
     "guide": "Eyewear guide",

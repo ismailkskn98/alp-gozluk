@@ -5,6 +5,7 @@
   },
   "Navigation": {
     "home": "Ana sayfa",
+    "breadcrumb": "Sayfa yolu",
     "shop": "Tüm ürünler",
     "new": "Yeni gelenler",
     "guide": "Gözlük rehberi",

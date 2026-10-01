@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 :root {
+  --announcement-bar-height: 0rem;
   --brand-blue: #0e51a1;
   --brand-cyan: #00c7e8;
   --background: #ffffff;
@@ -45,6 +46,10 @@
   --sidebar-accent-foreground: #10233d;
   --sidebar-border: #dce4ed;
   --sidebar-ring: #1756a3;
+}
+
+:root:has([data-announcement-bar]) {
+  --announcement-bar-height: 2.25rem;
 }
 
 @theme inline {
@@ -154,6 +159,12 @@ body {
 
 .home-hero-media video {
   animation: home-hero-media-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 48rem) {
+  .home-hero-media {
+    min-height: calc(100svh - 3.75rem - var(--announcement-bar-height));
+  }
 }
 
 .home-hero-copy {

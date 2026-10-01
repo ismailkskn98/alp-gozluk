@@ -3,5 +3,10 @@ import ProductGrid from '@/components/site/product-grid';
 
 export default async function CategoryPage({ params }) {
   const { locale, slug } = await params;
-  return <><PageIntro eyebrow={locale === 'tr' ? 'Kategori' : 'Category'} title={slug.replaceAll('-', ' ')} /><section className="grid-container py-12"><ProductGrid locale={locale} filters={{ category: slug }} /></section></>;
+  const title = slug.replaceAll('-', ' ');
+  const breadcrumbs = [
+    { label: locale === 'tr' ? 'Tüm ürünler' : 'Shop all', href: '/shop' },
+    { label: title },
+  ];
+  return <><PageIntro breadcrumbs={breadcrumbs} eyebrow={locale === 'tr' ? 'Kategori' : 'Category'} title={title} /><section className="grid-container py-12"><ProductGrid locale={locale} filters={{ category: slug }} /></section></>;
 }

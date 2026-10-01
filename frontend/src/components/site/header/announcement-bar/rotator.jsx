@@ -35,6 +35,7 @@ export default function AnnouncementRotator({ announcements, labels }) {
 
   return (
     <div
+      data-announcement-bar
       className="relative z-10 min-h-9 border-b border-black/10"
       style={{ backgroundColor: active.backgroundColor, color: active.textColor }}
       onMouseEnter={() => hasMultiple && setIsInteracting(true)}
