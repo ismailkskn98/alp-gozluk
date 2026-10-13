@@ -1,0 +1,35 @@
+<svg viewBox="0 0 1440 540" width="1440" height="540" aria-label="Birinci şahıs perspektifinde güneş gözlüğü" xmlns="http://www.w3.org/2000/svg"><style>
+.lens{fill:url(#lensTint);stroke:#252a26;stroke-width:17;stroke-linecap:round;stroke-linejoin:round}
+.lens-rim{fill:none;stroke:rgba(252,238,197,.44);stroke-width:3;stroke-linecap:round}
+.frame-shine{fill:none;stroke:#7a7867;stroke-width:3;opacity:.8;stroke-linecap:round}
+.temple{fill:none;stroke:#242823;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
+.temple-shine{fill:none;stroke:#7a7b6e;stroke-width:3;stroke-linecap:round}
+.bridge{fill:none;stroke:#242b27;stroke-width:23;stroke-linecap:round}
+.bridge-shine{fill:none;stroke:#a4a18d;stroke-width:3;stroke-linecap:round;opacity:.85}
+</style>
+   <defs>
+    <linearGradient id="lensTint" x1="0.18" y1="0" x2="0.82" y2="1" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="#203b39" stop-opacity=".87"/><stop offset=".46" stop-color="#1b3335" stop-opacity=".77"/><stop offset="1" stop-color="#475249" stop-opacity=".83"/></linearGradient>
+    <linearGradient id="reflection" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="white" stop-opacity=".25"/><stop offset=".35" stop-color="white" stop-opacity="0"/><stop offset="1" stop-color="white" stop-opacity=".08"/></linearGradient>
+    <clipPath id="clipLeft"><path d="M84 167 C85 129 113 111 163 109 L584 109 C638 109 678 137 683 180 L657 397 C651 448 613 470 556 480 L252 480 C192 480 150 457 132 411 L84 221 C80 202 80 184 84 167 Z"/></clipPath>
+    <clipPath id="clipRight"><path d="M1356 167 C1355 129 1327 111 1277 109 L856 109 C802 109 762 137 757 180 L783 397 C789 448 827 470 884 480 L1188 480 C1248 480 1290 457 1308 411 L1356 221 C1360 202 1360 184 1356 167 Z"/></clipPath>
+    <clipPath id="clipBoth"><path d="M84 167 C85 129 113 111 163 109 L584 109 C638 109 678 137 683 180 L657 397 C651 448 613 470 556 480 L252 480 C192 480 150 457 132 411 L84 221 C80 202 80 184 84 167 Z"/><path d="M1356 167 C1355 129 1327 111 1277 109 L856 109 C802 109 762 137 757 180 L783 397 C789 448 827 470 884 480 L1188 480 C1248 480 1290 457 1308 411 L1356 221 C1360 202 1360 184 1356 167 Z"/></clipPath>
+   </defs>
+   <!-- Arms reach the edges of the viewer's vision, simulating a POV eyewear try-on -->
+   <path class="temple" d="M97 167 C48 160 -23 149 -94 142"/><path class="temple" d="M1343 167 C1392 160 1463 149 1534 142"/>
+   <path class="temple-shine" d="M100 162 C39 155 -3 152 -88 139"/><path class="temple-shine" d="M1340 162 C1401 155 1443 152 1528 139"/>
+   <path class="lens" d="M84 167 C85 129 113 111 163 109 L584 109 C638 109 678 137 683 180 L657 397 C651 448 613 470 556 480 L252 480 C192 480 150 457 132 411 L84 221 C80 202 80 184 84 167 Z"/>
+   <path class="lens" d="M1356 167 C1355 129 1327 111 1277 109 L856 109 C802 109 762 137 757 180 L783 397 C789 448 827 470 884 480 L1188 480 C1248 480 1290 457 1308 411 L1356 221 C1360 202 1360 184 1356 167 Z"/>
+   <path class="bridge" d="M680 185 Q720 141 760 185"/>
+   <path class="bridge-shine" d="M684 179 Q720 145 756 179"/>
+   <path class="frame-shine" d="M95 167 C99 135 127 121 171 119 L580 119"/>
+   <path class="frame-shine" d="M1345 167 C1341 135 1313 121 1269 119 L860 119"/>
+   <path class="lens-rim" d="M108 245 L150 407 C165 449 203 464 259 465"/>
+   <path class="lens-rim" d="M1332 245 L1290 407 C1275 449 1237 464 1181 465"/>
+   <path d="M140 135 C230 121 360 124 485 129" stroke="white" stroke-width="14" stroke-opacity=".075" fill="none" stroke-linecap="round" clip-path="url(#clipLeft)"/>
+   <path d="M1300 135 C1210 121 1080 124 955 129" stroke="white" stroke-width="14" stroke-opacity=".075" fill="none" stroke-linecap="round" clip-path="url(#clipRight)"/>
+   <path d="M116 176 C156 138 240 141 281 139" stroke="white" stroke-width="27" stroke-opacity=".065" fill="none" stroke-linecap="round" clip-path="url(#clipLeft)"/>
+   <path d="M1324 176 C1284 138 1200 141 1159 139" stroke="white" stroke-width="27" stroke-opacity=".065" fill="none" stroke-linecap="round" clip-path="url(#clipRight)"/>
+   <path d="M698 210 Q690 222 689 242" stroke="#776f5f" stroke-width="9" stroke-linecap="round" opacity=".7"/>
+   <path d="M742 210 Q750 222 751 242" stroke="#776f5f" stroke-width="9" stroke-linecap="round" opacity=".7"/>
+   <circle cx="109" cy="165" r="6" fill="#a29e86"/><circle cx="1331" cy="165" r="6" fill="#a29e86"/>
+  </svg>

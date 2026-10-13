@@ -73,6 +73,9 @@
     ]
   },
   "Home": {
+    "sequence": {
+      "imageAlt": "Eyewear transforming from a technical drawing into the finished product"
+    },
     "hero": {
       "title": "Every perspective is personal.",
       "description": "Sunglasses and optical frames designed to move with your everyday style.",
@@ -89,6 +92,13 @@
       "emptyTitle": "A new edit is on the way",
       "emptyDescription": "Products will appear here once published.",
       "explore": "View product"
+    },
+    "modelShowcase": {
+      "title": "See the frame in real life.",
+      "description": "Explore selected frames through real proportions, different faces and everyday styling.",
+      "featured": "Editorial selection",
+      "action": "Explore product",
+      "imageLabel": "on-model view"
     },
     "categories": {
       "title": "Choose for your perspective.",

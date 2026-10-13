@@ -15,29 +15,43 @@ const createValidationError = () => {
   return error;
 };
 
-const attachMedia = async (products) => {
+const attachMedia = async (products, { galleryLimit = 8, lifestyleLimit = 12 } = {}) => {
   if (products.length === 0) return products;
   const ids = products.map((product) => product.id);
   const [mediaRows] = await getDb().query(
     `SELECT entity_id AS productId, storage_key AS storageKey, storage_driver AS storageDriver,
-       visibility, alt_text AS altText, sort_order AS sortOrder
+       visibility, alt_text AS altText, media_role AS mediaRole, is_featured AS isFeatured,
+       model_name AS modelName, width, height, sort_order AS sortOrder
      FROM media_assets
      WHERE entity_type = 'product' AND entity_id IN (${ids.map(() => '?').join(', ')})
-     ORDER BY entity_id, sort_order, id`,
+     ORDER BY entity_id, is_featured DESC, sort_order, id`,
     ids,
   );
-  const mediaByProduct = new Map();
+  const galleriesByProduct = new Map();
+  const lifestyleByProduct = new Map();
   for (const media of mediaRows) {
     const resolved = {
       url: await getStorage(media.storageDriver).getUrl(media.storageKey, { visibility: media.visibility }),
       altText: media.altText,
+      role: media.mediaRole,
+      modelName: media.modelName,
+      isFeatured: Boolean(media.isFeatured),
+      width: media.width,
+      height: media.height,
       sortOrder: media.sortOrder,
     };
-    const current = mediaByProduct.get(media.productId) || [];
-    current.push(resolved);
-    mediaByProduct.set(media.productId, current);
+    const isGallery = media.mediaRole === 'gallery';
+    const target = isGallery ? galleriesByProduct : lifestyleByProduct;
+    const limit = isGallery ? galleryLimit : lifestyleLimit;
+    const current = target.get(media.productId) || [];
+    if (current.length < limit) current.push(resolved);
+    target.set(media.productId, current);
   }
-  return products.map((product) => ({ ...product, images: mediaByProduct.get(product.id) || [] }));
+  return products.map((product) => ({
+    ...product,
+    images: galleriesByProduct.get(product.id) || [],
+    lifestyleImages: lifestyleByProduct.get(product.id) || [],
+  }));
 };
 
 const attachVariantColors = async (products, locale) => {
@@ -211,7 +225,7 @@ const listPublished = async (requestedLocale, filters = {}) => {
         ? 'out_of_stock'
         : inStockVariantCount === lowStockVariantCount ? 'low_stock' : 'in_stock',
     };
-  }));
+  }), { galleryLimit: 5, lifestyleLimit: 2 });
   const products = await attachVariantColors(productsWithMedia, locale);
   const result = { products, pagination: { page: filters.page || 1, limit, hasMore: products.length === limit } };
   return result;
@@ -239,6 +253,82 @@ const listAdmin = async (requestedLocale = 'tr') => {
     [locale, locale],
   );
   return rows;
+};
+
+const findAdminById = async (id) => {
+  const database = getDb();
+  const [productResult, translationsResult, audiencesResult, categoriesResult,
+    collectionsResult, productAttributesResult, variantsResult, variantAttributesResult] = await Promise.all([
+    database.query(
+      `SELECT p.id, p.code, p.brand, p.brand_id AS brandId, p.status, p.featured,
+         p.tax_rate AS taxRate, p.origin_country_code AS originCountryCode,
+         p.created_at AS createdAt, p.updated_at AS updatedAt
+       FROM products p WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1`,
+      [id],
+    ),
+    database.query(
+      `SELECT locale, name, slug, short_description AS shortDescription,
+         description, seo_title AS seoTitle, seo_description AS seoDescription
+       FROM product_translations WHERE product_id = ? ORDER BY locale`,
+      [id],
+    ),
+    database.query('SELECT audience_id AS id FROM product_audiences WHERE product_id = ? ORDER BY audience_id', [id]),
+    database.query('SELECT category_id AS id FROM product_categories WHERE product_id = ? ORDER BY is_primary DESC, category_id', [id]),
+    database.query('SELECT collection_id AS id FROM collection_products WHERE product_id = ? ORDER BY sort_order, collection_id', [id]),
+    database.query('SELECT attribute_value_id AS id FROM product_attribute_values WHERE product_id = ? ORDER BY attribute_value_id', [id]),
+    database.query(
+      `SELECT id, sku, barcode, color_code AS colorCode, frame_size AS frameSize,
+         lens_width_mm AS lensWidthMm, bridge_width_mm AS bridgeWidthMm,
+         temple_length_mm AS templeLengthMm, lens_type AS lensType,
+         lens_category AS lensCategory, uv_protection AS uvProtection,
+         price, compare_at_price AS compareAtPrice, cost_price AS costPrice,
+         stock_quantity AS stockQuantity, low_stock_threshold AS lowStockThreshold
+       FROM product_variants
+       WHERE product_id = ? AND status = 'active' AND deleted_at IS NULL
+       ORDER BY id`,
+      [id],
+    ),
+    database.query(
+      `SELECT vav.variant_id AS variantId, vav.attribute_value_id AS attributeValueId
+       FROM variant_attribute_values vav
+       INNER JOIN product_variants pv ON pv.id = vav.variant_id
+       WHERE pv.product_id = ? AND pv.status = 'active' AND pv.deleted_at IS NULL
+       ORDER BY vav.variant_id, vav.attribute_value_id`,
+      [id],
+    ),
+  ]);
+
+  const product = productResult[0][0];
+  if (!product) return null;
+  const attributeIdsByVariant = new Map();
+  for (const row of variantAttributesResult[0]) {
+    const ids = attributeIdsByVariant.get(row.variantId) || [];
+    ids.push(row.attributeValueId);
+    attributeIdsByVariant.set(row.variantId, ids);
+  }
+
+  return {
+    ...product,
+    featured: Boolean(product.featured),
+    taxRate: Number(product.taxRate),
+    translations: translationsResult[0],
+    audienceIds: audiencesResult[0].map((row) => row.id),
+    categoryIds: categoriesResult[0].map((row) => row.id),
+    collectionIds: collectionsResult[0].map((row) => row.id),
+    productAttributeValueIds: productAttributesResult[0].map((row) => row.id),
+    variants: variantsResult[0].map((variant) => ({
+      ...variant,
+      price: Number(variant.price),
+      compareAtPrice: variant.compareAtPrice === null ? null : Number(variant.compareAtPrice),
+      costPrice: variant.costPrice === null ? null : Number(variant.costPrice),
+      stockQuantity: Number(variant.stockQuantity),
+      lowStockThreshold: Number(variant.lowStockThreshold),
+      lensWidthMm: variant.lensWidthMm === null ? null : Number(variant.lensWidthMm),
+      bridgeWidthMm: variant.bridgeWidthMm === null ? null : Number(variant.bridgeWidthMm),
+      templeLengthMm: variant.templeLengthMm === null ? null : Number(variant.templeLengthMm),
+      attributeValueIds: attributeIdsByVariant.get(variant.id) || [],
+    })),
+  };
 };
 
 const findPublishedBySlug = async (requestedLocale, slug) => {
@@ -380,6 +470,30 @@ const insertLinks = async (connection, table, columns, rows) => {
   }
 };
 
+const insertVariant = async (connection, productId, variant, requestMeta) => {
+  const [variantResult] = await connection.query(
+    `INSERT INTO product_variants
+      (product_id, sku, barcode, color_code, frame_size, lens_width_mm, bridge_width_mm,
+       temple_length_mm, lens_type, lens_category, uv_protection, price, compare_at_price,
+       cost_price, stock_quantity, low_stock_threshold)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [productId, variant.sku, variant.barcode || null, variant.colorCode || null,
+      variant.frameSize || null, variant.lensWidthMm ?? null, variant.bridgeWidthMm ?? null,
+      variant.templeLengthMm ?? null, variant.lensType || null, variant.lensCategory || null,
+      variant.uvProtection || null, variant.price, variant.compareAtPrice ?? null,
+      variant.costPrice ?? null, variant.stockQuantity, variant.lowStockThreshold ?? 5],
+  );
+  await connection.query(
+    `INSERT INTO inventory_movements
+      (variant_id, movement_type, quantity, balance_after, reference_type, reference_id, note, created_by)
+     VALUES (?, 'initial_stock', ?, ?, 'product', ?, 'Ürün oluşturulurken tanımlanan başlangıç stoğu', ?)`,
+    [variantResult.insertId, variant.stockQuantity, variant.stockQuantity, productId, requestMeta.userId],
+  );
+  await insertLinks(connection, 'variant_attribute_values', ['variant_id', 'attribute_value_id'],
+    (variant.attributeValueIds || []).map((attributeValueId) => [variantResult.insertId, attributeValueId]));
+  return variantResult.insertId;
+};
+
 const create = async (payload, requestMeta) => {
   const connection = await getDb().getConnection();
   try {
@@ -401,28 +515,7 @@ const create = async (payload, requestMeta) => {
           translation.seoTitle || null, translation.seoDescription || null],
       );
     }
-    for (const variant of payload.variants) {
-      const [variantResult] = await connection.query(
-        `INSERT INTO product_variants
-          (product_id, sku, barcode, color_code, frame_size, lens_width_mm, bridge_width_mm,
-           temple_length_mm, lens_type, lens_category, uv_protection, price, compare_at_price,
-           cost_price, stock_quantity, low_stock_threshold)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [productResult.insertId, variant.sku, variant.barcode || null, variant.colorCode || null,
-          variant.frameSize || null, variant.lensWidthMm || null, variant.bridgeWidthMm || null,
-          variant.templeLengthMm || null, variant.lensType || null, variant.lensCategory || null,
-          variant.uvProtection || null, variant.price, variant.compareAtPrice || null,
-          variant.costPrice || null, variant.stockQuantity, variant.lowStockThreshold ?? 5],
-      );
-      await connection.query(
-        `INSERT INTO inventory_movements
-          (variant_id, movement_type, quantity, balance_after, reference_type, reference_id, note, created_by)
-         VALUES (?, 'initial_stock', ?, ?, 'product', ?, 'Ürün oluşturulurken tanımlanan başlangıç stoğu', ?)`,
-        [variantResult.insertId, variant.stockQuantity, variant.stockQuantity, productResult.insertId, requestMeta.userId],
-      );
-      await insertLinks(connection, 'variant_attribute_values', ['variant_id', 'attribute_value_id'],
-        (variant.attributeValueIds || []).map((id) => [variantResult.insertId, id]));
-    }
+    for (const variant of payload.variants) await insertVariant(connection, productResult.insertId, variant, requestMeta);
     await insertLinks(connection, 'product_audiences', ['product_id', 'audience_id'], payload.audienceIds.map((id) => [productResult.insertId, id]));
     await insertLinks(connection, 'product_categories', ['product_id', 'category_id', 'is_primary'],
       (payload.categoryIds || []).map((id, index) => [productResult.insertId, id, index === 0 ? 1 : 0]));
@@ -436,7 +529,10 @@ const create = async (payload, requestMeta) => {
       [requestMeta.userId, productResult.insertId, requestMeta.requestId, requestMeta.ip, JSON.stringify({ code: payload.code, status: payload.status })],
     );
     await connection.commit();
-    await cache.deleteByPrefix('catalog', 'products');
+    await Promise.all([
+      cache.deleteKeys(['catalog', 'facets', 'tr'], ['catalog', 'facets', 'en']),
+      cache.deleteByPrefix('catalog', 'products'),
+    ]);
     return productResult.insertId;
   } catch (error) {
     await connection.rollback();
@@ -446,4 +542,122 @@ const create = async (payload, requestMeta) => {
   }
 };
 
-module.exports = { create, findPublishedBySlug, listAdmin, listPublished, normalizeLocale };
+const update = async (id, payload, requestMeta) => {
+  const connection = await getDb().getConnection();
+  try {
+    await connection.beginTransaction();
+    const [products] = await connection.query(
+      'SELECT id, code, status FROM products WHERE id = ? AND deleted_at IS NULL LIMIT 1 FOR UPDATE',
+      [id],
+    );
+    if (!products[0]) {
+      await connection.rollback();
+      return false;
+    }
+
+    await validateRelations(connection, payload);
+    const [existingVariants] = await connection.query(
+      `SELECT id, sku FROM product_variants
+       WHERE product_id = ? AND status = 'active' AND deleted_at IS NULL FOR UPDATE`,
+      [id],
+    );
+    const existingVariantIds = new Set(existingVariants.map((variant) => Number(variant.id)));
+    const submittedExistingIds = payload.variants
+      .filter((variant) => variant.id !== undefined)
+      .map((variant) => Number(variant.id));
+    if (submittedExistingIds.some((variantId) => !existingVariantIds.has(variantId))) throw createValidationError();
+
+    await connection.query(
+      `UPDATE products SET code = ?, brand = ?, brand_id = ?, status = ?, featured = ?,
+         tax_rate = ?, origin_country_code = ?, updated_at = UTC_TIMESTAMP(6)
+       WHERE id = ?`,
+      [payload.code, payload.brand || 'ALP Gözlük', payload.brandId || null, payload.status,
+        payload.featured ? 1 : 0, payload.taxRate,
+        payload.originCountryCode?.trim().toUpperCase() || null, id],
+    );
+
+    for (const translation of payload.translations) {
+      await connection.query(
+        `INSERT INTO product_translations
+          (product_id, locale, name, slug, short_description, description, seo_title, seo_description)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name = VALUES(name), slug = VALUES(slug),
+           short_description = VALUES(short_description), description = VALUES(description),
+           seo_title = VALUES(seo_title), seo_description = VALUES(seo_description)`,
+        [id, translation.locale, translation.name, translation.slug,
+          translation.shortDescription || null, translation.description || null,
+          translation.seoTitle || null, translation.seoDescription || null],
+      );
+    }
+
+    await Promise.all([
+      connection.query('DELETE FROM product_audiences WHERE product_id = ?', [id]),
+      connection.query('DELETE FROM product_categories WHERE product_id = ?', [id]),
+      connection.query('DELETE FROM collection_products WHERE product_id = ?', [id]),
+      connection.query('DELETE FROM product_attribute_values WHERE product_id = ?', [id]),
+    ]);
+    await insertLinks(connection, 'product_audiences', ['product_id', 'audience_id'], payload.audienceIds.map((audienceId) => [id, audienceId]));
+    await insertLinks(connection, 'product_categories', ['product_id', 'category_id', 'is_primary'],
+      (payload.categoryIds || []).map((categoryId, index) => [id, categoryId, index === 0 ? 1 : 0]));
+    await insertLinks(connection, 'collection_products', ['collection_id', 'product_id', 'sort_order'],
+      (payload.collectionIds || []).map((collectionId, index) => [collectionId, id, index]));
+    await insertLinks(connection, 'product_attribute_values', ['product_id', 'attribute_value_id'],
+      (payload.productAttributeValueIds || []).map((attributeValueId) => [id, attributeValueId]));
+
+    for (const variant of payload.variants) {
+      if (!variant.id) {
+        await insertVariant(connection, id, variant, requestMeta);
+        continue;
+      }
+      await connection.query(
+        `UPDATE product_variants SET sku = ?, color_code = ?, frame_size = ?, lens_width_mm = ?,
+           bridge_width_mm = ?, temple_length_mm = ?, lens_type = ?, lens_category = ?,
+           uv_protection = ?, price = ?, compare_at_price = ?, low_stock_threshold = ?,
+           updated_at = UTC_TIMESTAMP(6)
+         WHERE id = ? AND product_id = ? AND status = 'active' AND deleted_at IS NULL`,
+        [variant.sku, variant.colorCode || null, variant.frameSize || null,
+          variant.lensWidthMm ?? null, variant.bridgeWidthMm ?? null, variant.templeLengthMm ?? null,
+          variant.lensType || null, variant.lensCategory || null, variant.uvProtection || null,
+          variant.price, variant.compareAtPrice ?? null, variant.lowStockThreshold, variant.id, id],
+      );
+      await connection.query('DELETE FROM variant_attribute_values WHERE variant_id = ?', [variant.id]);
+      await insertLinks(connection, 'variant_attribute_values', ['variant_id', 'attribute_value_id'],
+        (variant.attributeValueIds || []).map((attributeValueId) => [variant.id, attributeValueId]));
+    }
+
+    const archivedVariantIds = existingVariants
+      .map((variant) => Number(variant.id))
+      .filter((variantId) => !submittedExistingIds.includes(variantId));
+    if (archivedVariantIds.length) {
+      await connection.query(
+        `UPDATE product_variants SET status = 'archived', deleted_at = UTC_TIMESTAMP(6)
+         WHERE product_id = ? AND id IN (${archivedVariantIds.map(() => '?').join(', ')})`,
+        [id, ...archivedVariantIds],
+      );
+    }
+
+    await connection.query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, request_id, ip_hash, changes_json)
+       VALUES (?, 'product.update', 'product', ?, ?, SHA2(?, 256), ?)`,
+      [requestMeta.userId, id, requestMeta.requestId, requestMeta.ip,
+        JSON.stringify({
+          previous: { code: products[0].code, status: products[0].status },
+          next: { code: payload.code, status: payload.status },
+          archivedVariantIds,
+        })],
+    );
+    await connection.commit();
+    await Promise.all([
+      cache.deleteKeys(['catalog', 'facets', 'tr'], ['catalog', 'facets', 'en']),
+      cache.deleteByPrefix('catalog', 'products'),
+    ]);
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+module.exports = { create, findAdminById, findPublishedBySlug, listAdmin, listPublished, normalizeLocale, update };

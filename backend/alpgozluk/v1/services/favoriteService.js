@@ -27,9 +27,9 @@ const list = async (userId, requestedLocale = 'tr') => {
          MIN(CASE WHEN pv.status = 'active' AND pv.deleted_at IS NULL THEN pv.id END)
        ) AS default_variant_id,
        'TRY' AS currency,
-       (SELECT m.storage_key FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order, m.id LIMIT 1) AS storage_key,
-       (SELECT m.storage_driver FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order, m.id LIMIT 1) AS storage_driver,
-       (SELECT m.visibility FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order, m.id LIMIT 1) AS visibility
+       (SELECT m.storage_key FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order, m.id LIMIT 1) AS storage_key,
+       (SELECT m.storage_driver FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order, m.id LIMIT 1) AS storage_driver,
+       (SELECT m.visibility FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order, m.id LIMIT 1) AS visibility
      FROM customer_favorites cf
      INNER JOIN products p ON p.id = cf.product_id
      LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?

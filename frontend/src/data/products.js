@@ -34,6 +34,21 @@ function getApiSpecifications(product, locale) {
   return Object.fromEntries(rows.filter(([, value]) => value));
 }
 
+function normalizeLifestyleImages(product) {
+  return (product.lifestyleImages || [])
+    .map((image) => typeof image === 'string' ? { url: image } : image)
+    .filter((image) => image?.url)
+    .map((image) => ({
+      url: image.url,
+      altText: image.altText || '',
+      role: image.role || 'on_model',
+      modelName: image.modelName || '',
+      isFeatured: Boolean(image.isFeatured),
+      width: Number(image.width) || null,
+      height: Number(image.height) || null,
+    }));
+}
+
 function normalizeProductDetail(product, locale) {
   if (!product) return null;
   const localizedSpecifications = product.specifications?.[locale];
@@ -67,6 +82,7 @@ export async function listProducts(locale, filters = {}) {
         .map((image) => (typeof image === 'string' ? image : image.url))
         .filter(Boolean)
         .slice(0, 5),
+      lifestyleImages: normalizeLifestyleImages(product).slice(0, 2),
     }));
   } catch {
     return [];
@@ -93,6 +109,7 @@ export async function findProduct(locale, slug) {
         .map((image) => (typeof image === 'string' ? image : image.url))
         .filter(Boolean)
         .slice(0, 8),
+      lifestyleImages: normalizeLifestyleImages(product).slice(0, 12),
     }, locale);
   } catch {
     return null;

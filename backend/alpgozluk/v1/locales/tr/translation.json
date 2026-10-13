@@ -58,6 +58,8 @@
     "listed": "Ürünler listelendi.",
     "found": "Ürün bulundu.",
     "created": "Ürün oluşturuldu.",
+    "updated": "Ürün güncellendi.",
+    "duplicate": "Ürün kodu, URL adı veya SKU başka bir kayıtta kullanılıyor.",
     "not_found": "Ürün bulunamadı."
   },
   "inventory": {

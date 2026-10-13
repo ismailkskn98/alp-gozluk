@@ -1,13 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { listProducts } from "@/data/products";
 import ProductCard from "../../product-card";
 import SectionHeading from "../section-heading";
-import { getSessionUser } from "@/lib/server-api";
 
-export default async function FeaturedProducts({ locale, copy }) {
-  const [availableProducts, user] = await Promise.all([listProducts(locale), getSessionUser()]);
-  const products = availableProducts.slice(0, 3);
+export default function FeaturedProducts({ locale, copy, availableProducts, user }) {
+  const products = availableProducts
+    .filter((product) => product.lifestyleImages?.some((image) => image?.url))
+    .slice(0, 3);
 
   return (
     <section className="grid-container py-[clamp(2.5rem,6vw,5rem)]" aria-labelledby="featured-products-title">

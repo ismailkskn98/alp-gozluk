@@ -10,8 +10,15 @@ import { cn } from '@/lib/utils';
 
 const hasPreparedWhiteCanvas = (src) => typeof src === 'string' && src.includes('/uploads/public/products/demo/');
 
-export default function ProductGallery({ color, images = [], name, imageLabel }) {
-  const availableImages = images.filter(Boolean).slice(0, 8);
+export default function ProductGallery({ color, images = [], primaryModelImage, name, imageLabel }) {
+  const availableImages = [
+    ...(primaryModelImage?.url ? [{
+      src: primaryModelImage.url,
+      role: primaryModelImage.role || 'on_model',
+      altText: primaryModelImage.altText || '',
+    }] : []),
+    ...images.filter(Boolean).map((src) => ({ src, role: 'gallery', altText: '' })),
+  ].slice(0, 8);
   const imageRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const reduceMotion = useReducedMotion();
@@ -59,9 +66,9 @@ export default function ProductGallery({ color, images = [], name, imageLabel })
   return (
     <div className="grid min-w-0 gap-3 lg:grid-cols-[4.5rem_minmax(0,1fr)]">
       <div className="sticky top-[4.75rem] z-10 flex gap-2 self-start overflow-x-auto border-y border-black/8 bg-white/95 py-2 backdrop-blur lg:top-28 lg:flex-col lg:overflow-visible lg:border-0 lg:bg-transparent lg:py-0" aria-label={`${name} ${imageLabel}`}>
-        {availableImages.map((src, index) => (
+        {availableImages.map((image, index) => (
           <button
-            key={`${src}-${index}`}
+            key={`${image.src}-${index}`}
             type="button"
             onClick={() => focusImage(index)}
             aria-label={`${name} ${imageLabel} ${index + 1}`}
@@ -71,36 +78,50 @@ export default function ProductGallery({ color, images = [], name, imageLabel })
               activeIndex === index ? 'border-[#172536] opacity-100' : 'border-black/10 opacity-60 hover:border-black/40 hover:opacity-100',
             )}
           >
-            <Image src={src} alt="" fill quality={PRODUCT_IMAGE_QUALITY} sizes="72px" className={cn('object-contain', !hasPreparedWhiteCanvas(src) && 'p-1')} />
+            <Image
+              src={image.src}
+              alt=""
+              fill
+              quality={PRODUCT_IMAGE_QUALITY}
+              sizes="72px"
+              className={cn(
+                image.role === 'on_model' ? 'object-cover' : 'object-contain',
+                image.role === 'gallery' && !hasPreparedWhiteCanvas(image.src) && 'p-1',
+              )}
+            />
           </button>
         ))}
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
-        {availableImages.map((src, index) => {
+        {availableImages.map((image, index) => {
           const isFirst = index === 0;
+          const isModelImage = image.role !== 'gallery';
           const isLastUnpaired = index > 0 && remainingImageCount % 2 === 1 && index === availableImages.length - 1;
           return (
             <figure
-              key={`${src}-panel-${index}`}
+              key={`${image.src}-panel-${index}`}
               ref={(node) => { imageRefs.current[index] = node; }}
               data-image-index={index}
               className={cn(
                 'relative grid aspect-[4/3] scroll-mt-28 place-items-center overflow-hidden border border-black/8 bg-white',
                 (isFirst || isLastUnpaired) && 'sm:col-span-2',
               )}
-              style={{ backgroundColor: color }}
+              style={{ backgroundColor: isModelImage ? '#f4f4f2' : color }}
             >
               <Image
-                src={src}
-                alt={`${name} ${imageLabel} ${index + 1}`}
+                src={image.src}
+                alt={image.altText || `${name} ${imageLabel} ${index + 1}`}
                 fill
                 quality={PRODUCT_IMAGE_QUALITY}
                 priority={isFirst}
                 sizes={(isFirst || isLastUnpaired)
                   ? '(min-width: 1440px) 55rem, (min-width: 1024px) 58vw, 96vw'
                   : '(min-width: 1440px) 27rem, (min-width: 1024px) 29vw, (min-width: 640px) 48vw, 96vw'}
-                className={cn('object-contain', !hasPreparedWhiteCanvas(src) && 'p-[clamp(1rem,3vw,3rem)]')}
+                className={cn(
+                  'object-contain',
+                  !isModelImage && !hasPreparedWhiteCanvas(image.src) && 'p-[clamp(1rem,3vw,3rem)]',
+                )}
               />
             </figure>
           );

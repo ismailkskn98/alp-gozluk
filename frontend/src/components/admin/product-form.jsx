@@ -27,6 +27,7 @@ const requiredStock = z.preprocess(
 );
 
 const variantSchema = z.object({
+  variantId: z.number().int().positive().optional(),
   sku: z.string().trim().min(2).max(100),
   colorCode: z.string().trim().max(64).optional(),
   frameSize: z.string().trim().max(64).optional(),
@@ -59,16 +60,60 @@ const schema = z.object({
   audienceIds: z.array(z.string()).min(1, 'En az bir hedef kitle seçin.'),
   categoryIds: z.array(z.string()).optional(),
   collectionIds: z.array(z.string()).optional(),
-  status: z.enum(['draft', 'published']),
+  featured: z.boolean(),
+  taxRate: z.preprocess((value) => Number(value), z.number().min(0).max(100)),
+  enShortDescription: z.string().trim().max(500).optional(),
+  status: z.enum(['draft', 'published', 'archived']),
 });
 
-export default function ProductForm() {
+function getEditValues(product) {
+  const translations = new Map((product.translations || []).map((translation) => [translation.locale, translation]));
+  const turkish = translations.get('tr') || {};
+  const english = translations.get('en') || {};
+  return {
+    code: product.code || '',
+    brandId: product.brandId ? String(product.brandId) : '',
+    name: turkish.name || product.code || '',
+    slug: turkish.slug || '',
+    enName: english.name || turkish.name || '',
+    enSlug: english.slug || turkish.slug || '',
+    shortDescription: turkish.shortDescription || '',
+    enShortDescription: english.shortDescription || '',
+    originCountryCode: product.originCountryCode || '',
+    audienceIds: (product.audienceIds || []).map(String),
+    categoryIds: (product.categoryIds || []).map(String),
+    collectionIds: (product.collectionIds || []).map(String),
+    featured: Boolean(product.featured),
+    taxRate: Number(product.taxRate ?? 20),
+    status: product.status || 'draft',
+    variants: (product.variants || []).map((variant) => ({
+      variantId: Number(variant.id),
+      sku: variant.sku || '',
+      price: Number(variant.price),
+      compareAtPrice: variant.compareAtPrice ?? '',
+      stockQuantity: Number(variant.stockQuantity),
+      lowStockThreshold: Number(variant.lowStockThreshold),
+      colorCode: variant.colorCode || '',
+      frameSize: variant.frameSize || '',
+      lensType: variant.lensType || '',
+      lensCategory: variant.lensCategory || '',
+      uvProtection: variant.uvProtection || '',
+      lensWidthMm: variant.lensWidthMm ?? '',
+      bridgeWidthMm: variant.bridgeWidthMm ?? '',
+      templeLengthMm: variant.templeLengthMm ?? '',
+      attributeValueIds: variant.attributeValueIds || [],
+    })),
+  };
+}
+
+export default function ProductForm({ productId }) {
   const router = useRouter();
   const [catalog, setCatalog] = useState(null);
   const [serverError, setServerError] = useState('');
   const [catalogError, setCatalogError] = useState('');
+  const [loading, setLoading] = useState(Boolean(productId));
   const [productAttributeIds, setProductAttributeIds] = useState([]);
-  const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       status: 'draft',
@@ -77,23 +122,42 @@ export default function ProductForm() {
       categoryIds: [],
       collectionIds: [],
       enSlug: '',
+      enShortDescription: '',
       originCountryCode: '',
+      featured: false,
+      taxRate: 20,
     },
   });
   const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({ control, name: 'variants' });
 
   useEffect(() => {
     let active = true;
-    fetch('/api/admin/catalog', { cache: 'no-store' })
-      .then(async (response) => ({ ok: response.ok, payload: await response.json() }))
-      .then(({ ok, payload }) => {
-        if (!active) return;
-        if (!ok) throw new Error(payload.message || 'Katalog seçenekleri alınamadı.');
-        setCatalog(payload.data);
+    const catalogRequest = fetch('/api/admin/catalog', { cache: 'no-store' });
+    const productRequest = productId
+      ? fetch(`/api/admin/products/${encodeURIComponent(productId)}`, { cache: 'no-store' })
+      : Promise.resolve(null);
+    Promise.all([catalogRequest, productRequest])
+      .then(async ([catalogResponse, productResponse]) => {
+        const [catalogPayload, productPayload] = await Promise.all([
+          catalogResponse.json(),
+          productResponse ? productResponse.json() : Promise.resolve(null),
+        ]);
+        return { catalogResponse, catalogPayload, productResponse, productPayload };
       })
-      .catch((error) => { if (active) setCatalogError(error.message); });
+      .then(({ catalogResponse, catalogPayload, productResponse, productPayload }) => {
+        if (!active) return;
+        if (!catalogResponse.ok) throw new Error(catalogPayload.message || 'Katalog seçenekleri alınamadı.');
+        if (productResponse && !productResponse.ok) throw new Error(productPayload.message || 'Ürün bilgileri alınamadı.');
+        setCatalog(catalogPayload.data);
+        if (productPayload?.data?.product) {
+          reset(getEditValues(productPayload.data.product));
+          setProductAttributeIds(productPayload.data.product.productAttributeValueIds || []);
+        }
+      })
+      .catch((error) => { if (active) setCatalogError(error.message); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [productId, reset]);
 
   const productGroups = useMemo(() => (catalog?.attributeGroups || []).filter((group) => group.scope === 'product'), [catalog]);
   const variantGroups = useMemo(() => (catalog?.attributeGroups || []).filter((group) => group.scope === 'variant'), [catalog]);
@@ -114,18 +178,18 @@ export default function ProductForm() {
     const brand = catalog?.brands?.find((item) => String(item.id) === values.brandId);
     const translations = [
       { locale: 'tr', name: values.name, slug: values.slug, shortDescription: values.shortDescription },
-      { locale: 'en', name: values.enName || values.name, slug: values.enSlug || values.slug, shortDescription: values.shortDescription },
+      { locale: 'en', name: values.enName || values.name, slug: values.enSlug || values.slug, shortDescription: values.enShortDescription || values.shortDescription },
     ];
-    const response = await fetch('/api/admin/products', {
-      method: 'POST',
+    const response = await fetch(productId ? `/api/admin/products/${encodeURIComponent(productId)}` : '/api/admin/products', {
+      method: productId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: values.code,
         brand: brand?.name || 'ALP Gözlük',
         brandId: values.brandId ? Number(values.brandId) : undefined,
         status: values.status,
-        featured: false,
-        taxRate: 20,
+        featured: values.featured,
+        taxRate: values.taxRate,
         originCountryCode: values.originCountryCode || undefined,
         translations,
         audienceIds: values.audienceIds.map(Number),
@@ -133,6 +197,7 @@ export default function ProductForm() {
         collectionIds: (values.collectionIds || []).map(Number),
         productAttributeValueIds: productAttributeIds,
         variants: values.variants.map((variant) => ({
+          ...(variant.variantId ? { id: variant.variantId } : {}),
           sku: variant.sku,
           price: variant.price,
           compareAtPrice: variant.compareAtPrice === '' ? undefined : variant.compareAtPrice,
@@ -151,12 +216,20 @@ export default function ProductForm() {
       }),
     });
     const payload = await response.json();
-    if (!response.ok) { setServerError(payload.message || 'Ürün oluşturulamadı.'); return; }
+    if (!response.ok) { setServerError(payload.message || (productId ? 'Ürün güncellenemedi.' : 'Ürün oluşturulamadı.')); return; }
     router.push('/admin/products');
     router.refresh();
   }
 
   const checkClass = 'size-4 rounded-none border-border-strong text-primary focus:ring-primary';
+
+  if (loading) {
+    return <div className="max-w-5xl space-y-4" aria-label="Ürün bilgileri yükleniyor">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-40 animate-pulse rounded-xl border border-border bg-muted" />)}</div>;
+  }
+
+  if (productId && catalogError && !catalog) {
+    return <div role="alert" className="max-w-3xl rounded-xl border border-danger/25 bg-danger/8 p-5"><h2 className="font-medium text-danger">Ürün düzenleme ekranı açılamadı</h2><p className="mt-2 text-sm text-muted-foreground">{catalogError}</p><button type="button" onClick={() => router.push('/admin/products')} className="mt-5 h-10 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium">Ürünlere dön</button></div>;
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-5xl space-y-8" noValidate>
@@ -172,7 +245,7 @@ export default function ProductForm() {
           <div className="space-y-2"><Label htmlFor="enSlug">İngilizce URL adı</Label><Input id="enSlug" placeholder="atlas-01" aria-invalid={Boolean(errors.enSlug)} {...register('enSlug')} /></div>
           <div className="space-y-2"><Label htmlFor="originCountryCode">Menşei ülke kodu</Label><Input id="originCountryCode" placeholder="TR" maxLength={2} aria-invalid={Boolean(errors.originCountryCode)} {...register('originCountryCode')} />{errors.originCountryCode ? <p className="text-xs text-danger">{errors.originCountryCode.message}</p> : null}</div>
         </div>
-        <div className="mt-5 space-y-2"><Label htmlFor="shortDescription">Kısa açıklama</Label><textarea id="shortDescription" rows={4} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('shortDescription')} /></div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="shortDescription">Türkçe kısa açıklama</Label><textarea id="shortDescription" rows={4} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('shortDescription')} /></div><div className="space-y-2"><Label htmlFor="enShortDescription">İngilizce kısa açıklama</Label><textarea id="enShortDescription" rows={4} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" {...register('enShortDescription')} /></div></div>
       </section>
 
       <section className="border-x border-b border-border bg-card p-5 sm:p-6">
@@ -210,6 +283,7 @@ export default function ProductForm() {
               control={control}
               errors={errors.variants?.[index]}
               groups={variantGroups}
+              stockReadOnly={Boolean(productId && field.variantId)}
               removable={variantFields.length > 1}
               onRemove={() => removeVariant(index)}
             />
@@ -218,9 +292,9 @@ export default function ProductForm() {
         {errors.variants?.root ? <p className="mt-3 text-xs text-danger">{errors.variants.root.message}</p> : null}
       </section>
 
-      <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><Label>Yayın durumu</Label><div className="mt-2 max-w-md"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} ariaLabel="Yayın durumu" options={[{ value: 'draft', label: 'Taslak' }, { value: 'published', label: 'Yayında' }]} />} /></div><p className="mt-2 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
+      <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><h2 className="font-semibold">Yayın ve fiyatlandırma ayarları</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><div><Label>Yayın durumu</Label><div className="mt-2"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} ariaLabel="Yayın durumu" options={[{ value: 'draft', label: 'Taslak' }, { value: 'published', label: 'Yayında' }, { value: 'archived', label: 'Arşivlendi' }]} />} /></div></div><div className="space-y-2"><Label htmlFor="taxRate">KDV oranı (%)</Label><Input id="taxRate" type="number" min="0" max="100" step="0.01" aria-invalid={Boolean(errors.taxRate)} {...register('taxRate')} /></div></div><label className="mt-5 flex min-h-11 items-center gap-3 border-t border-border pt-5 text-sm"><Controller control={control} name="featured" render={({ field }) => <input type="checkbox" className={checkClass} checked={field.value} onChange={(event) => field.onChange(event.target.checked)} />} />Öne çıkan ürün olarak göster</label><p className="mt-3 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
       {serverError ? <p role="alert" className="bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}
-      <div className="flex justify-end gap-2"><button type="button" onClick={() => router.back()} className="h-10 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium">Vazgeç</button><button type="submit" disabled={isSubmitting || !catalog} className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : 'Ürünü kaydet'}</button></div>
+      <div className="flex justify-end gap-2"><button type="button" onClick={() => router.back()} className="h-10 rounded-lg border border-border-strong bg-card px-4 text-sm font-medium">Vazgeç</button><button type="submit" disabled={isSubmitting || !catalog} className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">{isSubmitting ? 'Kaydediliyor…' : productId ? 'Değişiklikleri kaydet' : 'Ürünü kaydet'}</button></div>
     </form>
   );
 }

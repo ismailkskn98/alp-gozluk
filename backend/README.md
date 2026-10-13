@@ -28,6 +28,12 @@ npm run dev
 7. `2026-09-22_004_customer_account.sql`
 8. `2026-09-22_005_eyewear_variant_specs.sql`
 9. `2026-09-22_006_cart_and_favorites.sql`
+10. `2026-09-25_001_order_core.sql`
+11. `2026-09-25_002_commerce_settings.sql`
+12. `2026-09-25_003_iyzico_payments.sql`
+13. `2026-10-01_001_checkout_address_neighborhood.sql`
+14. `2026-10-01_002_transactional_email_outbox.sql`
+15. `2026-10-13_001_product_media_metadata.sql`
 
 Dosyalar MariaDB 10.6 ve 11.4 için `CURRENT_TIMESTAMP(6)` sözdizimini kullanır. Tarihlerin UTC tutulabilmesi için veritabanı sunucusu ve uygulama bağlantıları UTC kullanmalıdır. Sunucu ayarını kontrol etmek için:
 
@@ -36,6 +42,15 @@ SELECT @@global.time_zone, @@session.time_zone, NOW(6), UTC_TIMESTAMP(6);
 ```
 
 İlk dosya `CREATE TABLE IF NOT EXISTS`, başlangıç verileri ise benzersiz anahtarlar üzerinden güvenli tekrar çalıştırma kuralları kullanır. Yarıda kalan ilk denemeden sonra aynı dosyayı baştan çalıştırabilirsiniz.
+
+Küratörlü model görsellerini ürünlere bağlamak için medya migration'ından ve demo katalog seed'inden sonra:
+
+```bash
+npm run db:migrate:model-media
+npm run db:import:model-media
+```
+
+Import komutu frontend tarafından servis edilmeyen `backend/seed-assets/model-media` klasörünü kaynak olarak okur, dosyaları aktif storage sürücüsüne yükler ve ürün kodu, model adı, kullanım rolü ile öne çıkma bilgisini idempotent olarak kaydeder. İsteğe bağlı farklı bir kaynak klasörü `node scripts/import-model-media.js <klasör>` biçiminde verilebilir.
 
 ## İlk süper yönetici
 

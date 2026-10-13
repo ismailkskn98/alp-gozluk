@@ -16,7 +16,11 @@ exports.listMedia = async (req, res) => {
     const entityId = req.query.entityId
       ? parsePositiveInteger(req.query.entityId, null, Number.MAX_SAFE_INTEGER)
       : undefined;
-    const result = await mediaService.listMedia({ page, limit, entityType, entityId });
+    const mediaRole = req.query.mediaRole
+      ? String(req.query.mediaRole).trim().toLowerCase()
+      : undefined;
+    const search = req.query.search ? String(req.query.search).trim() : undefined;
+    const result = await mediaService.listMedia({ page, limit, entityType, entityId, mediaRole, search });
 
     return res.json({ status: true, message: req.t('media.listed'), data: result });
   } catch (error) {
@@ -56,7 +60,7 @@ exports.updateMedia = async (req, res) => {
   }
 
   try {
-    const record = await mediaService.updateMedia({ id, ...req.body });
+    const record = await mediaService.updateMedia({ id, userId: req.user.id, ...req.body });
     if (!record) return res.status(404).json({ status: false, message: req.t('media.not_found') });
     return res.json({ status: true, message: req.t('media.updated'), data: { record } });
   } catch (error) {

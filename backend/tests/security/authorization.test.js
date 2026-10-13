@@ -45,6 +45,19 @@ test('admin ürün oluşturma endpointi tokensız istekleri reddeder', async () 
   assert.ok(response.body.message);
 });
 
+test('admin ürün detay ve güncelleme endpointleri tokensız kullanılamaz', async () => {
+  const detailResponse = await request(createApp())
+    .get('/api/alpgozluk/v1/admin/products/1')
+    .expect(401);
+  const updateResponse = await request(createApp())
+    .put('/api/alpgozluk/v1/admin/products/1')
+    .send({})
+    .expect(401);
+
+  assert.equal(detailResponse.body.status, false);
+  assert.equal(updateResponse.body.status, false);
+});
+
 test('admin stok endpointleri tokensız istekleri reddeder', async () => {
   const app = createApp();
   await request(app).get('/api/alpgozluk/v1/admin/inventory').expect(401);

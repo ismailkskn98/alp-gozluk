@@ -73,6 +73,9 @@
     ]
   },
   "Home": {
+    "sequence": {
+      "imageAlt": "Gözlüğün teknik çizimden tamamlanmış ürüne dönüşümü"
+    },
     "hero": {
       "title": "Her bakış, kendine özgü.",
       "description": "Günlük stiline uyum sağlayan güneş gözlükleri ve optik çerçeveler.",
@@ -89,6 +92,13 @@
       "emptyTitle": "Yeni seçki hazırlanıyor",
       "emptyDescription": "Ürünler yayınlandığında burada görünecek.",
       "explore": "Ürünü incele"
+    },
+    "modelShowcase": {
+      "title": "Çerçeveyi, hayatın içinde gör.",
+      "description": "Seçili modelleri gerçek oranları, farklı yüzler ve günlük stil içinde keşfet.",
+      "featured": "Editoryal seçki",
+      "action": "Ürünü keşfet",
+      "imageLabel": "model görünümü"
     },
     "categories": {
       "title": "Bakışına göre seç.",

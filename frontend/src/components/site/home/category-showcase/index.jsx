@@ -1,7 +1,7 @@
 import SectionHeading from '../section-heading';
 import CategoryCard from './category-card';
 
-export default function CategoryShowcase({ copy }) {
+export default function CategoryShowcase({ copy, media = [] }) {
   return (
     <section className="home-deferred-section grid-container pb-[clamp(5rem,11vw,10rem)]" aria-labelledby="home-categories-title">
       <div>
@@ -12,7 +12,7 @@ export default function CategoryShowcase({ copy }) {
             description={copy.sunglassesCopy}
             action={copy.action}
             href="/category/sunglasses"
-            image="/mockup-gozlukler/2@4x.png"
+            image={media[0]?.url || '/mockup-gozlukler/2@4x.png'}
             imagePosition="center"
           />
           <CategoryCard
@@ -20,7 +20,7 @@ export default function CategoryShowcase({ copy }) {
             description={copy.darkFramesCopy}
             action={copy.darkFramesAction}
             href="/shop"
-            image="/mockup-gozlukler/3@4x.png"
+            image={media[1]?.url || '/mockup-gozlukler/3@4x.png'}
             imagePosition="58% center"
           />
         </div>

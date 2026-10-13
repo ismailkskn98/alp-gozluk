@@ -2,6 +2,7 @@ import { ShieldCheck } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import Breadcrumb4 from '@/components/breadcrumb-4';
 import ProductGallery from '@/components/site/product-detail/gallery';
+import LifestyleGallery from '@/components/site/product-detail/lifestyle-gallery';
 import ProductSpecifications from '@/components/site/product-detail/specifications';
 import ProductDetailActions from '@/components/site/product-detail/actions';
 import FulfillmentSummary from '@/components/site/product-detail/fulfillment-summary';
@@ -22,6 +23,11 @@ export default async function ProductPage({ params }) {
   const isSaleReady = !['Fiyat yakında', 'Price coming soon'].includes(product.price);
   const productType = tr ? product.type : product.type === 'Güneş Gözlüğü' ? 'Sunglasses' : 'Optical frame';
   const productTypeHref = product.type === 'Güneş Gözlüğü' ? '/shop?type=sunglasses' : '/shop?type=optical';
+  const primaryModelImage = product.lifestyleImages?.find((image) => image.isFeatured)
+    || product.lifestyleImages?.[0];
+  const remainingLifestyleImages = (product.lifestyleImages || [])
+    .filter((image) => image !== primaryModelImage);
+
   return (
     <section className="grid-container pb-[clamp(1.5rem,4vw,4rem)] pt-5 sm:pt-7">
       <Breadcrumb4 items={[
@@ -33,6 +39,7 @@ export default async function ProductPage({ params }) {
         <ProductGallery
           color={product.color}
           images={product.images}
+          primaryModelImage={primaryModelImage}
           name={product.name}
           imageLabel={tr ? 'ürün görünümü' : 'product view'}
         />
@@ -53,6 +60,7 @@ export default async function ProductPage({ params }) {
           />
         </div>
       </div>
+      <LifestyleGallery images={remainingLifestyleImages} name={product.name} locale={locale} />
     </section>
   );
 }

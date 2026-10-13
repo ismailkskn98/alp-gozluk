@@ -58,6 +58,8 @@
     "listed": "Products listed.",
     "found": "Product found.",
     "created": "Product created.",
+    "updated": "Product updated.",
+    "duplicate": "The product code, URL slug, or SKU is already in use.",
     "not_found": "Product not found."
   },
   "inventory": {

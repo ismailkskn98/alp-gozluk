@@ -21,3 +21,20 @@ export async function proxyAdminRequest(request, path, method = 'GET') {
     return NextResponse.json({ status: false, message: 'API servisine ulaşılamıyor.' }, { status: 503 });
   }
 }
+
+export async function proxyAdminFormDataRequest(request, path, method = 'POST') {
+  const token = (await cookies()).get(authCookieName)?.value;
+  if (!token) return NextResponse.json({ status: false, message: 'Oturum gerekli.' }, { status: 401 });
+
+  try {
+    const backendResponse = await fetch(`${getApiUrl()}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, 'Accept-Language': 'tr' },
+      body: await request.formData(),
+      cache: 'no-store',
+    });
+    return NextResponse.json(await backendResponse.json(), { status: backendResponse.status });
+  } catch {
+    return NextResponse.json({ status: false, message: 'API servisine ulaşılamıyor.' }, { status: 503 });
+  }
+}

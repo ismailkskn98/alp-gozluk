@@ -32,6 +32,7 @@ export default function ProductVariantEditor({
   control,
   errors,
   groups,
+  stockReadOnly = false,
   removable,
   onRemove,
 }) {
@@ -82,7 +83,7 @@ export default function ProductVariantEditor({
         <div className="space-y-2"><Label htmlFor={`variant-${index}-sku`}>SKU</Label><Input id={`variant-${index}-sku`} placeholder="ALP-ATLAS-BLK" aria-invalid={Boolean(errors?.sku)} {...register(`variants.${index}.sku`)} /><FieldError error={errors?.sku} /></div>
         <div className="space-y-2"><Label htmlFor={`variant-${index}-price`}>Satış fiyatı (TRY)</Label><Input id={`variant-${index}-price`} type="number" step="0.01" min="0" placeholder="3490" aria-invalid={Boolean(errors?.price)} {...register(`variants.${index}.price`)} /><FieldError error={errors?.price} /></div>
         <div className="space-y-2"><Label htmlFor={`variant-${index}-compare`}>Eski fiyat</Label><Input id={`variant-${index}-compare`} type="number" step="0.01" min="0" placeholder="3990" aria-invalid={Boolean(errors?.compareAtPrice)} {...register(`variants.${index}.compareAtPrice`)} /><FieldError error={errors?.compareAtPrice} /></div>
-        <div className="space-y-2"><Label htmlFor={`variant-${index}-stock`}>Stok</Label><Input id={`variant-${index}-stock`} type="number" min="0" placeholder="0" aria-invalid={Boolean(errors?.stockQuantity)} {...register(`variants.${index}.stockQuantity`)} /><FieldError error={errors?.stockQuantity} /></div>
+        <div className="space-y-2"><Label htmlFor={`variant-${index}-stock`}>Stok</Label><Input id={`variant-${index}-stock`} type="number" min="0" placeholder="0" readOnly={stockReadOnly} aria-describedby={stockReadOnly ? `variant-${index}-stock-help` : undefined} aria-invalid={Boolean(errors?.stockQuantity)} className={stockReadOnly ? 'bg-muted text-muted-foreground' : undefined} {...register(`variants.${index}.stockQuantity`)} />{stockReadOnly ? <p id={`variant-${index}-stock-help`} className="text-[0.7rem] leading-4 text-muted-foreground">Stok hareketleri Stok ekranından yönetilir.</p> : null}<FieldError error={errors?.stockQuantity} /></div>
         <div className="space-y-2"><Label htmlFor={`variant-${index}-threshold`}>Düşük stok eşiği</Label><Input id={`variant-${index}-threshold`} type="number" min="0" placeholder="5" aria-invalid={Boolean(errors?.lowStockThreshold)} {...register(`variants.${index}.lowStockThreshold`)} /><FieldError error={errors?.lowStockThreshold} /></div>
       </div>
 

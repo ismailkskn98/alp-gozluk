@@ -79,7 +79,8 @@ const resolveMedia = async (rows) => {
   const [mediaRows] = await getDb().query(
     `SELECT entity_id AS product_id, storage_key, storage_driver, visibility, alt_text
      FROM media_assets
-     WHERE entity_type = 'product' AND entity_id IN (${productIds.map(() => '?').join(', ')})
+     WHERE entity_type = 'product' AND media_role = 'gallery'
+       AND entity_id IN (${productIds.map(() => '?').join(', ')})
      ORDER BY entity_id, sort_order, id`,
     productIds,
   );

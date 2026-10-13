@@ -7,7 +7,18 @@ import { Link } from '@/i18n/navigation';
 import { PRODUCT_IMAGE_QUALITY } from '@/lib/product-images';
 
 export default function ProductMedia({ product, explore, imageLabel }) {
-  const images = (product.images || []).filter(Boolean).slice(0, 5);
+  const galleryItems = (product.images || []).filter(Boolean).map((src) => ({ src, role: 'gallery', altText: '' }));
+  const lifestyleItems = (product.lifestyleImages || []).filter((image) => image?.url).map((image) => ({
+    src: image.url,
+    role: image.role || 'on_model',
+    altText: image.altText || '',
+    isFeatured: Boolean(image.isFeatured),
+  }));
+  const primaryLifestyleItem = lifestyleItems.find((image) => image.isFeatured) || lifestyleItems[0];
+  const remainingLifestyleItems = lifestyleItems.filter((image) => image !== primaryLifestyleItem);
+  const images = primaryLifestyleItem
+    ? [primaryLifestyleItem, ...galleryItems.slice(0, 2), ...remainingLifestyleItems.slice(0, 1), ...galleryItems.slice(2)].slice(0, 5)
+    : galleryItems.slice(0, 5);
   const [activeIndex, setActiveIndex] = useState(0);
   const hasMultipleImages = images.length > 1;
 
@@ -33,15 +44,15 @@ export default function ProductMedia({ product, explore, imageLabel }) {
       onPointerLeave={() => setActiveIndex(0)}
     >
       {images.length > 0 ? (
-        images.map((src, index) => (
+        images.map((image, index) => (
           <Image
-            key={src}
-            src={src}
-            alt={index === 0 ? `${product.name} ${imageLabel}` : ''}
+            key={`${image.src}-${index}`}
+            src={image.src}
+            alt={image.altText || (index === 0 ? `${product.name} ${imageLabel}` : '')}
             fill
             quality={PRODUCT_IMAGE_QUALITY}
             sizes="(min-width: 1024px) 30vw, (min-width: 640px) 48vw, 82vw"
-            className={`object-contain transition-[opacity,transform] duration-300 ease-out ${activeIndex === index ? 'scale-100 opacity-100' : 'pointer-events-none scale-[0.985] opacity-0'}`}
+            className={`${image.role === 'on_model' ? 'object-cover' : 'object-contain'} transition-[opacity,transform] duration-300 ease-out ${activeIndex === index ? 'scale-100 opacity-100' : 'pointer-events-none scale-[0.985] opacity-0'}`}
           />
         ))
       ) : (
@@ -78,9 +89,9 @@ export default function ProductMedia({ product, explore, imageLabel }) {
           </button>
 
           <div className="absolute inset-x-3 bottom-2 z-30 flex gap-1" aria-label={`${product.name} ${imageLabel}`}>
-            {images.map((src, index) => (
+            {images.map((image, index) => (
               <button
-                key={src}
+                key={`${image.src}-segment-${index}`}
                 type="button"
                 onClick={() => setActiveIndex(index)}
                 aria-label={`${product.name} ${index + 1}. ${imageLabel}`}

@@ -73,13 +73,13 @@ const loadCheckoutItems = async (connection, cartId, locale) => {
        pv.sku, pv.color_code, pv.frame_size, pv.price, pv.stock_quantity,
        pv.status AS variant_status, pv.deleted_at AS variant_deleted_at,
        (SELECT ma.storage_key FROM media_assets ma
-        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id
+        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id AND ma.media_role = 'gallery'
         ORDER BY ma.sort_order, ma.id LIMIT 1) AS image_storage_key,
        (SELECT ma.storage_driver FROM media_assets ma
-        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id
+        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id AND ma.media_role = 'gallery'
         ORDER BY ma.sort_order, ma.id LIMIT 1) AS image_storage_driver,
        (SELECT ma.alt_text FROM media_assets ma
-        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id
+        WHERE ma.entity_type = 'product' AND ma.entity_id = p.id AND ma.media_role = 'gallery'
         ORDER BY ma.sort_order, ma.id LIMIT 1) AS image_alt_text
      FROM cart_items ci
      INNER JOIN product_variants pv ON pv.id = ci.variant_id

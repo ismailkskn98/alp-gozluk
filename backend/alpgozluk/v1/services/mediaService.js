@@ -2,6 +2,7 @@ const { config } = require('../config/env');
 const { getDb } = require('../models/db');
 const { validateImageFile } = require('../helpers/imageFile');
 const { getStorage } = require('../../../general_services/storage');
+const cache = require('./cacheService');
 
 const entityPrefixes = {
   product: 'products',
@@ -11,25 +12,59 @@ const entityPrefixes = {
   user: 'users',
 };
 
+const mediaRoles = new Set(['gallery', 'on_model', 'editorial']);
+
+const createValidationError = (message = 'Geçersiz medya bilgileri.') => {
+  const error = new Error(message);
+  error.statusCode = 422;
+  return error;
+};
+
+const normalizeBoolean = (value, fallback = false) => {
+  if (value === undefined || value === null || value === '') return fallback;
+  if ([true, 1, '1', 'true'].includes(value)) return true;
+  if ([false, 0, '0', 'false'].includes(value)) return false;
+  throw createValidationError();
+};
+
+const normalizeMediaMetadata = (input = {}) => {
+  const altText = String(input.altText || '').trim();
+  const mediaRole = String(input.mediaRole || 'gallery').trim().toLowerCase();
+  const modelName = String(input.modelName || '').trim();
+  const sortOrder = Number(input.sortOrder || 0);
+  const isFeatured = normalizeBoolean(input.isFeatured);
+
+  if (
+    altText.length > 255 ||
+    !mediaRoles.has(mediaRole) ||
+    modelName.length > 120 ||
+    !Number.isInteger(sortOrder) ||
+    sortOrder < 0 ||
+    sortOrder > 10000
+  ) {
+    throw createValidationError();
+  }
+
+  if (mediaRole === 'gallery' && modelName) throw createValidationError();
+
+  return {
+    altText,
+    mediaRole,
+    modelName: modelName || null,
+    sortOrder,
+    isFeatured,
+  };
+};
+
 const normalizeMediaInput = (input = {}) => {
   const entityType = String(input.entityType || '').trim().toLowerCase();
   const entityId = Number(input.entityId);
-  const altText = String(input.altText || '').trim();
-  const sortOrder = Number(input.sortOrder || 0);
 
   if (!entityPrefixes[entityType] || !Number.isInteger(entityId) || entityId <= 0) {
-    const error = new Error('Geçersiz medya ilişkisi.');
-    error.statusCode = 422;
-    throw error;
+    throw createValidationError('Geçersiz medya ilişkisi.');
   }
 
-  if (altText.length > 255 || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) {
-    const error = new Error('Geçersiz medya bilgileri.');
-    error.statusCode = 422;
-    throw error;
-  }
-
-  return { entityType, entityId, altText, sortOrder };
+  return { entityType, entityId, ...normalizeMediaMetadata(input) };
 };
 
 const withResolvedUrl = async (row) => ({
@@ -43,6 +78,9 @@ const withResolvedUrl = async (row) => ({
   width: row.width,
   height: row.height,
   altText: row.alt_text,
+  mediaRole: row.media_role,
+  modelName: row.model_name,
+  isFeatured: Boolean(row.is_featured),
   sortOrder: row.sort_order,
   visibility: row.visibility,
   url: await getStorage(row.storage_driver).getUrl(row.storage_key, {
@@ -80,8 +118,9 @@ const uploadMedia = async ({ files, input, userId }) => {
       const [result] = await connection.query(
         `INSERT INTO media_assets
           (entity_type, entity_id, storage_key, storage_driver, mime_type, size_bytes,
-           width, height, alt_text, sort_order, visibility, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'public', ?)`,
+           width, height, alt_text, media_role, model_name, is_featured, sort_order,
+           visibility, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'public', ?)`,
         [
           mediaInput.entityType,
           mediaInput.entityId,
@@ -92,6 +131,9 @@ const uploadMedia = async ({ files, input, userId }) => {
           savedFile.width,
           savedFile.height,
           mediaInput.altText,
+          mediaInput.mediaRole,
+          mediaInput.modelName,
+          mediaInput.isFeatured ? 1 : 0,
           mediaInput.sortOrder + index,
           userId,
         ],
@@ -106,6 +148,7 @@ const uploadMedia = async ({ files, input, userId }) => {
       `SELECT * FROM media_assets WHERE id IN (${placeholders}) ORDER BY sort_order, id`,
       insertedIds,
     );
+    await cache.deleteByPrefix('catalog');
     return Promise.all(rows.map(withResolvedUrl));
   } catch (error) {
     await connection.rollback();
@@ -118,7 +161,7 @@ const uploadMedia = async ({ files, input, userId }) => {
   }
 };
 
-const listMedia = async ({ page, limit, entityType, entityId }) => {
+const listMedia = async ({ page, limit, entityType, entityId, mediaRole, search }) => {
   const where = [];
   const values = [];
 
@@ -135,6 +178,20 @@ const listMedia = async ({ page, limit, entityType, entityId }) => {
   if (entityId) {
     where.push('entity_id = ?');
     values.push(entityId);
+  }
+
+  if (mediaRole) {
+    if (!mediaRoles.has(mediaRole)) throw createValidationError();
+    where.push('media_role = ?');
+    values.push(mediaRole);
+  }
+
+  if (search) {
+    const normalizedSearch = String(search).trim().slice(0, 120);
+    if (normalizedSearch) {
+      where.push('(model_name LIKE ? OR alt_text LIKE ?)');
+      values.push(`%${normalizedSearch}%`, `%${normalizedSearch}%`);
+    }
   }
 
   const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
@@ -155,23 +212,28 @@ const listMedia = async ({ page, limit, entityType, entityId }) => {
   };
 };
 
-const updateMedia = async ({ id, altText, sortOrder }) => {
-  const normalizedAltText = String(altText || '').trim();
-  const normalizedSortOrder = Number(sortOrder);
-
-  if (normalizedAltText.length > 255 || !Number.isInteger(normalizedSortOrder) || normalizedSortOrder < 0) {
-    const error = new Error('Geçersiz medya bilgileri.');
-    error.statusCode = 422;
-    throw error;
-  }
+const updateMedia = async ({ id, userId, ...input }) => {
+  const metadata = normalizeMediaMetadata(input);
 
   const database = getDb();
   const [result] = await database.query(
-    'UPDATE media_assets SET alt_text = ?, sort_order = ? WHERE id = ?',
-    [normalizedAltText, normalizedSortOrder, id],
+    `UPDATE media_assets
+     SET alt_text = ?, media_role = ?, model_name = ?, is_featured = ?, sort_order = ?,
+         updated_by = ?, updated_at = UTC_TIMESTAMP(6)
+     WHERE id = ?`,
+    [
+      metadata.altText,
+      metadata.mediaRole,
+      metadata.modelName,
+      metadata.isFeatured ? 1 : 0,
+      metadata.sortOrder,
+      userId,
+      id,
+    ],
   );
 
   if (result.affectedRows === 0) return null;
+  await cache.deleteByPrefix('catalog');
   const [rows] = await database.query('SELECT * FROM media_assets WHERE id = ? LIMIT 1', [id]);
   return withResolvedUrl(rows[0]);
 };
@@ -189,6 +251,9 @@ const replaceMedia = async ({ id, file, userId }) => {
     entityType: existingMedia.entity_type,
     entityId: existingMedia.entity_id,
     altText: existingMedia.alt_text,
+    mediaRole: existingMedia.media_role,
+    modelName: existingMedia.model_name,
+    isFeatured: existingMedia.is_featured,
     sortOrder: existingMedia.sort_order,
   });
   const savedFile = await saveFile(file, mediaInput);
@@ -220,6 +285,7 @@ const replaceMedia = async ({ id, file, userId }) => {
     .catch((error) => console.error('Eski medya dosyası temizlenemedi:', error.message));
 
   const [rows] = await database.query('SELECT * FROM media_assets WHERE id = ? LIMIT 1', [id]);
+  await cache.deleteByPrefix('catalog');
   return withResolvedUrl(rows[0]);
 };
 
@@ -230,6 +296,7 @@ const deleteMedia = async (id) => {
   if (!media) return false;
 
   await database.query('DELETE FROM media_assets WHERE id = ?', [id]);
+  await cache.deleteByPrefix('catalog');
   getStorage(media.storage_driver)
     .delete(media.storage_key)
     .catch((error) => console.error('Silinen kaydın dosyası temizlenemedi:', error.message));
@@ -243,4 +310,5 @@ module.exports = {
   replaceMedia,
   deleteMedia,
   normalizeMediaInput,
+  normalizeMediaMetadata,
 };

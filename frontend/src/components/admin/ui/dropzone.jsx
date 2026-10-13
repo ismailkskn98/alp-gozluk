@@ -19,7 +19,12 @@ export default function AdminDropzone({ maxFiles = 5, maxSize = 10 * 1024 * 1024
     onDropAccepted(accepted) {
       setError('');
       setFiles((current) => {
-        const next = [...current, ...accepted].slice(0, maxFiles).map((file) => ({ file, preview: URL.createObjectURL(file) }));
+        const remainingSlots = Math.max(0, maxFiles - current.length);
+        const added = accepted.slice(0, remainingSlots).map((file) => ({
+          file,
+          preview: URL.createObjectURL(file),
+        }));
+        const next = [...current, ...added];
         onChange?.(next.map((entry) => entry.file));
         return next;
       });

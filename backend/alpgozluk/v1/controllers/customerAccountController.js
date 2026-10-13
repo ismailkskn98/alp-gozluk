@@ -74,9 +74,9 @@ async function getAccountData(userId) {
     database.query(`SELECT p.id, pt.slug, pt.name,
       (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.id AND pv.status = 'active' ORDER BY pv.price ASC, pv.id ASC LIMIT 1) AS price_amount,
       'TRY' AS currency,
-      (SELECT m.storage_key FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS storage_key,
-      (SELECT m.storage_driver FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS storage_driver,
-      (SELECT m.visibility FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS visibility
+      (SELECT m.storage_key FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS storage_key,
+      (SELECT m.storage_driver FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS storage_driver,
+      (SELECT m.visibility FROM media_assets m WHERE m.entity_type = 'product' AND m.entity_id = p.id AND m.media_role = 'gallery' ORDER BY m.sort_order ASC, m.id ASC LIMIT 1) AS visibility
       FROM customer_favorites cf
       INNER JOIN products p ON p.id = cf.product_id
       INNER JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = 'tr'
