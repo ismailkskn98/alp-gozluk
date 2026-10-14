@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
 
 import FooterGlasses from "./footer-glasses";
 
@@ -63,11 +64,12 @@ export default function FooterScene({ children }) {
           const pinnedStart = entryDistance;
           const pinnedPosition = (progress) => pinnedStart + pinnedDistance * progress;
           const fadeStart = mobile ? 0.9 : 0.84;
+          const scrollPacing = mobile ? 1.32 : 1.42;
 
           gsap.set(glasses, {
             force3D: true,
             opacity: 0.98,
-            rotationX: mobile ? -34 : -42,
+            rotationX: mobile ? 42 : 50,
             rotationZ: mobile ? -0.55 : 0.4,
             scale: startScale,
             transformOrigin: "50% 50%",
@@ -90,12 +92,20 @@ export default function FooterScene({ children }) {
             .to(
               glasses,
               {
-                rotationX: mobile ? -24 : -28,
                 rotationZ: mobile ? -0.2 : 0.14,
                 scale: 0.98,
                 xPercent: mobile ? -0.7 : 0.45,
                 y: () => -window.innerHeight * (mobile ? 0.2 : 0.24),
                 z: mobile ? -420 : -520,
+                duration: entryDistance,
+                ease: "sine.out",
+              },
+              0,
+            )
+            .to(
+              glasses,
+              {
+                rotationX: 0,
                 duration: entryDistance,
                 ease: "sine.out",
               },
@@ -115,15 +125,6 @@ export default function FooterScene({ children }) {
                 ease: "sine.inOut",
               },
               pinnedStart,
-            )
-            .to(
-              glasses,
-              {
-                rotationX: 0,
-                duration: pinnedDistance * 0.88,
-                ease: "sine.inOut",
-              },
-              pinnedPosition(0.04),
             )
             .to(copyGroups, { opacity: 0.84, duration: pinnedDistance * 0.38 }, pinnedStart)
             .to(
@@ -159,16 +160,20 @@ export default function FooterScene({ children }) {
             .to(opticalVignette, { opacity: 0.82, duration: pinnedDistance * 0.68, ease: "sine.inOut" }, pinnedPosition(0.32))
             .to(copyGroups, { opacity: 1, duration: pinnedDistance * 0.5 }, pinnedPosition(0.5));
 
-          const getScrollProgress = () => gsap.utils.clamp(0, 1, (window.innerHeight - scene.getBoundingClientRect().top) / scene.clientHeight);
+          const getScrollProgress = () => {
+            const rawProgress = gsap.utils.clamp(0, 1, (window.innerHeight - scene.getBoundingClientRect().top) / scene.clientHeight);
+
+            return 1 - (1 - rawProgress) ** scrollPacing;
+          };
           let currentProgress = getScrollProgress();
           let targetProgress = currentProgress;
           let isRendering = false;
 
           const renderProgress = () => {
-            const smoothing = 1 - 0.8 ** gsap.ticker.deltaRatio(60);
+            const smoothing = 1 - 0.9 ** gsap.ticker.deltaRatio(60);
             currentProgress += (targetProgress - currentProgress) * smoothing;
 
-            if (Math.abs(targetProgress - currentProgress) < 0.0003) {
+            if (Math.abs(targetProgress - currentProgress) < 0.00015) {
               currentProgress = targetProgress;
               isRendering = false;
               gsap.ticker.remove(renderProgress);
@@ -213,23 +218,14 @@ export default function FooterScene({ children }) {
   return (
     <div ref={sceneRef} className="footer-scene-track relative" style={{ height: "var(--footer-scene-height, 245svh)" }}>
       <footer data-footer-scene className="sticky top-0 isolate h-svh overflow-hidden bg-[#dba666] text-white [perspective:1400px]">
-        <div
+        <Image
+          src="/footer/footer-bg.jpg"
+          alt=""
           aria-hidden="true"
-          className="absolute inset-0 z-0 bg-[#e0aa68]"
-          style={{
-            backgroundImage: "radial-gradient(circle at 50% 17%, #fffef2 0%, #fff4c9 13%, #efcb89 38%, #dca462 70%, #ba7546 100%)",
-          }}
+          fill
+          sizes="100vw"
+          className="absolute inset-0 z-0 object-cover object-center"
         />
-        <div
-          aria-hidden="true"
-          className="absolute left-1/2 top-[16%] z-[1] size-[clamp(13rem,27vw,31rem)] -translate-x-1/2 rounded-full bg-[#fffde8] shadow-[0_0_clamp(5rem,14vw,15rem)_clamp(2rem,7vw,8rem)_rgba(255,250,202,0.9)]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-[-10%] top-[-12%] z-[2] h-[72%] bg-[radial-gradient(ellipse_at_center,rgba(255,255,244,0.96)_0%,rgba(255,246,202,0.5)_42%,transparent_74%)]"
-        />
-        <div aria-hidden="true" className="absolute -bottom-[27%] -left-[12%] z-[3] h-[58%] w-[82%] rounded-[50%] bg-[#cf925e]/70" />
-        <div aria-hidden="true" className="absolute -bottom-[31%] -right-[20%] z-[3] h-[53%] w-[88%] rounded-[50%] bg-[#b9754f]/45" />
         <div data-footer-lens-filter aria-hidden="true" className="absolute inset-0 z-[5] bg-[linear-gradient(180deg,#26302b_0%,#19211d_58%,#101713_100%)] will-change-[opacity]" />
         <div
           data-footer-optical-vignette
