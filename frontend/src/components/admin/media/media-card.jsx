@@ -49,8 +49,8 @@ export default function MediaCard({ media, product, onEdit, onDelete }) {
           <span>Sıra {media.sortOrder}</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <AdminButton variant="secondary" size="sm" onClick={() => onEdit(media)}><Edit3 className="size-3.5" />Düzenle</AdminButton>
-          <AdminButton variant="ghost" size="sm" className="text-danger hover:bg-danger/10" onClick={() => onDelete(media)}><Trash2 className="size-3.5" />Sil</AdminButton>
+          <AdminButton type="button" variant="secondary" size="sm" onClick={() => onEdit(media)}><Edit3 className="size-3.5" />Düzenle</AdminButton>
+          <AdminButton type="button" variant="ghost" size="sm" className="text-danger hover:bg-danger/10" onClick={() => onDelete(media)}><Trash2 className="size-3.5" />Sil</AdminButton>
         </div>
       </div>
     </article>

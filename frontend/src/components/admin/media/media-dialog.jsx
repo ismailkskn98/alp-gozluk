@@ -23,8 +23,17 @@ const emptyValues = {
   isFeatured: false,
 };
 
-export default function MediaDialog({ open, onOpenChange, products, media, onSaved }) {
+export default function MediaDialog({
+  open,
+  onOpenChange,
+  products = [],
+  productId,
+  productLabel,
+  media,
+  onSaved,
+}) {
   const editing = Boolean(media);
+  const contextualProductId = productId ? String(productId) : '';
   const [values, setValues] = useState(() => media ? {
     productId: String(media.entityId),
     mediaRole: media.mediaRole || 'gallery',
@@ -32,7 +41,7 @@ export default function MediaDialog({ open, onOpenChange, products, media, onSav
     altText: media.altText || '',
     sortOrder: String(media.sortOrder || 0),
     isFeatured: Boolean(media.isFeatured),
-  } : emptyValues);
+  } : { ...emptyValues, productId: contextualProductId });
   const [files, setFiles] = useState([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +77,7 @@ export default function MediaDialog({ open, onOpenChange, products, media, onSav
           body: JSON.stringify(metadata),
         });
         const metadataPayload = await metadataResponse.json();
-        if (!metadataResponse.ok) throw new Error(metadataPayload.message || 'Medya bilgileri güncellenemedi.');
+        if (!metadataResponse.ok) throw new Error(metadataPayload.message || 'Görsel bilgileri güncellenemedi.');
 
         if (files[0]) {
           const replacement = new FormData();
@@ -102,19 +111,26 @@ export default function MediaDialog({ open, onOpenChange, products, media, onSav
       <DialogContent showClose={!pending} className="w-[min(94vw,42rem)]">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>{editing ? 'Medya kaydını düzenle' : 'Ürün görseli yükle'}</DialogTitle>
-            <DialogDescription>{editing ? 'Görselin kullanım alanını, model bilgisini veya dosyasını değiştirin.' : 'Dosya storage alanına yüklenir ve seçtiğiniz ürüne bağlanır.'}</DialogDescription>
+            <DialogTitle>{editing ? 'Görseli düzenle' : 'Ürüne görsel ekle'}</DialogTitle>
+            <DialogDescription>{editing ? 'Görselin kullanım alanını, model bilgisini veya dosyasını değiştirin.' : 'Seçtiğiniz dosyalar bu ürüne bağlanır ve kullanım alanına göre sitede gösterilir.'}</DialogDescription>
           </DialogHeader>
 
           <div className="mt-6 space-y-5">
-            <AdminFormField label="Ürün" required>
-              <AdminSelect
-                value={values.productId}
-                onValueChange={(value) => change('productId', value)}
-                disabled={editing || pending}
-                options={[{ value: '', label: 'Ürün seçin' }, ...products.map((product) => ({ value: String(product.id), label: `${product.name} · ${product.code}` }))]}
-              />
-            </AdminFormField>
+            {contextualProductId ? (
+              <div className="rounded-xl border border-border bg-muted/45 px-4 py-3">
+                <p className="text-xs font-medium text-muted-foreground">Bağlı ürün</p>
+                <p className="mt-1 text-sm font-medium">{productLabel || `Ürün #${contextualProductId}`}</p>
+              </div>
+            ) : (
+              <AdminFormField label="Ürün" required>
+                <AdminSelect
+                  value={values.productId}
+                  onValueChange={(value) => change('productId', value)}
+                  disabled={editing || pending}
+                  options={[{ value: '', label: 'Ürün seçin' }, ...products.map((product) => ({ value: String(product.id), label: `${product.name} · ${product.code}` }))]}
+                />
+              </AdminFormField>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <AdminFormField label="Kullanım alanı" required>
                 <AdminSelect value={values.mediaRole} onValueChange={(value) => change('mediaRole', value)} disabled={pending} options={roleOptions} />

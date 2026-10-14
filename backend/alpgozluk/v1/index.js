@@ -20,6 +20,8 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const adminSettingsRoutes = require('./routes/adminSettingsRoutes');
+const homepageRoutes = require('./routes/homepageRoutes');
+const adminHomepageRoutes = require('./routes/adminHomepageRoutes');
 const verifyToken = require('./middlewares/verifyToken');
 const optionalAuth = require('./middlewares/optionalAuth');
 const requirePermission = require('./middlewares/requirePermission');
@@ -35,6 +37,7 @@ router.use('/catalog', catalogRoutes);
 router.use('/navigation', navigationRoutes);
 router.use('/announcements', announcementRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/homepage', homepageRoutes);
 router.use('/locations', locationRoutes);
 router.use('/cart', optionalAuth, cartRoutes);
 router.use('/checkout', optionalAuth, orderRoutes);
@@ -69,6 +72,12 @@ router.use(
   verifyToken,
   requirePermission('content.manage'),
   adminAnnouncementRoutes,
+);
+router.use(
+  '/admin/homepage',
+  verifyToken,
+  requirePermission('content.manage'),
+  adminHomepageRoutes,
 );
 router.use(
   '/admin/inventory',

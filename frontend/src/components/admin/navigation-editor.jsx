@@ -9,9 +9,14 @@ import { AdminButton } from '@/components/admin/ui/button';
 import ConfirmActionDialog from '@/components/admin/ui/confirm-action-dialog';
 import { adminInputClass, AdminFormField } from '@/components/admin/ui/form-field';
 import { AdminSelect } from '@/components/admin/ui/select';
+import NavigationItemImage from '@/components/admin/navigation-item-image';
 
 const optionalPath = z.union([z.literal(''), z.string().regex(/^\/(?!\/)[^\s]{0,499}$/, 'Site içi / ile başlayan bir yol girin.')]);
 const itemSchema = z.object({
+  id: z.number().int().positive().nullable().optional(),
+  mediaAssetId: z.number().int().positive().nullable().optional(),
+  imageUrl: z.string().optional(),
+  imageAltText: z.string().optional(),
   code: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{1,99}$/, 'Geçerli ve benzersiz bir kod girin.'),
   parentCode: z.string(),
   itemType: z.enum(['link', 'group', 'promo']),
@@ -54,6 +59,10 @@ function flattenItems(items, parentCode = '') {
     const tr = translations.find((translation) => translation.locale === 'tr');
     const en = translations.find((translation) => translation.locale === 'en');
     const current = {
+      id: item.id || null,
+      mediaAssetId: item.mediaAssetId || null,
+      imageUrl: item.imageUrl || '',
+      imageAltText: item.imageAltText || '',
       code: item.code,
       parentCode,
       itemType: item.itemType || 'link',
@@ -73,11 +82,11 @@ export default function NavigationEditor() {
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(true);
   const [removeTarget, setRemoveTarget] = useState(null);
-  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const { control, register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { items: [] },
   });
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const { fields, append, remove } = useFieldArray({ control, name: 'items', keyName: 'fieldKey' });
   const currentItems = useWatch({ control, name: 'items' }) || [];
 
   useEffect(() => {
@@ -98,6 +107,8 @@ export default function NavigationEditor() {
     setFeedback({ type: '', message: '' });
     const payload = {
       items: values.items.map((item) => ({
+        id: item.id || null,
+        mediaAssetId: item.mediaAssetId || null,
         code: item.code,
         parentCode: item.parentCode || null,
         itemType: item.itemType,
@@ -125,7 +136,7 @@ export default function NavigationEditor() {
       <div className="grid gap-8 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-3">
           {fields.map((field, index) => (
-            <section key={field.id} className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,35,61,0.03)] sm:p-5">
+            <section key={field.fieldKey} className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,35,61,0.03)] sm:p-5">
               <input type="hidden" {...register(`items.${index}.status`)} />
               <div className="mb-5 flex items-center gap-2 border-b border-border pb-4"><GripVertical className="size-4 text-muted-foreground" /><span className="text-sm font-semibold">{currentItems?.[index]?.trLabel || `Öğe ${index + 1}`}</span><button type="button" onClick={() => setRemoveTarget({ index, name: currentItems?.[index]?.trLabel || currentItems?.[index]?.code || `Öğe ${index + 1}` })} className="ml-auto grid size-9 place-items-center rounded-lg text-danger transition hover:bg-danger/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/25" aria-label="Öğeyi kaldır"><Trash2 className="size-4" /></button></div>
               <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
@@ -138,6 +149,19 @@ export default function NavigationEditor() {
                 <AdminFormField label="İngilizce etiket" error={errors.items?.[index]?.enLabel?.message}><input className={adminInputClass} {...register(`items.${index}.enLabel`)} aria-invalid={Boolean(errors.items?.[index]?.enLabel)} /></AdminFormField>
                 <AdminFormField label="İngilizce yol" error={errors.items?.[index]?.enHref?.message}><input className={adminInputClass} placeholder="/shop/women" {...register(`items.${index}.enHref`)} aria-invalid={Boolean(errors.items?.[index]?.enHref)} /></AdminFormField>
               </div>
+              {!currentItems?.[index]?.parentCode ? (
+                <NavigationItemImage
+                  itemId={currentItems?.[index]?.id}
+                  mediaAssetId={currentItems?.[index]?.mediaAssetId}
+                  imageUrl={currentItems?.[index]?.imageUrl}
+                  label={currentItems?.[index]?.trLabel}
+                  disabled={isSubmitting}
+                  onChanged={(image) => {
+                    setValue(`items.${index}.mediaAssetId`, image.mediaAssetId, { shouldDirty: true });
+                    setValue(`items.${index}.imageUrl`, image.imageUrl, { shouldDirty: true });
+                  }}
+                />
+              ) : null}
             </section>
           ))}
           <AdminButton type="button" variant="secondary" onClick={() => append({ code: `menu-link-${fields.length + 1}`, parentCode: '', itemType: 'link', columnPosition: 1, sortOrder: (fields.length + 1) * 10, status: 'active', trLabel: 'Yeni bağlantı', trHref: '/shop', enLabel: 'New link', enHref: '/shop' })}><Plus className="size-4" />Öğe ekle</AdminButton>

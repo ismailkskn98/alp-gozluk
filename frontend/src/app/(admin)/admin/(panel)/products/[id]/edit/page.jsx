@@ -8,7 +8,7 @@ export default async function EditProductPage({ params }) {
       <AdminPageHeader
         eyebrow="Katalog / Ürünler"
         title="Ürünü düzenle"
-        description="Ürün bilgilerini, katalog ilişkilerini, varyantlarını ve yayın durumunu güncelleyin."
+        description="Ürün bilgilerini, görsellerini, katalog ilişkilerini, varyantlarını ve yayın durumunu tek ekrandan yönetin."
       />
       <ProductForm productId={id} />
     </>

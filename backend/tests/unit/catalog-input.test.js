@@ -48,3 +48,15 @@ test('navigasyon payload doğrulaması eksik üst öğeyi ve harici URLyi redded
     { code: 'child', parentCode: 'parent', itemType: 'group', columnPosition: 1, sortOrder: 2, translations: [{ locale: 'tr', label: 'Alt grup' }] },
   ] }), null);
 });
+
+test('navigasyon görsel kimliği yalnız pozitif sayı olarak kabul edilir', () => {
+  const valid = normalizeNavigationPayload({ items: [{
+    id: 4, code: 'women', itemType: 'promo', mediaAssetId: 18, columnPosition: 1, sortOrder: 1,
+    translations: [{ locale: 'tr', label: 'Kadın', href: '/shop/kadin' }],
+  }] });
+  assert.equal(valid.items[0].mediaAssetId, 18);
+  assert.equal(normalizeNavigationPayload({ items: [{
+    code: 'women', itemType: 'promo', mediaAssetId: '../18', columnPosition: 1, sortOrder: 1,
+    translations: [{ locale: 'tr', label: 'Kadın', href: '/shop/kadin' }],
+  }] }), null);
+});

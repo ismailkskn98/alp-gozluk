@@ -7,7 +7,7 @@ import { getSessionUser } from '@/lib/server-api';
 const roles = [
   ['super_admin', 'Süper yönetici', 'Başlangıçta env ve bootstrap komutuyla oluşturulur. Silinemez, devre dışı bırakılamaz ve başka hesaba atanamaz.', ShieldCheck, 'Korumalı sistem rolü'],
   ['admin', 'Yönetici', 'Mağaza operasyonlarını ve yönetim modüllerini kullanır. Kullanıcı ve rol yönetemez.', LockKeyhole, 'Operasyon erişimi'],
-  ['editor', 'Editör', 'Ürün, katalog, medya, stok ve içerik gibi atanmış operasyonel alanlarda çalışır.', PencilLine, 'Sınırlı içerik erişimi'],
+  ['editor', 'Editör', 'Ürün, katalog, stok ve site içeriği gibi atanmış operasyonel alanlarda çalışır.', PencilLine, 'Sınırlı içerik erişimi'],
   ['customer', 'Müşteri', 'Yalnız public kayıt akışından oluşur ve yönetim paneline erişemez.', UserRound, 'Panel erişimi yok'],
 ];
 

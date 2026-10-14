@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { listProducts } from "@/data/products";
+import { fetchHomepageConfig } from '@/data/homepage';
 import { getSessionUser } from "@/lib/server-api";
 import CategoryShowcase from "./category-showcase";
 import FeaturedProducts from "./featured-products";
@@ -10,11 +11,13 @@ import ModelShowcase from "./model-showcase";
 import ServiceStrip from "./service-strip";
 
 export default async function Home({ locale }) {
-  const [t, availableProducts, user] = await Promise.all([
+  const [t, availableProducts, user, homepageConfig] = await Promise.all([
     getTranslations("Home"),
     listProducts(locale),
     getSessionUser(),
+    fetchHomepageConfig(),
   ]);
+  const managedContent = homepageConfig?.[locale] || {};
 
   const hero = {
     title: t("hero.title"),
@@ -24,6 +27,7 @@ export default async function Home({ locale }) {
     videoLabel: t("hero.videoLabel"),
     pauseVideo: t("hero.pauseVideo"),
     playVideo: t("hero.playVideo"),
+    ...(managedContent.hero || {}),
   };
 
   const featured = {
@@ -33,6 +37,7 @@ export default async function Home({ locale }) {
     emptyTitle: t("featured.emptyTitle"),
     emptyDescription: t("featured.emptyDescription"),
     explore: t("featured.explore"),
+    ...(managedContent.featured || {}),
   };
 
   const categories = {
@@ -44,6 +49,7 @@ export default async function Home({ locale }) {
     darkFramesCopy: t("categories.darkFramesCopy"),
     action: t("categories.action"),
     darkFramesAction: t("categories.darkFramesAction"),
+    ...(managedContent.categories || {}),
   };
 
   const modelShowcase = {
@@ -52,12 +58,8 @@ export default async function Home({ locale }) {
     featured: t("modelShowcase.featured"),
     action: t("modelShowcase.action"),
     imageLabel: t("modelShowcase.imageLabel"),
+    ...(managedContent.modelShowcase || {}),
   };
-
-  const categoryMedia = availableProducts
-    .flatMap((product) => product.lifestyleImages || [])
-    .filter((image) => image.role === 'on_model')
-    .slice(0, 2);
 
   const frameStory = {
     title: t("frameStory.title"),
@@ -70,9 +72,14 @@ export default async function Home({ locale }) {
       [t("frameStory.points.comfort"), t("frameStory.points.comfortCopy")],
       [t("frameStory.points.support"), t("frameStory.points.supportCopy")],
     ],
+    ...(managedContent.frameStory || {}),
   };
 
-  const services = [
+  if (managedContent.frameStory?.points?.length === 4) {
+    frameStory.points = managedContent.frameStory.points.map((point) => [point.title, point.description]);
+  }
+
+  const services = managedContent.services?.length === 3 ? managedContent.services.map((service) => [service.title, service.description]) : [
     [t("services.guide"), t("services.guideCopy")],
     [t("services.secure"), t("services.secureCopy")],
     [t("services.support"), t("services.supportCopy")],
@@ -84,8 +91,8 @@ export default async function Home({ locale }) {
       {/* <GlassesSequence imageAlt={t('sequence.imageAlt')} /> */}
       <FeaturedProducts locale={locale} copy={featured} availableProducts={availableProducts} user={user} />
       <ModelShowcase products={availableProducts} copy={modelShowcase} />
-      <CategoryShowcase copy={categories} media={categoryMedia} />
-      <FrameStory copy={frameStory} />
+      <CategoryShowcase copy={categories} media={[homepageConfig?.images?.categoryPrimary || {}, homepageConfig?.images?.categorySecondary || {}]} />
+      <FrameStory copy={frameStory} imageUrl={homepageConfig?.images?.frameStory?.url} />
       <ServiceStrip services={services} />
     </div>
   );

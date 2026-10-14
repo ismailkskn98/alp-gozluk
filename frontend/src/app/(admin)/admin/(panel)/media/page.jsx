@@ -1,5 +1,5 @@
-import MediaLibrary from '@/components/admin/media';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <MediaLibrary />;
+  redirect('/admin/products');
 }

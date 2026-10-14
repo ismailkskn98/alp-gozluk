@@ -27,7 +27,8 @@ const getHeader = async (requestedLocale, includeInactive = false) => {
   const [rows] = await getDb().query(
     `SELECT ni.id, ni.parent_id AS parentId, ni.code, ni.item_type AS itemType,
        COALESCE(t.href, ni.custom_url) AS href, ni.column_position AS columnPosition, ni.sort_order AS sortOrder,
-       ni.status, COALESCE(t.label, ni.code) AS label, t.description,
+       ni.status, ni.media_asset_id AS mediaAssetId, COALESCE(t.label, ni.code) AS label, t.description,
+       ma.alt_text AS imageAltText,
        ma.storage_key AS storageKey, ma.storage_driver AS storageDriver, ma.visibility
      FROM navigation_menus nm
      INNER JOIN navigation_items ni ON ni.menu_id = nm.id
@@ -102,6 +103,21 @@ const saveHeader = async (payload, requestMeta) => {
         );
         const itemId = result.insertId;
         idsByCode.set(item.code, itemId);
+        let mediaAssetId = null;
+        if (item.mediaAssetId) {
+          const [mediaRows] = await connection.query(
+            `SELECT id FROM media_assets
+             WHERE id = ? AND entity_type = 'navigation' AND entity_id = ? LIMIT 1`,
+            [item.mediaAssetId, itemId],
+          );
+          if (!mediaRows[0]) {
+            const error = new Error('Menü görseli bu öğeyle eşleşmiyor.');
+            error.statusCode = 422;
+            throw error;
+          }
+          mediaAssetId = item.mediaAssetId;
+        }
+        await connection.query('UPDATE navigation_items SET media_asset_id = ? WHERE id = ?', [mediaAssetId, itemId]);
         for (const translation of item.translations) {
           await connection.query(
             `INSERT INTO navigation_item_translations (navigation_item_id, locale, label, description, href)

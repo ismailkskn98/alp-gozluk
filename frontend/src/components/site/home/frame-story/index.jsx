@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
-export default function FrameStory({ copy }) {
+export default function FrameStory({ copy, imageUrl = '/mockup-gozlukler/16@9x.png' }) {
   return (
     <section className="home-deferred-section grid-container bg-[#f4f5f6] py-[clamp(4.5rem,9vw,8rem)]" aria-labelledby="frame-story-title">
       <div>
@@ -21,7 +21,7 @@ export default function FrameStory({ copy }) {
 
         <div className="mt-[clamp(2.5rem,5vw,5rem)] bg-white">
           <div className="relative min-h-[clamp(28rem,52vw,46rem)] overflow-hidden border-b border-black/8 bg-[#d8cbb9]">
-            <Image src="/mockup-gozlukler/16@9x.png" alt={copy.visualLabel} fill sizes="(max-width: 768px) 100vw, 92vw" quality={90} className="object-cover object-[center_76%]" />
+            <Image src={imageUrl} alt={copy.visualLabel} fill sizes="(max-width: 768px) 100vw, 92vw" quality={90} className="object-cover object-[center_76%]" />
             <span className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/22 to-transparent" />
             <span className="absolute left-5 top-5 text-xs text-white/85">ALP / Daily frame study</span>
           </div>

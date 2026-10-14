@@ -9,6 +9,7 @@ const entityPrefixes = {
   category: 'categories',
   collection: 'collections',
   content: 'content',
+  navigation: 'navigation',
   user: 'users',
 };
 
@@ -25,6 +26,12 @@ const normalizeBoolean = (value, fallback = false) => {
   if ([true, 1, '1', 'true'].includes(value)) return true;
   if ([false, 0, '0', 'false'].includes(value)) return false;
   throw createValidationError();
+};
+
+const invalidateMediaCaches = async (entityType) => {
+  await cache.deleteByPrefix('catalog');
+  if (entityType === 'navigation') await cache.deleteByPrefix('navigation');
+  if (entityType === 'content') await cache.deleteByPrefix('content');
 };
 
 const normalizeMediaMetadata = (input = {}) => {
@@ -148,7 +155,7 @@ const uploadMedia = async ({ files, input, userId }) => {
       `SELECT * FROM media_assets WHERE id IN (${placeholders}) ORDER BY sort_order, id`,
       insertedIds,
     );
-    await cache.deleteByPrefix('catalog');
+    await invalidateMediaCaches(mediaInput.entityType);
     return Promise.all(rows.map(withResolvedUrl));
   } catch (error) {
     await connection.rollback();
@@ -233,8 +240,8 @@ const updateMedia = async ({ id, userId, ...input }) => {
   );
 
   if (result.affectedRows === 0) return null;
-  await cache.deleteByPrefix('catalog');
   const [rows] = await database.query('SELECT * FROM media_assets WHERE id = ? LIMIT 1', [id]);
+  await invalidateMediaCaches(rows[0].entity_type);
   return withResolvedUrl(rows[0]);
 };
 
@@ -285,7 +292,7 @@ const replaceMedia = async ({ id, file, userId }) => {
     .catch((error) => console.error('Eski medya dosyası temizlenemedi:', error.message));
 
   const [rows] = await database.query('SELECT * FROM media_assets WHERE id = ? LIMIT 1', [id]);
-  await cache.deleteByPrefix('catalog');
+  await invalidateMediaCaches(existingMedia.entity_type);
   return withResolvedUrl(rows[0]);
 };
 
@@ -296,7 +303,7 @@ const deleteMedia = async (id) => {
   if (!media) return false;
 
   await database.query('DELETE FROM media_assets WHERE id = ?', [id]);
-  await cache.deleteByPrefix('catalog');
+  await invalidateMediaCaches(media.entity_type);
   getStorage(media.storage_driver)
     .delete(media.storage_key)
     .catch((error) => console.error('Silinen kaydın dosyası temizlenemedi:', error.message));

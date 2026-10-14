@@ -19,10 +19,6 @@ export const moduleConfigs = {
     eyebrow: 'İçerik', title: 'Sayfalar ve içerik', description: 'Yasal sayfaları ve yönetilebilir site içeriklerini yayınlayın.', action: 'İçerik ekle', singular: 'içerik',
     columns: ['Başlık', 'Dil', 'Son düzenleme', 'Durum'], row: ['Mesafeli Satış Sözleşmesi', 'TR', 'Henüz düzenlenmedi', 'Taslak'], tone: 'neutral',
   },
-  media: {
-    eyebrow: 'Medya', title: 'Medya kütüphanesi', description: 'Local veya S3 üzerinde tutulan güvenli medya kayıtlarını yönetin.', action: 'Medya yükle', singular: 'medya', dropzone: true,
-    columns: ['Dosya', 'Tür', 'Boyut', 'Storage'], row: ['atlas-main.webp', 'WebP', '284 KB', 'Local'], tone: 'info',
-  },
   reports: {
     eyebrow: 'Analiz', title: 'Raporlar', description: 'Satış, ürün ve stok performansını karşılaştırın.', action: 'Rapor oluştur', singular: 'rapor',
     columns: ['Rapor', 'Dönem', 'Oluşturan', 'Durum'], row: ['Aylık satış özeti', 'Eylül 2026', 'Sistem', 'Hazır'], tone: 'success',

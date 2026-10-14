@@ -179,6 +179,22 @@ body {
   display: none;
 }
 
+.footer-scene-track {
+  --footer-scene-height: 215svh;
+}
+
+@media (min-width: 48rem) {
+  .footer-scene-track {
+    --footer-scene-height: 245svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-scene-track {
+    --footer-scene-height: 100svh;
+  }
+}
+
 .home-deferred-section {
   content-visibility: auto;
   contain-intrinsic-size: auto 52rem;

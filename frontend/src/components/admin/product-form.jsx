@@ -3,12 +3,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Plus } from 'lucide-react';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AdminSelect } from '@/components/admin/ui/select';
+import ProductMediaManager from '@/components/admin/product-media';
 import ProductVariantEditor, { emptyVariant } from '@/components/admin/product-variant-editor';
 
 const optionalMeasurement = z.preprocess(
@@ -129,6 +130,8 @@ export default function ProductForm({ productId }) {
     },
   });
   const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({ control, name: 'variants' });
+  const productName = useWatch({ control, name: 'name' });
+  const productCode = useWatch({ control, name: 'code' });
 
   useEffect(() => {
     let active = true;
@@ -217,7 +220,8 @@ export default function ProductForm({ productId }) {
     });
     const payload = await response.json();
     if (!response.ok) { setServerError(payload.message || (productId ? 'Ürün güncellenemedi.' : 'Ürün oluşturulamadı.')); return; }
-    router.push('/admin/products');
+    const savedProductId = productId || payload.data?.id;
+    router.push(productId ? '/admin/products' : `/admin/products/${savedProductId}/edit#product-images`);
     router.refresh();
   }
 
@@ -291,6 +295,15 @@ export default function ProductForm({ productId }) {
         </div>
         {errors.variants?.root ? <p className="mt-3 text-xs text-danger">{errors.variants.root.message}</p> : null}
       </section>
+
+      {productId ? (
+        <ProductMediaManager productId={productId} productName={productName} productCode={productCode} />
+      ) : (
+        <section id="product-images" className="border-x border-b border-border bg-card p-5 sm:p-6">
+          <h2 className="font-semibold">Ürün görselleri</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">Önce ürün ve varyant bilgilerini kaydedin. Kayıttan sonra aynı düzenleme ekranında galeri, model ve editoryal görselleri ekleyebileceğiniz bu alan otomatik açılır.</p>
+        </section>
+      )}
 
       <section className="rounded-b-xl border-x border-b border-border bg-card p-5 sm:p-6"><h2 className="font-semibold">Yayın ve fiyatlandırma ayarları</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><div><Label>Yayın durumu</Label><div className="mt-2"><Controller control={control} name="status" render={({ field }) => <AdminSelect value={field.value} onValueChange={field.onChange} ariaLabel="Yayın durumu" options={[{ value: 'draft', label: 'Taslak' }, { value: 'published', label: 'Yayında' }, { value: 'archived', label: 'Arşivlendi' }]} />} /></div></div><div className="space-y-2"><Label htmlFor="taxRate">KDV oranı (%)</Label><Input id="taxRate" type="number" min="0" max="100" step="0.01" aria-invalid={Boolean(errors.taxRate)} {...register('taxRate')} /></div></div><label className="mt-5 flex min-h-11 items-center gap-3 border-t border-border pt-5 text-sm"><Controller control={control} name="featured" render={({ field }) => <input type="checkbox" className={checkClass} checked={field.value} onChange={(event) => field.onChange(event.target.checked)} />} />Öne çıkan ürün olarak göster</label><p className="mt-3 text-xs text-muted-foreground">Yayındaki ürün public katalog API’sinde ve uygun hedef kitle sayfalarında görünür.</p></section>
       {serverError ? <p role="alert" className="bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p> : null}

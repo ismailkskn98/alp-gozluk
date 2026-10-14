@@ -1,6 +1,6 @@
 import {
   BadgePercent, Boxes, ChartNoAxesCombined, ClipboardList, FileText, Megaphone,
-  FolderTree, ImageIcon, LayoutDashboard, ListTree, Package, Settings, ShieldCheck,
+  FolderTree, LayoutDashboard, ListTree, Package, Settings, ShieldCheck,
   ShoppingBag, SlidersHorizontal, Tags, Users, Warehouse,
 } from 'lucide-react';
 
@@ -24,7 +24,6 @@ export const adminNavigationGroups = [
       { label: 'Markalar', href: '/admin/brands', icon: Tags },
       { label: 'Mega menü', href: '/admin/navigation', icon: ListTree },
       { label: 'Stok', href: '/admin/inventory', icon: Warehouse },
-      { label: 'Medya', href: '/admin/media', icon: ImageIcon },
     ],
   },
   {
@@ -32,7 +31,7 @@ export const adminNavigationGroups = [
     items: [
       { label: 'Kampanyalar', href: '/admin/campaigns', icon: BadgePercent },
       { label: 'Duyuru barı', href: '/admin/announcements', icon: Megaphone },
-      { label: 'İçerik', href: '/admin/content', icon: FileText },
+      { label: 'Site içeriği', href: '/admin/content', icon: FileText },
       { label: 'Raporlar', href: '/admin/reports', icon: ChartNoAxesCombined },
     ],
   },
@@ -49,7 +48,7 @@ export const adminNavigationGroups = [
 
 const editorPaths = new Set([
   '/admin', '/admin/products', '/admin/categories', '/admin/collections', '/admin/audiences',
-  '/admin/attributes', '/admin/brands', '/admin/inventory', '/admin/media', '/admin/content', '/admin/announcements',
+  '/admin/attributes', '/admin/brands', '/admin/inventory', '/admin/content', '/admin/announcements',
 ]);
 
 export function getAdminNavigation(user) {

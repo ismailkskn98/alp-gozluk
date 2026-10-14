@@ -7,6 +7,10 @@ const normalizeNavigationPayload = (body = {}) => {
   const items = [];
 
   for (const rawItem of body.items) {
+    const id = rawItem.id === undefined || rawItem.id === null ? null : Number(rawItem.id);
+    const mediaAssetId = rawItem.mediaAssetId === undefined || rawItem.mediaAssetId === null || rawItem.mediaAssetId === ''
+      ? null
+      : Number(rawItem.mediaAssetId);
     const code = String(rawItem.code || '').trim().toLowerCase();
     const parentCode = rawItem.parentCode ? String(rawItem.parentCode).trim().toLowerCase() : null;
     const itemType = String(rawItem.itemType || 'link').trim();
@@ -14,6 +18,7 @@ const normalizeNavigationPayload = (body = {}) => {
     const columnPosition = Number(rawItem.columnPosition ?? 1);
     const sortOrder = Number(rawItem.sortOrder ?? 0);
     const status = String(rawItem.status || 'active').trim();
+    if ((id !== null && (!Number.isInteger(id) || id <= 0)) || (mediaAssetId !== null && (!Number.isInteger(mediaAssetId) || mediaAssetId <= 0))) return null;
     if (!codePattern.test(code) || seenCodes.has(code) || (parentCode && !codePattern.test(parentCode))) return null;
     if (!['link', 'group', 'promo'].includes(itemType) || !['active', 'inactive'].includes(status)) return null;
     if (customUrl && !urlPattern.test(customUrl)) return null;
@@ -35,7 +40,7 @@ const normalizeNavigationPayload = (body = {}) => {
     )) return null;
 
     seenCodes.add(code);
-    items.push({ code, parentCode, itemType, customUrl, columnPosition, sortOrder, status, translations });
+    items.push({ id, code, parentCode, itemType, customUrl, columnPosition, sortOrder, status, mediaAssetId, translations });
   }
 
   if (items.some((item) => item.parentCode && !seenCodes.has(item.parentCode))) return null;
