@@ -31,6 +31,7 @@ if (mediaBaseUrl) {
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  transpilePackages: ["three"],
   images: {
     remotePatterns,
     qualities: [10, 25, 50, 75, 90, 100],

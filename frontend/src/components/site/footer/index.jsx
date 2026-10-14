@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { FOOTER_GLASSES_MODE } from "./footer-glasses-mode";
 import FooterScene from "./footer-scene";
 import LanguageSwitcher from "./language-switcher";
 
@@ -108,8 +109,20 @@ export default function SiteFooter({ locale }) {
           </div>
 
           <div className="mt-[clamp(0.75rem,1.8vh,1.4rem)] flex items-center justify-between gap-4 border-t border-white/20 pt-[clamp(0.65rem,1.6vh,1.15rem)] text-[0.62rem] text-white/72 sm:text-xs">
-            <p>
-              © {new Date().getFullYear()} ALP Gözlük. {tr ? "Tüm hakları saklıdır." : "All rights reserved."}
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>
+                © {new Date().getFullYear()} ALP Gözlük. {tr ? "Tüm hakları saklıdır." : "All rights reserved."}
+              </span>
+              {FOOTER_GLASSES_MODE === "3d" && (
+                <a
+                  href="https://sketchfab.com/3d-models/mustang-sunglasses-mu-1683-eeec9fbb427246959acee4e4266b0f0a"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-opacity hover:opacity-60"
+                >
+                  3D: Berk Gedik / CC BY 4.0
+                </a>
+              )}
             </p>
             <div className="flex shrink-0 items-center gap-3 sm:gap-5">
               <LanguageSwitcher locale={locale} />
