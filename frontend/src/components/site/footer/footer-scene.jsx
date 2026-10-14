@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+import FooterGlasses from "./footer-glasses";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -27,7 +28,7 @@ export default function FooterScene({ children }) {
 
       const footer = scene.querySelector("[data-footer-scene]");
       const glasses = scene.querySelector("[data-footer-glasses]");
-      const glassesImage = glasses.querySelector("img");
+      const glassesImage = glasses.querySelector("[data-footer-glasses-image]");
       const lensFilter = scene.querySelector("[data-footer-lens-filter]");
       const opticalVignette = scene.querySelector("[data-footer-optical-vignette]");
       const copyGroups = scene.querySelectorAll("[data-footer-copy]");
@@ -243,18 +244,7 @@ export default function FooterScene({ children }) {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center will-change-transform [backface-visibility:hidden] [transform-style:preserve-3d]"
         >
-          <Image
-            // src="/footer/footer-pov-sunglasses-inesta.png"
-            // src="/footer/gozluk.png"
-            src="/footer/gozluk_seffaf.svg"
-            alt=""
-            width={1920}
-            height={1080}
-            sizes="(max-width: 47.999rem) 112vw, 100vw"
-            unoptimized
-            draggable={false}
-            className="h-auto w-[112vw] max-w-none select-none object-contain md:w-[100vw]"
-          />
+          <FooterGlasses />
         </div>
       </footer>
     </div>
